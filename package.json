@@ -1,0 +1,12 @@
+{
+  "name": "dao-mono.git",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "pull:ui": "git subtree pull --prefix packages/taiko-ui https://github.com/aragon/taiko-ui main --squash"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
