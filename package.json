@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "pull:ui": "git subtree pull --prefix packages/taiko-ui https://github.com/aragon/taiko-ui main --squash"
+    "pull:ui": "git subtree pull --prefix packages/taiko-ui https://github.com/aragon/taiko-ui main --squash",
+    "pull:contracts": "git subtree pull --prefix packages/taiko-contracts https://github.com/aragon/taiko-contracts main --squash"
   },
   "keywords": [],
   "author": "",

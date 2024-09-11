@@ -2,7 +2,36 @@
 
 ## Mainnet
 
-## Holesly
+## Holesky
+
+### September 10th 2024
+_Taiko deployment_
+
+```
+  Chain ID: 17000
+  Deploying from: 0x4100a9B680B1Be1F10Cb8b5a57fE59eA77A8184e
+  Using production settings
+
+  Factory: 0x27F9bDA389f3657FbC8c6D9E963f0FA0B9FE14a2
+
+  DAO: 0x2A6E5e0E24595C60Bd64A03fF39794CA5EAC7D98
+  Voting token: 0x6490E12d480549D333499236fF2Ba6676C296011
+  Taiko Bridge: 0xA098b76a3Dd499D3F6D58D8AcCaFC8efBFd06807
+
+  Plugins
+  - Multisig plugin: 0xDCe46B45198C29F67145737753350Eeb764f9c7D
+  - Emergency multisig plugin: 0x0721390c5eFD84876f5acaa4D61A6385b3448635
+  - Optimistic token voting plugin: 0x681492235290E723df94461063b5d48396472eE8
+
+  Plugin repositories
+  - Multisig plugin repository: 0x0Cb60f8A13ad346c0AbC604af9363a05A1008d20
+  - Emergency multisig plugin repository: 0x9B1DB6209a9f52e76Dd6F42334c47ac6c7a642ff
+  - Optimistic token voting plugin repository: 0x582AB594dbE9f9FfA0Ae67c5C783CD0Ad77B0957
+
+  Helpers
+  - Public key registry 0x6265937DD2C0762f0493f9FBb5372832976dA427
+  - Delegation wall 0x8cCE36573293e5bE12F8530f683caa51719cF57E
+```
 
 ### August 1st 2024
 
