@@ -1,6 +1,0 @@
-[submodule "packages/taiko-ui"]
-	path = packages/taiko-ui
-	url = https://github.com/aragon/taiko-ui
-[submodule "packages/taiko-contracts"]
-	path = packages/taiko-contracts
-	url = https://github.com/aragon/taiko-contracts
