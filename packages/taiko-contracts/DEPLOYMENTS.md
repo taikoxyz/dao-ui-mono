@@ -34,6 +34,30 @@ _Taiko Deployment_
 
 ```
 
+### October 2nd 2024
+_Taiko deployment_
+
+```
+  Chain ID: 17000
+  Deploying from: 0x4100a9B680B1Be1F10Cb8b5a57fE59eA77A8184e
+  Using production settings
+  Factory: 0x41668f646760e5Cb9D83797ffeF7772bEEf87DfB
+  DAO: 0xf29d203d253AA49DAAC55DA8a674899dD0ACc05B
+  Voting token: 0x6490E12d480549D333499236fF2Ba6676C296011
+  Taiko Bridge: 0xA098b76a3Dd499D3F6D58D8AcCaFC8efBFd06807
+  Plugins
+  - Multisig plugin: 0x5f4Ae17F5AE886030730A0A1603441C063D5bbd2
+  - Emergency multisig plugin: 0x5a4C2dD33e1CF1F7bEA15be9ABb294eb51E836ff
+  - Optimistic token voting plugin: 0x041527f730C72469247D227371147807F59A20D7
+  Plugin repositories
+  - Multisig plugin repository: 0x01cb0A62ED9e48D3224361d1128bc33C42c08876
+  - Emergency multisig plugin repository: 0x3359A9DF60403a394C71E53DC5FA184ca30Bac01
+  - Optimistic token voting plugin repository: 0xCA6C7A39966e136d9448677D804d124CCA44b1b0
+  Helpers
+  - Public key registry 0xC2d816653b743981CC3457c7c354F30C817e94D9
+  - Delegation wall 0x7f194A7F477B14F72Bc6475433D6bB927e59E5fB
+```
+
 ### August 1st 2024
 
 Deployment for internal testing, with L2 voting disabled and using a pre-release voting token.
