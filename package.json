@@ -1,0 +1,14 @@
+{
+  "name": "monorepo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "pull:contracts": "cd packages/contracts && git pull origin main",
+    "pull:ui": "cd packages/ui && git pull origin main",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
