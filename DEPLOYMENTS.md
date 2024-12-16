@@ -4,6 +4,43 @@
 ## Holesky
 
 ### 13/12/2024
+Inflated Security Council member count for testing purposes. These accounts are controlled by the `0x4100a9B680B1Be1F10Cb8b5a57fE59eA77A8184e` member:
+
+- `0x542AD228c125d570E0a1007c1072b393d8f3D045`
+- `0xeA1688488BE7D2E1fC259ceef2b9b514A701f1D2`
+- `0xCe433Dd6f23333799C11199104AA6986333b7B0b`
+- `0x54a98E2797Ba1D27848bc3F7cb07C6559326fe7b`
+- `0x1e76BF1b36DD4D9A5eBf951E5961700E829a75A9`
+
+```
+Deploying from: 0x4100a9B680B1Be1F10Cb8b5a57fE59eA77A8184e
+Chain ID: 17000
+Using production settings
+
+Factory: 0x9b3AaA41cCe5c947DC2b03bc25988b2494fA71e0
+
+DAO: 0xCf95Ab810ca5D6c38F858B8983987db2D6B3e500
+Voting token: 0x6490E12d480549D333499236fF2Ba6676C296011
+Taiko Bridge: 0xA098b76a3Dd499D3F6D58D8AcCaFC8efBFd06807
+
+Plugins
+- Multisig plugin: 0x445FC738de44Abc86d860EB6AC304474da75A64b
+- Emergency multisig plugin: 0x24e2e606CE4507Be7fb51DC5fe3a24fc50038e45
+- Optimistic token voting plugin: 0x55471956B21aAd8777257c3ab56e94E21d7118Dd
+
+Helpers
+- Signer list 0xa97428F5eB89e5165890BBdc1EF7203061Eb1D21
+- Encryption registry 0x1614336AD0B3945C6D371b3Db318FEb47811dde7
+- Delegation wall 0x4b311A6b0faCEa352dD0Bc0000e14962b9303C19
+
+Plugin repositories
+- Multisig plugin repository: 0x4592cC5CcB93F693355a247B8773D7d04eEa40D7
+- Emergency multisig plugin repository: 0x07CBb46824927ABa013a11c8707B9d1098d90f94
+- Optimistic token voting plugin repository: 0x32fd666CA8eA49F0b8f1Be52bEbd08b1D23d02Cb
+
+```
+
+### 13/12/2024
 Security Council member `0x55792e1F0a41D3af8B6d41DFdcf24651AA80fA1e` replaced by `0x1B77E354d33A46CC79C6ECcd2aeF3e4A06cAf063`.
 
 ```
