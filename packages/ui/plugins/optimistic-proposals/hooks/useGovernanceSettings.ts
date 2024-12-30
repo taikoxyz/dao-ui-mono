@@ -2,10 +2,10 @@ import { PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS } from "@/constants";
 import { useConfig } from "wagmi";
 import { OptimisticTokenVotingPluginAbi } from "../artifacts/OptimisticTokenVotingPlugin.sol";
 import { useQuery } from "@tanstack/react-query";
-import { readContract } from "@wagmi/core";
+import { Config, readContract } from "@wagmi/core";
 
 export function useGovernanceSettings() {
-  const config = useConfig();
+  const config = useConfig() as Config;
 
   const {
     data: governanceSettings,

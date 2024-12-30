@@ -3,10 +3,10 @@ import { PUB_TOKEN_ADDRESS } from "@/constants";
 import { Erc20VotesAbi } from "../artifacts/ERC20Votes";
 import { Address } from "viem";
 import { useQuery } from "@tanstack/react-query";
-import { readContract } from "@wagmi/core";
+import { Config, readContract } from "@wagmi/core";
 
 export function useTokenPastVotes(holderAddress?: Address, timestamp?: bigint) {
-  const config = useConfig();
+  const config = useConfig() as Config;
   const {
     data: votes,
     isLoading,

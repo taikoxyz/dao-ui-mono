@@ -4,7 +4,7 @@ import { PUB_SIGNER_LIST_CONTRACT_ADDRESS } from "@/constants";
 import { Address, getAbiItem, GetLogsReturnType } from "viem";
 import { useQuery } from "@tanstack/react-query";
 import { getLogsUntilNow } from "@/utils/evm";
-import { readContract } from "@wagmi/core";
+import { Config, readContract } from "@wagmi/core";
 
 const SignersAddedEvent = getAbiItem({
   abi: SignerListAbi,
@@ -43,7 +43,7 @@ export function useSignerList() {
 }
 
 export function useApproverWalletList() {
-  const config = useConfig();
+  const config = useConfig() as Config;
 
   return useQuery({
     queryKey: ["encryption-registry-recipients-fetch", PUB_SIGNER_LIST_CONTRACT_ADDRESS],

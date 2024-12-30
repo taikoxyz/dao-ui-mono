@@ -2,10 +2,10 @@ import { PUB_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
 import { useConfig } from "wagmi";
 import { MultisigPluginAbi } from "../artifacts/MultisigPlugin";
 import { useQuery } from "@tanstack/react-query";
-import { readContract } from "@wagmi/core";
+import { Config, readContract } from "@wagmi/core";
 
 export function useMultisigSettings() {
-  const config = useConfig();
+  const config = useConfig() as Config;
 
   const {
     data: settings,

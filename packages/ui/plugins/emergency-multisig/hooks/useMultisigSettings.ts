@@ -1,11 +1,11 @@
 import { PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
-import { useConfig } from "wagmi";
 import { EmergencyMultisigPluginAbi } from "../artifacts/EmergencyMultisigPlugin";
 import { useQuery } from "@tanstack/react-query";
-import { readContract } from "@wagmi/core";
+import { readContract, Config } from "@wagmi/core";
+import { useConfig } from "wagmi";
 
 export function useMultisigSettings() {
-  const config = useConfig();
+  const config = useConfig() as Config;
 
   const {
     data: settings,
