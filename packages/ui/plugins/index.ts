@@ -36,7 +36,7 @@ export const plugins: PluginItem[] = [
     // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
     pluginAddress: PUB_MULTISIG_PLUGIN_ADDRESS,
     hiddenIfNotSigner: true,
-    hideFromMenu: true,
+   hideFromMenu: true,
   },
   {
     id: "emergency-council",
@@ -45,7 +45,7 @@ export const plugins: PluginItem[] = [
     // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
     pluginAddress: PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS,
     hiddenIfNotSigner: true,
-    hideFromMenu: true,
+   hideFromMenu: true,
   },
   {
     id: "security-council",
@@ -53,14 +53,7 @@ export const plugins: PluginItem[] = [
     title: "Security Council",
     // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
     pluginAddress: PUB_ENCRYPTION_REGISTRY_CONTRACT_ADDRESS,
-  } /*
-  {
-    id: "members",
-    folderName: "members",
-    title: "Members",
-    // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
-    pluginAddress: PUB_DELEGATION_WALL_CONTRACT_ADDRESS,
-  },*/,
+  },
   {
     id: "delegates",
     folderName: "delegates",
@@ -68,45 +61,4 @@ export const plugins: PluginItem[] = [
     // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
     pluginAddress: PUB_DELEGATION_WALL_CONTRACT_ADDRESS,
   },
-  //*/
-
-  /*
-  {
-    id: "community-proposals",
-    folderName: "optimistic-proposals",
-    title: "Proposals",
-    // icon: IconType.APP_MEMBERS,
-    pluginAddress: PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
-  },
-  {
-    id: "taiko-council",
-    folderName: "multisig",
-    title: "Draft Proposals",
-    // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
-    pluginAddress: PUB_MULTISIG_PLUGIN_ADDRESS,
-    hiddenIfNotSigner: true,
-  },
-  {
-    id: "security-council",
-    folderName: "emergency-multisig",
-    title: "Emergency Proposals",
-    // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
-    pluginAddress: PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS,
-    hiddenIfNotSigner: true,
-  },
-  {
-    id: "members",
-    folderName: "members",
-    title: "Delegates",
-    // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
-    pluginAddress: PUB_DELEGATION_WALL_CONTRACT_ADDRESS,
-  },
-  {
-    id: "members",
-    folderName: "members",
-    title: "Security Council",
-    // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
-    pluginAddress: PUB_DELEGATION_WALL_CONTRACT_ADDRESS,
-  },
-  */
 ];
