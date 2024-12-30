@@ -24,9 +24,7 @@ import { useDerivedWallet } from "@/hooks/useDerivedWallet";
 import { toHex } from "viem";
 import { PUB_APP_NAME, PUB_PROJECT_URL } from "@/constants";
 import { useSignerList } from "../hooks/useSignerList";
-import {
-  useMultisigSettings as useEmergencyMultisigSettings,
-} from "@/plugins/emergency-multisig/hooks/useMultisigSettings";
+import { useMultisigSettings as useEmergencyMultisigSettings } from "@/plugins/emergency-multisig/hooks/useMultisigSettings";
 import { NotFound } from "@/components/not-found";
 import EmergencyProposalCreate from "../../emergency-multisig/pages/new";
 import EmergencyProposalList from "../../emergency-multisig/pages/proposal-list";
@@ -117,8 +115,7 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
               receive encrypted payloads.
             </p>
 
-
-        <div className="flex flex-col gap-y-3">
+            <div className="flex flex-col gap-y-3">
               <Heading size="h3">Account status</Heading>
               <AccountStatus />
             </div>
@@ -139,9 +136,9 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <div className="divider" />
             <Heading size="h4">Voting Requirements</Heading>
             <p className="text-base leading-tight text-neutral-500">
-            {emergencyMultisigSettings.minApprovals || "-"} out of{" "}
-            {multisigMembers?.length || 0} approvals before execution
-</p>
+              {emergencyMultisigSettings.minApprovals || "-"} out of {multisigMembers?.length || 0} approvals before
+              execution
+            </p>
           </ElseIf>
           <ElseIf condition={toggleValue === "proposals"}>
             <Heading size="h3">Proposals</Heading>
@@ -161,28 +158,26 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <div className="divider" />
             <Heading size="h4">Voting Requirements</Heading>
             <p className="text-base leading-tight text-neutral-500">
-            {multisigSettings.minApprovals || "-"} out of {multisigMembers?.length || 0} before entering public optimistic stage
-</p>
+              {multisigSettings.minApprovals || "-"} out of {multisigMembers?.length || 0} before entering public
+              optimistic stage
+            </p>
           </ElseIf>
           <Else>
             <p className="text-neutral-500">{toggleValue}</p>
           </Else>
-
-
         </If>
-
       </div>
 
-        <div className="flex flex-col items-baseline gap-y-2 py-3 lg:gap-x-6 lg:py-4">
-          <dt className="line-clamp-1 shrink-0 text-lg leading-tight text-neutral-800 lg:line-clamp-6 lg:w-40">
-            About {PUB_APP_NAME}
-          </dt>
-          <dd className="size-full text-base leading-tight text-neutral-500">
-            <a href={PUB_PROJECT_URL} target="_blank" className="font-semibold text-primary-400 underline">
-              Learn more about the project
-            </a>
-          </dd>
-        </div>
+      <div className="flex flex-col items-baseline gap-y-2 py-3 lg:gap-x-6 lg:py-4">
+        <dt className="line-clamp-1 shrink-0 text-lg leading-tight text-neutral-800 lg:line-clamp-6 lg:w-40">
+          About {PUB_APP_NAME}
+        </dt>
+        <dd className="size-full text-base leading-tight text-neutral-500">
+          <a href={PUB_PROJECT_URL} target="_blank" className="font-semibold text-primary-400 underline">
+            Learn more about the project
+          </a>
+        </dd>
+      </div>
     </aside>
   );
 }

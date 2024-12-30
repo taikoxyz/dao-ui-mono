@@ -63,69 +63,67 @@ export default function Proposals() {
 
   return (
     <MainSection>
-            <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
-            <div className="flex flex-1 flex-col gap-y-6">
+      <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
+        <div className="flex flex-1 flex-col gap-y-6">
+          <div className="flex w-full flex-row content-center justify-between">
+            <h1 className="line-clamp-1 flex flex-1 shrink-0 text-2xl font-normal leading-tight text-neutral-800 md:text-3xl">
+              Proposals
+            </h1>
+          </div>
+          <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
+            <NoVetoPowerWarning
+              delegatingToSomeoneElse={delegatingToSomeoneElse}
+              delegatesTo={delegatesTo}
+              delegatedToZero={delegatedToZero}
+              address={address}
+            />
+          </If>
+          <If condition={proposalCount}>
+            <Then>
+              <DataList.Root
+                entityLabel={entityLabel}
+                itemsCount={proposalCount}
+                pageSize={DEFAULT_PAGE_SIZE}
+                state={dataListState}
+              >
+                <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
+                  {Array.from(Array(proposalCount || 0)?.keys())
+                    .reverse()
+                    ?.map((proposalIndex) => <ProposalCard key={proposalIndex} proposalIndex={proposalIndex} />)}
+                </DataList.Container>
+                <DataList.Pagination />
+              </DataList.Root>
+            </Then>
+            <Else>
+              <CardEmptyState
+                heading="No proposals yet"
+                description="The list of proposals is currently empty. Here you will see the proposals created by the Security Council and submitted to the community for optimistic approval."
+                objectIllustration={{
+                  object: "LABELS",
+                }}
+              />
+            </Else>
+          </If>
+        </div>
+        <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
+          <div className="flex flex-col gap-y-3">
+            <Heading size="h3">Details</Heading>
+            <p className="text-neutral-500">
+              Proposals submitted to the community can be vetoed by token holders. Additionally, token holders can opt
+              to delegate their voting power to delegates.
+            </p>
 
-      <div className="flex w-full flex-row content-center justify-between">
-        <h1 className="line-clamp-1 flex flex-1 shrink-0 text-2xl font-normal leading-tight text-neutral-800 md:text-3xl">
-          Proposals
-        </h1>
+            <div className="flex flex-col items-baseline gap-y-2 py-3 lg:gap-x-6 lg:py-4">
+              <dt className="line-clamp-1 shrink-0 text-lg leading-tight text-neutral-800 lg:line-clamp-6 lg:w-40">
+                Veto threshold
+              </dt>
+              <dd className="size-full text-base leading-tight text-neutral-500">
+                {((optimisticSettings.minVetoRatio || 0) / 10000).toFixed(2)}% of {PUB_TOKEN_SYMBOL} supply
+              </dd>
+            </div>
+          </div>
+        </aside>
       </div>
-      <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
-        <NoVetoPowerWarning
-          delegatingToSomeoneElse={delegatingToSomeoneElse}
-          delegatesTo={delegatesTo}
-          delegatedToZero={delegatedToZero}
-          address={address}
-        />
-      </If>
-      <If condition={proposalCount}>
-        <Then>
-          <DataList.Root
-            entityLabel={entityLabel}
-            itemsCount={proposalCount}
-            pageSize={DEFAULT_PAGE_SIZE}
-            state={dataListState}
-          >
-            <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
-              {Array.from(Array(proposalCount || 0)?.keys())
-                .reverse()
-                ?.map((proposalIndex) => <ProposalCard key={proposalIndex} proposalIndex={proposalIndex} />)}
-            </DataList.Container>
-            <DataList.Pagination />
-          </DataList.Root>
-        </Then>
-        <Else>
-          <CardEmptyState
-            heading="No proposals yet"
-            description="The list of proposals is currently empty. Here you will see the proposals created by the Security Council and submitted to the community for optimistic approval."
-            objectIllustration={{
-              object: "LABELS",
-            }}
-          />
-        </Else>
-      </If>
-      </div>
-       <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
-                <div className="flex flex-col gap-y-3">
-                  <Heading size="h3">Details</Heading>
-                      <p className="text-neutral-500">
-                      Proposals submitted to the community can be vetoed by token holders. Additionally, token holders can opt to delegate their voting power to delegates.
-
-
-                      </p>
-
-                      <div className="flex flex-col items-baseline gap-y-2 py-3 lg:gap-x-6 lg:py-4">
-                  <dt className="line-clamp-1 shrink-0 text-lg leading-tight text-neutral-800 lg:line-clamp-6 lg:w-40">
-                    Veto threshold
-                  </dt>
-                  <dd className="size-full text-base leading-tight text-neutral-500">
-                    {((optimisticSettings.minVetoRatio || 0) / 10000).toFixed(2)}% of {PUB_TOKEN_SYMBOL} supply
-                  </dd>
-                </div>
-                </div>
-              </aside>
-              </div>
     </MainSection>
   );
 }

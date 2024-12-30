@@ -46,7 +46,8 @@
     "react-hook-form": "^7.52.1",
     "tailwindcss-fluid-type": "^2.0.6",
     "viem": "2.19.8",
-    "wagmi": "2.10.9"
+    "wagmi": "2.10.9",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@aragon/osx-commons-configs": "^0.2.0",
