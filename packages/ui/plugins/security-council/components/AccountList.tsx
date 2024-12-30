@@ -9,6 +9,8 @@ import { BYTES32_ZERO } from "@/utils/evm";
 import SecurityCouncilProfiles from "../../../security-council-profiles.json";
 import { Address, isAddressEqual } from "viem";
 
+interface IAccountListProps {}
+
 export const AccountList: React.FC<IAccountListProps> = ({}) => {
   const [searchValue, setSearchValue] = useState<string>();
   const { data: accounts, isLoading: isLoading1 } = useSignerList();
@@ -43,7 +45,7 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
           .map((account) => {
             const eAcc = encryptionAccounts.find((a) => a.owner === account);
 
-            if (!eAcc.publicKey || eAcc.publicKey === BYTES32_ZERO) {
+            if (!eAcc || !eAcc.publicKey || eAcc.publicKey === BYTES32_ZERO) {
               return (
                 <AccountListItemPending
                   key={account}

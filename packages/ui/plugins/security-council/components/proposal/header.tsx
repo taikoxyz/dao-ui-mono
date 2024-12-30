@@ -2,11 +2,11 @@ import { AvatarIcon, Breadcrumbs, Heading, IBreadcrumbsLink, IconType, ProposalS
 import { useProposalStatus } from "@/plugins/emergency-multisig/hooks/useProposalVariantStatus";
 import { Publisher } from "@/components/publisher";
 import { getShortTimeDiffFrom } from "@/utils/dates";
-import { EmergencyProposal } from "../../utils/types";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { HeaderSection } from "@/components/layout/header-section";
 import { getTagVariantFromStatus } from "@/utils/ui-variants";
 import { capitalizeFirstLetter } from "@/utils/text";
+import { EmergencyProposal } from "@/plugins/emergency-multisig/utils/types";
 
 interface ProposalHeaderProps {
   proposalId: string;

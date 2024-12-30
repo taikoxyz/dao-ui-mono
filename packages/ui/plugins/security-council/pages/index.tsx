@@ -42,11 +42,7 @@ export default function EncryptionPage() {
   const onToggleChange = (value: string | undefined) => {
     if (value) setToggleValue(value as "members" | "proposals" | "emergency-proposals");
   };
-
   const { hash } = useUrl();
-
-  console.log({ hash });
-
   return (
     <MainSection>
       <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
@@ -68,7 +64,7 @@ export default function EncryptionPage() {
 
           <If condition={toggleValue === "members"}>
             <Then>
-              <AccountList listType={toggleValue} />
+              <AccountList />
             </Then>
             <ElseIf condition={toggleValue === "emergency-proposals"}>
               <Then>
