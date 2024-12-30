@@ -1,6 +1,3 @@
 [submodule "packages/contracts"]
 	path = packages/contracts
 	url = https://github.com/aragon/taiko-contracts
-[submodule "packages/ui"]
-	path = packages/ui
-	url = https://github.com/aragon/taiko-ui
