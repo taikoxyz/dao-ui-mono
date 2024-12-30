@@ -32,7 +32,6 @@ export const Navbar: React.FC = () => {
       })),
   ];
 
-  console.log({ navLinks, plugins });
   return (
     <>
       <nav className="h-30 sticky top-0 z-[var(--hub-navbar-z-index)] flex w-full select-none items-center justify-center border-b border-b-neutral-100 bg-neutral-0">
