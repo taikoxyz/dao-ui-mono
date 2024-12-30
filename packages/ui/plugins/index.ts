@@ -53,7 +53,6 @@ export const plugins: PluginItem[] = [
     title: "Security Council",
     // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
     pluginAddress: PUB_ENCRYPTION_REGISTRY_CONTRACT_ADDRESS,
-    hiddenIfNotSigner: true,
   } /*
   {
     id: "members",
