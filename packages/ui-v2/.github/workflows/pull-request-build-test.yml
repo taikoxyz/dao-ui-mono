@@ -1,0 +1,36 @@
+name: Pull request build and test
+on:
+  pull_request:
+
+jobs:
+  run-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - name: Build
+        run: bun run build
+        env:
+          # NEXT_PUBLIC_DAO_ADDRESS: ${{secrets.DAO_ADDRESS}}
+          NEXT_PUBLIC_DAO_ADDRESS: "0x32844d83744AA532009B561a753a144E6f98C283"
+          NEXT_PUBLIC_TOKEN_ADDRESS: "0xD7090050422785a989a6a2Bf519C26E09Bc8BABc"
+          NEXT_PUBLIC_MULTISIG_PLUGIN_ADDRESS: "0x9695520e32F85eF403f6B18b8a94e44A90D5cBF0"
+          NEXT_PUBLIC_EMERGENCY_MULTISIG_PLUGIN_ADDRESS: "0x832d6339e26EF129cEd320f84d19034a3d3411e6"
+          NEXT_PUBLIC_DUAL_GOVERNANCE_PLUGIN_ADDRESS: "0xeB6e121d41B1C72Bb89cAd700de693e40af3A83e"
+          NEXT_PUBLIC_ENCRYPTION_REGISTRY_CONTRACT_ADDRESS: "0xBFE2bf3F192e87747d61824041a2A6e1b5a3a130"
+          NEXT_PUBLIC_DELEGATION_WALL_CONTRACT_ADDRESS: "0xFdA7007A88CF56Ac0662E9500a06C736e51023eC"
+
+          NEXT_PUBLIC_CHAIN_NAME: holesky
+          NEXT_PUBLIC_WEB3_URL_PREFIX: https://rpc/
+          NEXT_PUBLIC_ALCHEMY_API_KEY: x
+          NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: x
+          NEXT_PUBLIC_IPFS_ENDPOINTS: https://ipfs/,https://ipfs2/api
+          NEXT_PUBLIC_PINATA_JWT: x
+          NEXT_PUBLIC_ETHERSCAN_API_KEY: x
+          NODE_ENV: production
+
+      - name: Run tests
+        run: bun test
