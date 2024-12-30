@@ -36,7 +36,7 @@ export const plugins: PluginItem[] = [
     // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
     pluginAddress: PUB_MULTISIG_PLUGIN_ADDRESS,
     hiddenIfNotSigner: true,
-    hideFromMenu: true,
+   hideFromMenu: true,
   },
   {
     id: "emergency-council",

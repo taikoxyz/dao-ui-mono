@@ -5,6 +5,7 @@ import utc from "dayjs/plugin/utc";
 import React from "react";
 import { VotingStage, type IVotingStageProps } from "./votingStage/votingStage";
 import type { ITransformedStage } from "@/utils/types";
+import { If, Then } from "../if";
 
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
@@ -15,6 +16,7 @@ interface IProposalVotingProps {
 }
 
 export const ProposalVoting: React.FC<IProposalVotingProps> = ({ stages, description }) => {
+
   return (
     <Card className="overflow-hidden rounded-xl bg-neutral-0 shadow-neutral">
       {/* Header */}
@@ -23,11 +25,16 @@ export const ProposalVoting: React.FC<IProposalVotingProps> = ({ stages, descrip
         <p className="text-lg leading-normal text-neutral-500">{description}</p>
       </div>
       {/* Stages */}
+      <If condition={stages && stages.length > 0}>
+        <Then>
       <AccordionContainer isMulti={false} defaultValue="Stage 1" className="border-t border-t-neutral-100">
         {stages.map((stage, index) => (
           <VotingStage key={stage.id} {...({ ...stage, number: index + 1 } as IVotingStageProps)} />
         ))}
       </AccordionContainer>
+      </Then>
+
+      </If>
     </Card>
   );
 };

@@ -55,7 +55,6 @@ export default function Proposals() {
   }
 
   return (
-    <div>
       <EncryptionPlaceholderOrChildren>
         <If condition={!proposalCount}>
           <Then>
@@ -106,7 +105,6 @@ export default function Proposals() {
           </Else>
         </If>
       </EncryptionPlaceholderOrChildren>
-    </div>
   );
 }
 
