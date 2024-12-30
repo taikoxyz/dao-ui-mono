@@ -3,8 +3,8 @@ import { SignerListAbi } from "../artifacts/SignerList";
 import { PUB_SIGNER_LIST_CONTRACT_ADDRESS } from "@/constants";
 import { Address, getAbiItem, GetLogsReturnType } from "viem";
 import { useQuery } from "@tanstack/react-query";
-import { readContract } from "@wagmi/core";
 import { getLogsUntilNow } from "@/utils/evm";
+import { readContract } from "@wagmi/core";
 
 const SignersAddedEvent = getAbiItem({
   abi: SignerListAbi,
