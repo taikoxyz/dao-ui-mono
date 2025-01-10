@@ -44,7 +44,7 @@ export const HeaderDao = () => {
               Welcome to the {PUB_APP_NAME} DAO's Governance app. Use this tool to engage with the community and shape
               the future direction of the protocol.
             </p>
-            <ul className="list-disc list-inside">
+            <ul className="list-inside list-disc">
               <li>explain the dao is currently on l1, but will eventually move onto l2</li>
             </ul>
           </div>

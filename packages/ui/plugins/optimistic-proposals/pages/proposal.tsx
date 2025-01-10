@@ -146,9 +146,9 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
           <div className="flex flex-col gap-y-6 md:w-[33%]">
             <CardResources resources={proposal.resources} title="Resources" />
             <div>
-            <ul className="list-disc list-inside">
-<li>Tokens must be on the voter's wallet before the proposal is created in order for them to vote.</li>
-</ul>
+              <ul className="list-inside list-disc">
+                <li>Tokens must be on the voter's wallet before the proposal is created in order for them to vote.</li>
+              </ul>
             </div>
           </div>
         </div>

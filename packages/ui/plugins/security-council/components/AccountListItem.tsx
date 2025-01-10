@@ -25,63 +25,58 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
   const isCurrentUser = isConnected && owner && equalAddresses(currentUserAddress, owner);
   const selfAppointed = !appointedAgent || equalAddresses(appointedAgent, ADDRESS_ZERO);
   const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
-console.log(props)
+  console.log(props);
   return (
-    <DataList.Item
-    href="#" target={undefined}
-    className="min-w-fit !py-0 px-4 md:px-6" {...otherProps}>
+    <DataList.Item href="#" target={undefined} className="min-w-fit !py-0 px-4 md:px-6" {...otherProps}>
       <div className="flex flex-col items-start justify-center gap-y-3 py-4 md:min-w-44 md:py-6">
         <div className="flex w-full items-center justify-start gap-6">
           <MemberAvatar address={owner} avatarSrc={avatarSrc} responsiveSize={{ md: "md" }} />
-         <div className="flex flex-col justify-center items-center">
-          <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">{profile?.name}</p>
-          <p className="inline-block w-full truncate text-sm text-neutral-400">
-          <button
-              className="p-0 flex flex-col"
-              onClick={() =>{
-                window.open(`${PUB_CHAIN.blockExplorers?.default.url}/address/${owner}`)
-              }}>
-            {formatHexString(owner)}
-            </button></p>
+          <div className="flex flex-col items-center justify-center">
+            <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">{profile?.name}</p>
+            <p className="inline-block w-full truncate text-sm text-neutral-400">
+              <button
+                className="flex flex-col p-0"
+                onClick={() => {
+                  window.open(`${PUB_CHAIN.blockExplorers?.default.url}/address/${owner}`);
+                }}
+              >
+                {formatHexString(owner)}
+              </button>
+            </p>
           </div>
         </div>
         <If condition={!selfAppointed}>
           <Then>
-          <p className="inline-block w-full font-bold truncate text-sm text-neutral-400">
-          Appointed wallet:</p>
+            <p className="font-bold inline-block w-full truncate text-sm text-neutral-400">Appointed wallet:</p>
           </Then>
         </If>
         <p className="inline-block w-full truncate text-sm text-neutral-400">
           <If condition={selfAppointed}>
             <Then>
               <button
-              className="p-0 flex flex-col"
-              onClick={() =>{
-                window.open(`${PUB_CHAIN.blockExplorers?.default.url}/address/${currentUserAddress}`)
-              }}>
-              <Tag
-              variant="info"
-              label={`Self-appointed`}/>
+                className="flex flex-col p-0"
+                onClick={() => {
+                  window.open(`${PUB_CHAIN.blockExplorers?.default.url}/address/${currentUserAddress}`);
+                }}
+              >
+                <Tag variant="info" label={`Self-appointed`} />
               </button>
-              </Then>
+            </Then>
 
-              <ElseIf condition={appointedAgent === currentUserAddress}>
-              <Tag variant="info" label="You"/>
-
-                </ElseIf>
+            <ElseIf condition={appointedAgent === currentUserAddress}>
+              <Tag variant="info" label="You" />
+            </ElseIf>
 
             <Else>
-            <button
-              className="p-0 flex flex-col"
-              onClick={() =>{
-                window.open(`${PUB_CHAIN.blockExplorers?.default.url}/address/${appointedAgent}`)
-              }}>
-              <Tag
-              variant="info"
-              label={formatHexString(appointedAgent)}/>
+              <button
+                className="flex flex-col p-0"
+                onClick={() => {
+                  window.open(`${PUB_CHAIN.blockExplorers?.default.url}/address/${appointedAgent}`);
+                }}
+              >
+                <Tag variant="info" label={formatHexString(appointedAgent)} />
               </button>
-
-              </Else>
+            </Else>
           </If>
         </p>
         <div className="text-md w-full text-neutral-400">{profile?.description}</div>
