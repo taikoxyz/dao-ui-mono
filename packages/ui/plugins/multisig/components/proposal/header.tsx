@@ -1,4 +1,13 @@
-import { AvatarIcon, Breadcrumbs, Heading, IBreadcrumbsLink, IconType, ProposalStatus, Tag, TagVariant } from "@aragon/ods";
+import {
+  AvatarIcon,
+  Breadcrumbs,
+  Heading,
+  IBreadcrumbsLink,
+  IconType,
+  ProposalStatus,
+  Tag,
+  TagVariant,
+} from "@aragon/ods";
 import { MultisigProposal } from "@/plugins/multisig/utils/types";
 import { useProposalStatus } from "@/plugins/multisig/hooks/useProposalVariantStatus";
 import { HeaderSection } from "@/components/layout/header-section";
@@ -29,18 +38,16 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
             <Heading size="h1">{proposal.title}</Heading>
             {/* && <Tag label="Emergency" variant="critical" />*/}
             <If condition={proposalStatus == ProposalStatus.EXECUTED}>
-                <Then>
+              <Then>
                 <Tag label="Sent to Community Stage" variant="success" />
-                </Then>
-                <ElseIf condition={expired}>
+              </Then>
+              <ElseIf condition={expired}>
                 <Tag label="Expired" variant="critical" />
-                </ElseIf>
-                <Else>
+              </ElseIf>
+              <Else>
                 <Tag label="Active" variant="info" />
-
-                  </Else>
-
-              </If>
+              </Else>
+            </If>
           </div>
           <p className="text-lg leading-normal text-neutral-500">{proposal.summary}</p>
         </div>
@@ -51,17 +58,15 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
             <Publisher publisher={[{ address: proposal.creator }]} />
           </div>
           <If condition={proposalStatus !== ProposalStatus.EXECUTED && !expired}>
-          <div className="flex items-center gap-x-2">
-            <div className="flex gap-x-1 text-base leading-tight ">
-
-                  <span className="text-neutral-800">
-                    {getShortTimeDiffFrom(proposal.parameters.expirationDate * 1000n)}
-                  </span>
-                  <span className="text-neutral-500">left until expiration</span>
+            <div className="flex items-center gap-x-2">
+              <div className="flex gap-x-1 text-base leading-tight ">
+                <span className="text-neutral-800">
+                  {getShortTimeDiffFrom(proposal.parameters.expirationDate * 1000n)}
+                </span>
+                <span className="text-neutral-500">left until expiration</span>
+              </div>
             </div>
-          </div>
-            </If>
-
+          </If>
         </div>
       </HeaderSection>
     </div>

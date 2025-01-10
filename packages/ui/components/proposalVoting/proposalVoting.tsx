@@ -16,7 +16,6 @@ interface IProposalVotingProps {
 }
 
 export const ProposalVoting: React.FC<IProposalVotingProps> = ({ stages, description }) => {
-
   return (
     <Card className="overflow-hidden rounded-xl bg-neutral-0 shadow-neutral">
       {/* Header */}
@@ -27,13 +26,12 @@ export const ProposalVoting: React.FC<IProposalVotingProps> = ({ stages, descrip
       {/* Stages */}
       <If condition={stages && stages.length > 0}>
         <Then>
-      <AccordionContainer isMulti={false} defaultValue="Stage 1" className="border-t border-t-neutral-100">
-        {stages.map((stage, index) => (
-          <VotingStage key={stage.id} {...({ ...stage, number: index + 1 } as IVotingStageProps)} />
-        ))}
-      </AccordionContainer>
-      </Then>
-
+          <AccordionContainer isMulti={false} defaultValue="Stage 1" className="border-t border-t-neutral-100">
+            {stages.map((stage, index) => (
+              <VotingStage key={stage.id} {...({ ...stage, number: index + 1 } as IVotingStageProps)} />
+            ))}
+          </AccordionContainer>
+        </Then>
       </If>
     </Card>
   );

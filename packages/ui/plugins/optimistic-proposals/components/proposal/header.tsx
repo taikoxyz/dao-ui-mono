@@ -33,9 +33,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal }
     <div className="flex w-full justify-center bg-neutral-0">
       {/* Wrapper */}
       <HeaderSection>
-        <Breadcrumbs
-          links={breadcrumbs}
-        />
+        <Breadcrumbs links={breadcrumbs} />
         {/* Title & description */}
         <div className="flex w-full flex-col gap-y-2">
           <div className="flex w-full items-center gap-x-4">
@@ -43,8 +41,8 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal }
             {proposalStatus && <Tag label={capitalizeFirstLetter(proposalStatus)} variant={tagVariant} />}
           </div>
           <div className="flex w-full items-center gap-x-4">
-          {isEmergency && <Tag label="Emergency Proposal" variant="critical" />}
-          {!isEmergency && <Tag label="Standard Proposal" variant="neutral" />}
+            {isEmergency && <Tag label="Emergency Proposal" variant="critical" />}
+            {!isEmergency && <Tag label="Standard Proposal" variant="neutral" />}
           </div>
           <p className="text-lg leading-normal text-neutral-500">{proposal.summary || DEFAULT_PROPOSAL_SUMMARY}</p>
         </div>

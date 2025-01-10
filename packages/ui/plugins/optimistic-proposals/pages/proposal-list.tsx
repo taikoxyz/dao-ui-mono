@@ -15,7 +15,14 @@ import {
   type DataListState,
 } from "@aragon/ods";
 import { Else, ElseIf, If, Then } from "@/components/if";
-import { PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS, PUB_CHAIN, PUB_TOKEN_SYMBOL, PUB_APP_NAME, PUB_PROJECT_URL, PUB_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
+import {
+  PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
+  PUB_CHAIN,
+  PUB_TOKEN_SYMBOL,
+  PUB_APP_NAME,
+  PUB_PROJECT_URL,
+  PUB_MULTISIG_PLUGIN_ADDRESS,
+} from "@/constants";
 import { OptimisticTokenVotingPluginAbi } from "../artifacts/OptimisticTokenVotingPlugin.sol";
 import { MainSection } from "@/components/layout/main-section";
 import { ADDRESS_ZERO } from "@/utils/evm";
@@ -63,45 +70,46 @@ export function PublicProposals() {
   const delegatingToSomeoneElse = !!delegatesTo && delegatesTo !== address && delegatesTo !== ADDRESS_ZERO;
   const delegatedToZero = !!delegatesTo && delegatesTo === ADDRESS_ZERO;
 
-  return (<>
-          <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
-            <NoVetoPowerWarning
-              delegatingToSomeoneElse={delegatingToSomeoneElse}
-              delegatesTo={delegatesTo}
-              delegatedToZero={delegatedToZero}
-              address={address}
-            />
-          </If>
-          <If condition={proposalCount}>
-            <Then>
-              <DataList.Root
-                entityLabel={entityLabel}
-                itemsCount={proposalCount}
-                pageSize={DEFAULT_PAGE_SIZE}
-                state={dataListState}
-                onLoadMore={() => {
-                  console.log('load more')
-                }}
-              >
-                <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
-                  {Array.from(Array(proposalCount || 0)?.keys())
-                    .reverse()
-                    ?.map((proposalIndex) => <ProposalCard key={proposalIndex} proposalIndex={proposalIndex} />)}
-                </DataList.Container>
-                <DataList.Pagination />
-              </DataList.Root>
-            </Then>
-            <Else>
-              <CardEmptyState
-                heading="No proposals yet"
-                description="The list of proposals is currently empty. Here you will see the proposals created by the Security Council and submitted to the community for optimistic approval."
-                objectIllustration={{
-                  object: "LABELS",
-                }}
-              />
-            </Else>
-          </If>
-        </>
+  return (
+    <>
+      <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
+        <NoVetoPowerWarning
+          delegatingToSomeoneElse={delegatingToSomeoneElse}
+          delegatesTo={delegatesTo}
+          delegatedToZero={delegatedToZero}
+          address={address}
+        />
+      </If>
+      <If condition={proposalCount}>
+        <Then>
+          <DataList.Root
+            entityLabel={entityLabel}
+            itemsCount={proposalCount}
+            pageSize={DEFAULT_PAGE_SIZE}
+            state={dataListState}
+            onLoadMore={() => {
+              console.log("load more");
+            }}
+          >
+            <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
+              {Array.from(Array(proposalCount || 0)?.keys())
+                .reverse()
+                ?.map((proposalIndex) => <ProposalCard key={proposalIndex} proposalIndex={proposalIndex} />)}
+            </DataList.Container>
+            <DataList.Pagination />
+          </DataList.Root>
+        </Then>
+        <Else>
+          <CardEmptyState
+            heading="No proposals yet"
+            description="The list of proposals is currently empty. Here you will see the proposals created by the Security Council and submitted to the community for optimistic approval."
+            objectIllustration={{
+              object: "LABELS",
+            }}
+          />
+        </Else>
+      </If>
+    </>
   );
 }
 
@@ -156,7 +164,7 @@ export default function ProposalList() {
           <div className="flex items-start justify-between">
             <Heading size="h1">Proposals</Heading>
           </div>
-              <PublicProposals />
+          <PublicProposals />
         </div>
         <AsideSection />
       </div>
@@ -164,27 +172,27 @@ export default function ProposalList() {
   );
 }
 
-
 function AsideSection() {
-  return (<aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
+  return (
+    <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
       <div className="flex flex-col gap-y-3">
-       <Heading size="h3">Emergency Proposals</Heading>
-       <b> (only shown after execution)</b>
+        <Heading size="h3">Emergency Proposals</Heading>
+        <b> (only shown after execution)</b>
 
-            <ul className="list-disc list-inside">
-      <li>SC members can create them</li>
-      <li>6 SC approvals makes them automatically approved</li>
-      <li>Any SC member can instantly execute them</li>
-    </ul>
+        <ul className="list-inside list-disc">
+          <li>SC members can create them</li>
+          <li>6 SC approvals makes them automatically approved</li>
+          <li>Any SC member can instantly execute them</li>
+        </ul>
 
-    <Heading size="h3">Community Proposals</Heading>
-    <b>(shown since created)</b>
-    <ul className="list-disc list-inside">
-      <li>SC members can create them</li>
-      <li>3 SC approvals makes them go into public voting</li>
-      <li>Token holders can veto with a 30% for the next 9 days</li>
-      <li>If non-vetoed, the proposal can be executed after the 9 days</li>
-    </ul>
+        <Heading size="h3">Community Proposals</Heading>
+        <b>(shown since created)</b>
+        <ul className="list-inside list-disc">
+          <li>SC members can create them</li>
+          <li>3 SC approvals makes them go into public voting</li>
+          <li>Token holders can veto with a 30% for the next 9 days</li>
+          <li>If non-vetoed, the proposal can be executed after the 9 days</li>
+        </ul>
       </div>
       <div className="flex flex-col items-baseline gap-y-2 py-3 lg:gap-x-6 lg:py-4">
         <dt className="line-clamp-1 shrink-0 text-lg leading-tight text-neutral-800 lg:line-clamp-6 lg:w-40">
@@ -199,4 +207,3 @@ function AsideSection() {
     </aside>
   );
 }
-

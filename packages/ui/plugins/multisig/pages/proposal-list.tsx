@@ -55,56 +55,56 @@ export default function Proposals() {
   }
 
   return (
-      <EncryptionPlaceholderOrChildren>
-        <If condition={!proposalCount}>
-          <Then>
-            <If condition={canCreate}>
-              <Then>
-                <CardEmptyState
-                  heading="No proposals yet"
-                  description="The list of proposals is currently empty. Be the first one to create a proposal."
-                  objectIllustration={{
-                    object: "ACTION",
-                  }}
-                  primaryButton={{
-                    label: "Submit a proposal",
-                    onClick: () => push("/plugins/taiko-council/#/new"),
-                  }}
-                />
-              </Then>
-              <Else>
-                <CardEmptyState
-                  heading="No proposals yet"
-                  description="The list of proposals is currently empty. Here you will see the proposals created by the Security Council before a super majority can enact an emergency execution on the DAO."
-                  objectIllustration={{
-                    object: "ACTION",
-                  }}
-                />
-              </Else>
-            </If>
-          </Then>
-          <Else>
-            <DataList.Root
-              entityLabel={entityLabel}
-              itemsCount={proposalCount}
-              pageSize={DEFAULT_PAGE_SIZE}
-              state={dataListState}
-              //onLoadMore={fetchNextPage}
-            >
-              <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
-                {proposalCount &&
-                  Array.from(Array(proposalCount || 0)?.keys())
-                    .reverse()
-                    ?.map((proposalIndex) => (
-                      // TODO: update with router agnostic ODS DataListItem
-                      <ProposalCard key={proposalIndex} proposalId={BigInt(proposalIndex)} />
-                    ))}
-              </DataList.Container>
-              <DataList.Pagination />
-            </DataList.Root>
-          </Else>
-        </If>
-      </EncryptionPlaceholderOrChildren>
+    <EncryptionPlaceholderOrChildren>
+      <If condition={!proposalCount}>
+        <Then>
+          <If condition={canCreate}>
+            <Then>
+              <CardEmptyState
+                heading="No proposals yet"
+                description="The list of proposals is currently empty. Be the first one to create a proposal."
+                objectIllustration={{
+                  object: "ACTION",
+                }}
+                primaryButton={{
+                  label: "Submit a proposal",
+                  onClick: () => push("/plugins/taiko-council/#/new"),
+                }}
+              />
+            </Then>
+            <Else>
+              <CardEmptyState
+                heading="No proposals yet"
+                description="The list of proposals is currently empty. Here you will see the proposals created by the Security Council before a super majority can enact an emergency execution on the DAO."
+                objectIllustration={{
+                  object: "ACTION",
+                }}
+              />
+            </Else>
+          </If>
+        </Then>
+        <Else>
+          <DataList.Root
+            entityLabel={entityLabel}
+            itemsCount={proposalCount}
+            pageSize={DEFAULT_PAGE_SIZE}
+            state={dataListState}
+            //onLoadMore={fetchNextPage}
+          >
+            <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
+              {proposalCount &&
+                Array.from(Array(proposalCount || 0)?.keys())
+                  .reverse()
+                  ?.map((proposalIndex) => (
+                    // TODO: update with router agnostic ODS DataListItem
+                    <ProposalCard key={proposalIndex} proposalId={BigInt(proposalIndex)} />
+                  ))}
+            </DataList.Container>
+            <DataList.Pagination />
+          </DataList.Root>
+        </Else>
+      </If>
+    </EncryptionPlaceholderOrChildren>
   );
 }
 
