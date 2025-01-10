@@ -3,6 +3,40 @@
 
 ## Holesky
 
+### 10/01/2025
+Applied permission changes; Included new addresses as part of the security council:
+
+- `0xd54f3bDe60B73614905BA3881954d9FeB2476360`
+- `0xcdCEBD75cDcb9DEd637D537776431Db563Ff0821`
+- `0x65E0FB30DFBF4bEdb85df7eb8Dab704b2Dc16bE5`
+
+```
+Deploying from: 0x4100a9B680B1Be1F10Cb8b5a57fE59eA77A8184e
+Chain ID: 17000
+Using production settings
+
+Factory: 0xeae0d49AC7dd147CEFc0e2565cF1b63c8968F4b6
+
+DAO: 0xE6a5ce91F4788C7803F0D95809a389aE61812F1B
+Voting token: 0x6490E12d480549D333499236fF2Ba6676C296011
+Taiko Bridge: 0xA098b76a3Dd499D3F6D58D8AcCaFC8efBFd06807
+
+Plugins
+- Multisig plugin: 0x11301A062e7710bB4557cD6973A4c0E82E571022
+- Emergency multisig plugin: 0x253bBf4A2cC4bD56fC661742e0B81A300E026715
+- Optimistic token voting plugin: 0xf626f0311b009c784C7c3C6674E463cD2ef7D62C
+
+Helpers
+- Signer list 0x53610A1cD04AF31C2a7fB47395Bc2f51a55fAc89
+- Encryption registry 0xD9e0d0Fb96856885116Dab38c9F1A03559206554
+- Delegation wall 0xa869FAC805deBcf62981BDeAB7d36a81301e0a82
+
+Plugin repositories
+- Multisig plugin repository: 0xD9b1D2714838b3ee37972768DB808dEF3c6c3759
+- Emergency multisig plugin repository: 0x63A3Ceb42C845448d46c92e1AD5f29C8b03469E1
+- Optimistic token voting plugin repository: 0xd03C584c161d7C4BB6658A229C1fb32f93214593
+
+```
 ### 13/12/2024
 Inflated Security Council member count for testing purposes. These accounts are controlled by the `0x4100a9B680B1Be1F10Cb8b5a57fE59eA77A8184e` member:
 
