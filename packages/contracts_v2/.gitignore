@@ -1,0 +1,27 @@
+# Signer lists
+script/multisig-*.json
+!script/multisig-members.json
+
+# Compiler files
+cache/
+out/
+
+# Ignores development broadcast logs
+/broadcast/**
+
+# Docs
+docs/
+
+# Dotenv file
+.env
+.env.test
+
+lcov.info*
+report/
+.DS_Store
+
+*.tree
+logs/*
+
+# Draw.io backup files
+*.drawio.bkp
