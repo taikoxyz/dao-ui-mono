@@ -21,7 +21,7 @@ export type PluginItem = {
 };
 
 export const plugins: PluginItem[] = [
-  //  /*
+  //
   {
     id: "community-proposals",
     folderName: "optimistic-proposals",

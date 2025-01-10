@@ -1,11 +1,12 @@
-import { Else, If, Then } from "@/components/if";
+import { Else, ElseIf, If, Then } from "@/components/if";
 import { formatHexString, equalAddresses, ADDRESS_ZERO } from "@/utils/evm";
-import { type IDataListItemProps, DataList, MemberAvatar, Tag } from "@aragon/ods";
+import { type IDataListItemProps, DataList, Link, MemberAvatar, Tag } from "@aragon/ods";
 import { useAccount } from "wagmi";
 import { Address, Hex } from "viem";
 import { AccountEncryptionStatus, useAccountEncryptionStatus } from "../hooks/useAccountEncryptionStatus";
 import { AddressText } from "@/components/text/address";
 import SecurityCouncilProfiles from "../../../security-council-profiles.json";
+import { PUB_CHAIN } from "@/constants";
 
 export interface IAccountListItemProps extends IDataListItemProps {
   /** 0x address of the account owner */
@@ -24,28 +25,63 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
   const isCurrentUser = isConnected && owner && equalAddresses(currentUserAddress, owner);
   const selfAppointed = !appointedAgent || equalAddresses(appointedAgent, ADDRESS_ZERO);
   const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
-
+console.log(props)
   return (
-    <DataList.Item className="min-w-fit !py-0 px-4 md:px-6" {...otherProps}>
+    <DataList.Item
+    href="#" target={undefined}
+    className="min-w-fit !py-0 px-4 md:px-6" {...otherProps}>
       <div className="flex flex-col items-start justify-center gap-y-3 py-4 md:min-w-44 md:py-6">
-        <div className="flex w-full items-center justify-between">
+        <div className="flex w-full items-center justify-start gap-6">
           <MemberAvatar address={owner} avatarSrc={avatarSrc} responsiveSize={{ md: "md" }} />
-          <If condition={isCurrentUser}>
-            <Then>
-              <Tag variant="success" label="You" />
-            </Then>
-            <Else>
-              <Tag variant="success" label="Signer" />
-            </Else>
-          </If>
+         <div className="flex flex-col justify-center items-center">
+          <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">{profile?.name}</p>
+          <p className="inline-block w-full truncate text-sm text-neutral-400">
+          <button
+              className="p-0 flex flex-col"
+              onClick={() =>{
+                window.open(`${PUB_CHAIN.blockExplorers?.default.url}/address/${owner}`)
+              }}>
+            {formatHexString(owner)}
+            </button></p>
+          </div>
         </div>
-
-        <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">{profile?.name}</p>
-        <p className="inline-block w-full truncate text-sm text-neutral-400">{formatHexString(owner)}</p>
-        <p className="inline-block w-full text-sm text-success-500">
+        <If condition={!selfAppointed}>
+          <Then>
+          <p className="inline-block w-full font-bold truncate text-sm text-neutral-400">
+          Appointed wallet:</p>
+          </Then>
+        </If>
+        <p className="inline-block w-full truncate text-sm text-neutral-400">
           <If condition={selfAppointed}>
-            <Then>The owner can decrypt emergency proposals</Then>
-            <Else>Appointed: {appointedAgent === currentUserAddress ? "You" : formatHexString(appointedAgent)}</Else>
+            <Then>
+              <button
+              className="p-0 flex flex-col"
+              onClick={() =>{
+                window.open(`${PUB_CHAIN.blockExplorers?.default.url}/address/${currentUserAddress}`)
+              }}>
+              <Tag
+              variant="info"
+              label={`Self-appointed`}/>
+              </button>
+              </Then>
+
+              <ElseIf condition={appointedAgent === currentUserAddress}>
+              <Tag variant="info" label="You"/>
+
+                </ElseIf>
+
+            <Else>
+            <button
+              className="p-0 flex flex-col"
+              onClick={() =>{
+                window.open(`${PUB_CHAIN.blockExplorers?.default.url}/address/${appointedAgent}`)
+              }}>
+              <Tag
+              variant="info"
+              label={formatHexString(appointedAgent)}/>
+              </button>
+
+              </Else>
           </If>
         </p>
         <div className="text-md w-full text-neutral-400">{profile?.description}</div>

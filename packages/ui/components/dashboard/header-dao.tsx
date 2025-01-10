@@ -40,11 +40,13 @@ export const HeaderDao = () => {
       <div className="flex w-full max-w-screen-xl flex-col gap-y-6">
         <div className="flex flex-col gap-y-8">
           <div className="md:w-4/5">
-            <Heading>{PUB_APP_NAME} DAO</Heading>
             <p className="text-xl leading-normal text-neutral-600 md:text-2xl">
               Welcome to the {PUB_APP_NAME} DAO's Governance app. Use this tool to engage with the community and shape
               the future direction of the protocol.
             </p>
+            <ul className="list-disc list-inside">
+              <li>explain the dao is currently on l1, but will eventually move onto l2</li>
+            </ul>
           </div>
         </div>
         <div className="flex flex-col gap-x-20 gap-y-4 sm:flex-row md:w-4/5">
@@ -63,7 +65,7 @@ export const HeaderDao = () => {
               <StateSkeletonBar size="xl" className="!bg-neutral-100" width={"100%"} />
             </div>
           )} */}
-          {/* 
+          {/*
           {totalVotingPowerFetched && totalVotingPower && (
             <div className="flex flex-col">
               <span className="text-3xl text-neutral-800 md:text-3xl">

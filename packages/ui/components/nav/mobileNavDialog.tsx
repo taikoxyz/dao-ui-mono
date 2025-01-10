@@ -33,7 +33,7 @@ export const MobileNavDialog: React.FC<IMobileNavDialogProps> = (props) => {
               className="rounded-xl outline-none focus-visible:ring focus-visible:ring-primary focus-visible:ring-offset"
             >
               <span className="flex py-2 pl-3 pr-4">
-                Governed on&nbsp;
+                Powered by&nbsp;
                 <img src="/logo-aragon-text.svg" height="24" alt="Aragon" />
               </span>
             </Link>

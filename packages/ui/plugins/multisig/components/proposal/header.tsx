@@ -1,4 +1,4 @@
-import { AvatarIcon, Breadcrumbs, Heading, IBreadcrumbsLink, IconType, ProposalStatus, TagVariant } from "@aragon/ods";
+import { AvatarIcon, Breadcrumbs, Heading, IBreadcrumbsLink, IconType, ProposalStatus, Tag, TagVariant } from "@aragon/ods";
 import { MultisigProposal } from "@/plugins/multisig/utils/types";
 import { useProposalStatus } from "@/plugins/multisig/hooks/useProposalVariantStatus";
 import { HeaderSection } from "@/components/layout/header-section";
@@ -28,6 +28,19 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
           <div className="flex w-full items-center gap-x-4">
             <Heading size="h1">{proposal.title}</Heading>
             {/* && <Tag label="Emergency" variant="critical" />*/}
+            <If condition={proposalStatus == ProposalStatus.EXECUTED}>
+                <Then>
+                <Tag label="Sent to Community Stage" variant="success" />
+                </Then>
+                <ElseIf condition={expired}>
+                <Tag label="Expired" variant="critical" />
+                </ElseIf>
+                <Else>
+                <Tag label="Active" variant="info" />
+
+                  </Else>
+
+              </If>
           </div>
           <p className="text-lg leading-normal text-neutral-500">{proposal.summary}</p>
         </div>
@@ -37,25 +50,18 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
             <Publisher publisher={[{ address: proposal.creator }]} />
           </div>
+          <If condition={proposalStatus !== ProposalStatus.EXECUTED && !expired}>
           <div className="flex items-center gap-x-2">
-            <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
             <div className="flex gap-x-1 text-base leading-tight ">
-              <If condition={proposalStatus == ProposalStatus.EXECUTED}>
-                <Then>
-                  <span className="text-neutral-500">The proposal was sent to the community stage</span>
-                </Then>
-                <ElseIf condition={expired}>
-                  <span className="text-neutral-500">The proposal expired</span>
-                </ElseIf>
-                <Else>
+
                   <span className="text-neutral-800">
                     {getShortTimeDiffFrom(proposal.parameters.expirationDate * 1000n)}
                   </span>
                   <span className="text-neutral-500">left until expiration</span>
-                </Else>
-              </If>
             </div>
           </div>
+            </If>
+
         </div>
       </HeaderSection>
     </div>

@@ -1,17 +1,21 @@
 import { useAccount, useBlockNumber, useReadContract } from "wagmi";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import ProposalCard from "@/plugins/optimistic-proposals/components/proposal";
 import {
   AlertCard,
+  Button,
   CardEmptyState,
   DataList,
   Heading,
+  IconType,
   Link,
   ProposalDataListItemSkeleton,
+  Toggle,
+  ToggleGroup,
   type DataListState,
 } from "@aragon/ods";
 import { Else, ElseIf, If, Then } from "@/components/if";
-import { PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS, PUB_CHAIN, PUB_TOKEN_SYMBOL } from "@/constants";
+import { PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS, PUB_CHAIN, PUB_TOKEN_SYMBOL, PUB_APP_NAME, PUB_PROJECT_URL, PUB_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
 import { OptimisticTokenVotingPluginAbi } from "../artifacts/OptimisticTokenVotingPlugin.sol";
 import { MainSection } from "@/components/layout/main-section";
 import { ADDRESS_ZERO } from "@/utils/evm";
@@ -19,10 +23,9 @@ import { useTokenVotes } from "@/hooks/useTokenVotes";
 import { AddressText } from "@/components/text/address";
 import { Address } from "viem";
 import { useGovernanceSettings } from "../hooks/useGovernanceSettings";
-
 const DEFAULT_PAGE_SIZE = 6;
 
-export default function Proposals() {
+export function PublicProposals() {
   const { address } = useAccount();
   const { data: blockNumber } = useBlockNumber({ watch: true });
   const { balance, delegatesTo } = useTokenVotes(address);
@@ -59,17 +62,8 @@ export default function Proposals() {
   const hasBalance = !!balance && balance > BigInt(0);
   const delegatingToSomeoneElse = !!delegatesTo && delegatesTo !== address && delegatesTo !== ADDRESS_ZERO;
   const delegatedToZero = !!delegatesTo && delegatesTo === ADDRESS_ZERO;
-  const { governanceSettings: optimisticSettings } = useGovernanceSettings();
 
-  return (
-    <MainSection>
-      <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
-        <div className="flex flex-1 flex-col gap-y-6">
-          <div className="flex w-full flex-row content-center justify-between">
-            <h1 className="line-clamp-1 flex flex-1 shrink-0 text-2xl font-normal leading-tight text-neutral-800 md:text-3xl">
-              Proposals
-            </h1>
-          </div>
+  return (<>
           <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
             <NoVetoPowerWarning
               delegatingToSomeoneElse={delegatingToSomeoneElse}
@@ -85,6 +79,9 @@ export default function Proposals() {
                 itemsCount={proposalCount}
                 pageSize={DEFAULT_PAGE_SIZE}
                 state={dataListState}
+                onLoadMore={() => {
+                  console.log('load more')
+                }}
               >
                 <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
                   {Array.from(Array(proposalCount || 0)?.keys())
@@ -104,27 +101,7 @@ export default function Proposals() {
               />
             </Else>
           </If>
-        </div>
-        <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
-          <div className="flex flex-col gap-y-3">
-            <Heading size="h3">Details</Heading>
-            <p className="text-neutral-500">
-              Proposals submitted to the community can be vetoed by token holders. Additionally, token holders can opt
-              to delegate their voting power to delegates.
-            </p>
-
-            <div className="flex flex-col items-baseline gap-y-2 py-3 lg:gap-x-6 lg:py-4">
-              <dt className="line-clamp-1 shrink-0 text-lg leading-tight text-neutral-800 lg:line-clamp-6 lg:w-40">
-                Veto threshold
-              </dt>
-              <dd className="size-full text-base leading-tight text-neutral-500">
-                {((optimisticSettings.minVetoRatio || 0) / 10000).toFixed(2)}% of {PUB_TOKEN_SYMBOL} supply
-              </dd>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </MainSection>
+        </>
   );
 }
 
@@ -170,3 +147,56 @@ const NoVetoPowerWarning = ({
     />
   );
 };
+
+export default function ProposalList() {
+  return (
+    <MainSection>
+      <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
+        <div className="flex flex-1 flex-col gap-y-6">
+          <div className="flex items-start justify-between">
+            <Heading size="h1">Proposals</Heading>
+          </div>
+              <PublicProposals />
+        </div>
+        <AsideSection />
+      </div>
+    </MainSection>
+  );
+}
+
+
+function AsideSection() {
+  return (<aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
+      <div className="flex flex-col gap-y-3">
+       <Heading size="h3">Emergency Proposals</Heading>
+       <b> (only shown after execution)</b>
+
+            <ul className="list-disc list-inside">
+      <li>SC members can create them</li>
+      <li>6 SC approvals makes them automatically approved</li>
+      <li>Any SC member can instantly execute them</li>
+    </ul>
+
+    <Heading size="h3">Community Proposals</Heading>
+    <b>(shown since created)</b>
+    <ul className="list-disc list-inside">
+      <li>SC members can create them</li>
+      <li>3 SC approvals makes them go into public voting</li>
+      <li>Token holders can veto with a 30% for the next 9 days</li>
+      <li>If non-vetoed, the proposal can be executed after the 9 days</li>
+    </ul>
+      </div>
+      <div className="flex flex-col items-baseline gap-y-2 py-3 lg:gap-x-6 lg:py-4">
+        <dt className="line-clamp-1 shrink-0 text-lg leading-tight text-neutral-800 lg:line-clamp-6 lg:w-40">
+          About {PUB_APP_NAME}
+        </dt>
+        <dd className="size-full text-base leading-tight text-neutral-500">
+          <a href={PUB_PROJECT_URL} target="_blank" className="font-semibold text-primary-400 underline">
+            Learn more about the project
+          </a>
+        </dd>
+      </div>
+    </aside>
+  );
+}
+

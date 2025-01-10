@@ -61,8 +61,6 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
             return (
               <AccountListItemReady
                 key={account}
-                href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${account}`}
-                target="_blank"
                 owner={account}
                 appointedAgent={eAcc?.appointedAgent}
                 publicKey={eAcc?.publicKey}

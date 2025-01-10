@@ -81,8 +81,8 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
   return (
     <AccordionItem className="border-t border-t-neutral-100 bg-neutral-0" value={title}>
       <AccordionItemHeader className="!items-start">
-        <div className="flex w-full gap-x-6">
-          <div className="flex flex-1 flex-col items-start gap-y-2">
+        <div className="flex w-full justify-between">
+          <div className="w-full flex flex-1 flex-col items-start gap-y-2">
             <div className="flex">
               {/* Method name */}
               <span className="flex w-full text-left text-lg leading-tight text-neutral-800 md:text-xl">
@@ -107,7 +107,7 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
               </Link>
             </div>
           </div>
-          <span className="hidden text-sm leading-tight text-neutral-500 sm:block md:text-base">{title}</span>
+          <div className="w-36 hidden text-sm leading-tight text-neutral-500 sm:block md:text-base text-right">{title}</div>
         </div>
       </AccordionItemHeader>
 

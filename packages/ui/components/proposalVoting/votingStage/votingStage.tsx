@@ -90,7 +90,6 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
             </Heading>
             <VotingStageStatus status={status} endDate={getShortTimeDiffFromDate(endDate)} />
           </div>
-          <span className="hidden leading-tight text-neutral-500 sm:block">{stageKey}</span>
         </div>
       </AccordionItemHeader>
 

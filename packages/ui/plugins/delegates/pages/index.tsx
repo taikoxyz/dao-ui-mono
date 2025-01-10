@@ -58,6 +58,11 @@ export default function MembersList() {
         <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
           <div className="flex flex-col gap-y-3">
             <Heading size="h3">Details</Heading>
+<b>In order to vote, a user must:</b>
+            <ul className="list-decimal list-inside">
+<li>create their delegation profile (button down below)</li>
+<li>set themselves as delegates on their profile</li>
+</ul>
             <If condition={toggleValue === "all"}>
               <Then>
                 <p className="text-neutral-500">{REGISTERED_SIDE_TEXT}</p>
