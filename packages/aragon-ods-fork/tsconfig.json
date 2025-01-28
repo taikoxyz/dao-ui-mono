@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "esnext",
+    "lib": ["dom", "esnext"],
+    "outDir": "dist",
+    "allowJs": true,
+    "sourceMap": true,
+    "rootDir": ".",
+    "strict": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": ["node_modules/@types"]
+  },
+  "include": ["src", ".eslintrc.js", "*.config.js"],
+  "exclude": ["node_modules", "dist", "storybook-static", "coverage"]
+}

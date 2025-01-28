@@ -17,7 +17,7 @@ export function isProxyContract(publicClient: PublicClient, contractAddress: Add
       abi: proxyAbi,
       functionName: "implementation",
       args: [],
-      chain: PUB_CHAIN,
+      chain: PUB_CHAIN as any,
     })
     .then(() => true)
     .catch((e: any) => {

@@ -107,7 +107,7 @@ export function useProposalExecute(proposalId: string) {
     });
 
     setTimeout(() => {
-      push("#/");
+      push("/");
       window.scroll(0, 0);
     }, 1000 * 2);
   }, [executingStatus, executeTxHash, isConfirming, isConfirmed]);

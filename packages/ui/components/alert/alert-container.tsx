@@ -44,8 +44,8 @@ function resolveDescription(alert: IAlert) {
       <a href={alert.explorerLink} target="_blank">
         <div className="flex flex-row text-xs text-primary-200 underline">
           <div className="">Show transaction</div>
-          <div>
-            <Icon className="ml-2 mt-1" size="sm" icon={IconType.LINK_EXTERNAL} />
+          <div className="ml-2 mt-1" >
+            <Icon size="sm" icon={IconType.LINK_EXTERNAL} />
           </div>
         </div>
       </a>

@@ -1,5 +1,5 @@
 import { capitalizeFirstLetter } from "@/utils/text";
-import { Button, Heading, Progress, RadioCard, RadioGroup } from "@aragon/ods";
+import { Button, Heading, VetoProgress, RadioCard, RadioGroup } from "@aragon/ods";
 import classNames from "classnames";
 import { useEffect, useState } from "react";
 import { type VotingCta } from "./types";
@@ -60,7 +60,7 @@ export const BreakdownMajorityVotingResult: React.FC<IBreakdownMajorityVotingRes
               >
                 {choice.option}
               </span>
-              <Progress value={choice.votePercentage} className={choiceClassNames[choice.option as Choices]} />
+              <VetoProgress value={choice.votePercentage} className={choiceClassNames[choice.option as Choices]} />
               <div className="flex gap-x-1">
                 <span className="text-neutral-800">{choice.voteAmount}</span>
                 <span className="text-neutral-500">{choice.tokenSymbol}</span>
