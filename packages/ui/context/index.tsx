@@ -28,7 +28,7 @@ const persister = createAsyncStoragePersister({
 
 // Create modal
 createWeb3Modal({
-  wagmiConfig: config,
+  wagmiConfig: config as any,
   projectId: PUB_WALLET_CONNECT_PROJECT_ID,
   enableAnalytics: false, // Optional - defaults to your Cloud configuration
   enableOnramp: true, // Optional
@@ -46,7 +46,7 @@ export function RootContextProvider({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={config}>
       <OdsModulesProvider
-        wagmiConfig={config}
+        wagmiConfig={config as any}
         queryClient={queryClient}
         coreProviderValues={odsCoreProviderValues}
         values={{ copy: customModulesCopy }}

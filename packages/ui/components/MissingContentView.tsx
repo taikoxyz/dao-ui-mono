@@ -35,5 +35,7 @@ export const MissingContentView = ({
 };
 
 function Illustration() {
-  return <IllustrationHuman className="mx-auto my-8 max-w-96" body="VOTING" expression="SMILE_WINK" hairs="CURLY" />;
+  return <div className="mx-auto my-8 max-w-96" >
+    <IllustrationHuman body="VOTING" expression="SMILE_WINK" hairs="CURLY" />
+    </div>
 }

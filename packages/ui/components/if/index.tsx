@@ -82,7 +82,7 @@ export const If = (props: IfProps) => {
     return children;
   }
 
-  const child = children as ReactElement;
+  const child = children as any // ReactElement;
   // Match the Then/ElseIf/Else elements first
   if (child.type === Then) {
     if (mainCondition) return child.props?.children;
