@@ -1,9 +1,0 @@
-[core]
-	repositoryformatversion = 0
-	filemode = true
-	bare = false
-	logallrefupdates = true
-	hooksPath = .husky/_
-[remote "origin"]
-	url = https://github.com/aragon/gov-ui-kit
-	fetch = +refs/tags/v1.0.44:refs/tags/v1.0.44

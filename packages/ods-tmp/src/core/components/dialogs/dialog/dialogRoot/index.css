@@ -1,7 +1,0 @@
-:root {
-  /* Z-index property of the dialog overlay */
-  --ods-dialog-overlay-z-index: auto;
-
-  /* Z-index property of the dialog content */
-  --ods-dialog-content-z-index: auto;
-}
