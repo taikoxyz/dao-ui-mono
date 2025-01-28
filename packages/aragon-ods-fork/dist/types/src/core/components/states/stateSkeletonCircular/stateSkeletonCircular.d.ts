@@ -12,4 +12,4 @@ export interface IStateSkeletonCircularProps extends ComponentPropsWithoutRef<'s
      */
     size?: StateSkeletonCircularSize;
 }
-export declare const StateSkeletonCircular: any;
+export declare const StateSkeletonCircular: import("react").ForwardRefExoticComponent<IStateSkeletonCircularProps & import("react").RefAttributes<HTMLDivElement>>;

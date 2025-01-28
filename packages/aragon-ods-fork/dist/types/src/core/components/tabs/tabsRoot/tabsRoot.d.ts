@@ -24,5 +24,5 @@ export interface ITabsContext {
      */
     isUnderlined: boolean;
 }
-export declare const TabsContext: any;
-export declare const TabsRoot: any;
+export declare const TabsContext: import("react").Context<ITabsContext>;
+export declare const TabsRoot: import("react").ForwardRefExoticComponent<ITabsRootProps & import("react").RefAttributes<HTMLDivElement>>;

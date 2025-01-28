@@ -26,4 +26,4 @@ export interface IRadioCardProps extends ComponentProps<'button'> {
      */
     disabled?: boolean;
 }
-export declare const RadioCard: any;
+export declare const RadioCard: import("react").ForwardRefExoticComponent<Omit<IRadioCardProps, "ref"> & import("react").RefAttributes<HTMLButtonElement>>;

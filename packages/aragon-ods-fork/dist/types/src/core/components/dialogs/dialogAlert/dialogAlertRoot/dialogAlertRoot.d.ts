@@ -47,7 +47,7 @@ export interface IDialogAlertRootProps extends ComponentPropsWithoutRef<'div'> {
 export interface IDialogAlertContext {
     variant: DialogAlertVariant;
 }
-export declare const DialogAlertContext: any;
+export declare const DialogAlertContext: import("react").Context<IDialogAlertContext>;
 /**
  * `DialogAlert.Root` component.
  */

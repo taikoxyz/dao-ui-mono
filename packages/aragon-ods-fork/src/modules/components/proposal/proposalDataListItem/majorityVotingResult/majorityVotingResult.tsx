@@ -24,7 +24,6 @@ export const MajorityVotingResult: React.FC<IMajorityVotingResultProps> = (props
                     </span>
                 )}
             </div>
-            bla
             <VetoProgress value={votePercentage} />
             <div className="flex gap-x-4 leading-tight md:gap-x-6 md:text-lg">
                 <span className="capitalize text-primary-400">{option}</span>

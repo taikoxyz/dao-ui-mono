@@ -1,7 +1,7 @@
 export declare const ProposalVoting: {
     BreakdownMultisig: import("react").FC<import("./proposalVotingBreakdownMultisig").IProposalVotingBreakdownMultisigProps>;
     BreakdownToken: import("react").FC<import("./proposalVotingBreakdownToken").IProposalVotingBreakdownTokenProps>;
-    Container: React.FC<import("./proposalVotingContainer").IProposalVotingContainerProps>;
+    Container: import("react").FC<import("./proposalVotingContainer").IProposalVotingContainerProps>;
     Details: import("react").FC<import("./proposalVotingDetails").IProposalVotingDetailsProps>;
     Stage: import("react").FC<import("./proposalVotingStage").IProposalVotingStageProps>;
     Votes: import("react").FC<import("./proposalVotingVotes").IProposalVotingVotesProps>;

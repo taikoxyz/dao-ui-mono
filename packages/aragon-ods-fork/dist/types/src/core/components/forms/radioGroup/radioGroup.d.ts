@@ -30,4 +30,4 @@ export interface IRadioGroupProps extends Pick<IInputContainerBaseProps, 'alert'
      */
     children?: ReactNode;
 }
-export declare const RadioGroup: any;
+export declare const RadioGroup: import("react").ForwardRefExoticComponent<IRadioGroupProps & import("react").RefAttributes<HTMLDivElement>>;

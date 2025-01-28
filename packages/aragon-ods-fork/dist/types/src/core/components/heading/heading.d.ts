@@ -12,4 +12,4 @@ export interface IHeadingProps extends React.HTMLAttributes<HTMLHeadingElement> 
      */
     as?: HeadingSize;
 }
-export declare const Heading: any;
+export declare const Heading: import("react").ForwardRefExoticComponent<IHeadingProps & import("react").RefAttributes<HTMLHeadingElement>>;

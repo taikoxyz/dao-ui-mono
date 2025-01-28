@@ -19,4 +19,4 @@ export interface IAccordionContainerBaseProps<TMulti extends boolean> extends Om
     onValueChange?: (value: AccordionMultiValue<TMulti>) => void;
 }
 export type IAccordionContainerProps = IAccordionContainerBaseProps<true> | IAccordionContainerBaseProps<false>;
-export declare const AccordionContainer: any;
+export declare const AccordionContainer: import("react").ForwardRefExoticComponent<(Omit<IAccordionContainerBaseProps<true>, "ref"> | Omit<IAccordionContainerBaseProps<false>, "ref">) & import("react").RefAttributes<HTMLDivElement>>;

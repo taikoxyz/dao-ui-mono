@@ -24,4 +24,4 @@ export interface IStateSkeletonBarProps extends ComponentPropsWithoutRef<'span'>
      */
     width?: CSSProperties['width'];
 }
-export declare const StateSkeletonBar: any;
+export declare const StateSkeletonBar: import("react").ForwardRefExoticComponent<IStateSkeletonBarProps & import("react").RefAttributes<HTMLDivElement>>;

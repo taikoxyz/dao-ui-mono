@@ -26,4 +26,4 @@ export interface IAddressInputProps extends Omit<IInputComponentProps<HTMLTextAr
      */
     onAccept?: (value?: IAddressInputResolvedValue) => void;
 }
-export declare const AddressInput: any;
+export declare const AddressInput: import("react").ForwardRefExoticComponent<IAddressInputProps & import("react").RefAttributes<HTMLTextAreaElement>>;

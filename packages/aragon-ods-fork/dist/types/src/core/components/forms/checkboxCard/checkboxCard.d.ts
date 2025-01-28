@@ -35,4 +35,4 @@ export interface ICheckboxCardProps extends ComponentProps<'button'> {
      */
     id?: string;
 }
-export declare const CheckboxCard: any;
+export declare const CheckboxCard: import("react").ForwardRefExoticComponent<Omit<ICheckboxCardProps, "ref"> & import("react").RefAttributes<HTMLButtonElement>>;

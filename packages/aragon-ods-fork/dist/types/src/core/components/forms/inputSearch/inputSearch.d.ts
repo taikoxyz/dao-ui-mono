@@ -5,4 +5,4 @@ export interface IInputSearchProps extends IInputComponentProps {
      */
     isLoading?: boolean;
 }
-export declare const InputSearch: any;
+export declare const InputSearch: import("react").ForwardRefExoticComponent<IInputSearchProps & import("react").RefAttributes<HTMLInputElement>>;

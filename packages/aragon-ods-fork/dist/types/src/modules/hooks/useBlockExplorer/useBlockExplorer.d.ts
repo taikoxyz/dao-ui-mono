@@ -31,7 +31,15 @@ export interface IBuildEntityUrlParams {
     id?: string;
 }
 export declare const useBlockExplorer: (params?: IUseBlockExplorerParams) => {
-    blockExplorer: any;
-    getBlockExplorer: any;
-    buildEntityUrl: any;
+    blockExplorer: {
+        name: string;
+        url: string;
+        apiUrl?: string | undefined;
+    } | undefined;
+    getBlockExplorer: (chainId?: number) => {
+        name: string;
+        url: string;
+        apiUrl?: string | undefined;
+    } | undefined;
+    buildEntityUrl: ({ type, chainId, id }: IBuildEntityUrlParams) => string | undefined;
 };

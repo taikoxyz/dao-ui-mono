@@ -19,4 +19,4 @@ export interface IToggleGroupBaseProps<TMulti extends boolean> extends Omit<Comp
     onChange?: (value: ToggleGroupValue<TMulti>) => void;
 }
 export type IToggleGroupProps = IToggleGroupBaseProps<true> | IToggleGroupBaseProps<false>;
-export declare const ToggleGroup: (props: IToggleGroupProps) => import("react").JSX.Element;
+export declare const ToggleGroup: (props: IToggleGroupProps) => import("react/jsx-runtime").JSX.Element;

@@ -16,7 +16,8 @@
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": ["node_modules/@types"]
   },
   "include": ["src", ".eslintrc.js", "*.config.js"],
   "exclude": ["node_modules", "dist", "storybook-static", "coverage"]

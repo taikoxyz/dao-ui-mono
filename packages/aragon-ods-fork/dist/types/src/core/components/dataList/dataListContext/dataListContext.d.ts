@@ -17,5 +17,5 @@ export interface IDataListContext extends Required<Pick<IDataListRootProps, 'pag
      */
     handleLoadMore: (newPage: number) => void;
 }
-export declare const DataListContextProvider: any;
+export declare const DataListContextProvider: import("react").Provider<IDataListContext | null>;
 export declare const useDataListContext: () => IDataListContext;

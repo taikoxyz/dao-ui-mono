@@ -9,4 +9,4 @@ export interface IAccordionItemProps extends ComponentPropsWithRef<'div'> {
      */
     disabled?: boolean;
 }
-export declare const AccordionItem: any;
+export declare const AccordionItem: import("react").ForwardRefExoticComponent<Omit<IAccordionItemProps, "ref"> & import("react").RefAttributes<HTMLDivElement>>;

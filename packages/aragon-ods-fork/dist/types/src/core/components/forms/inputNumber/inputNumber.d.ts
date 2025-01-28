@@ -1,3 +1,4 @@
+import type React from 'react';
 import { type IUseNumberMaskProps } from '../hooks';
 import { type IInputComponentProps } from '../inputContainer';
 export interface IInputNumberProps extends Omit<IInputComponentProps, 'onChange' | 'step' | 'min' | 'max' | 'maxLength'> {
@@ -29,4 +30,4 @@ export interface IInputNumberProps extends Omit<IInputComponentProps, 'onChange'
      */
     onChange?: IUseNumberMaskProps['onChange'];
 }
-export declare const InputNumber: any;
+export declare const InputNumber: React.ForwardRefExoticComponent<IInputNumberProps & React.RefAttributes<HTMLInputElement>>;
