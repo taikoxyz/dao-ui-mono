@@ -1,0 +1,30 @@
+name: Storybook Publish
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: 20
+  NODE_CACHE: "yarn"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.7
+      - name: Setup Node
+        uses: actions/setup-node@v4.0.3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ${{ env.NODE_CACHE }}
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Build storybook
+        run: yarn build:storybook
+      - name: Deploy storybook
+        run: yarn deploy:storybook --ci --host-token-env-variable=GITHUB_TOKEN --source-branch main --branch gh-pages --existing-output-dir=storybook-static
+        env:
+          GITHUB_TOKEN: ${{ secrets.ARABOT_PAT_TRIGGER_WORKFLOW }}

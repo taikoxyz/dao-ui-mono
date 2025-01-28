@@ -70,7 +70,8 @@
     "react-dropzone": "^14.2.0",
     "react-imask": "7.5.0",
     "sanitize-html": "^2.13.0",
-    "tiptap-markdown": "^0.8.10"
+    "tiptap-markdown": "^0.8.10",
+    "tslib": "^2.8.1"
   },
   "peerDependencies": {
     "@tailwindcss/typography": "^0.5.0",

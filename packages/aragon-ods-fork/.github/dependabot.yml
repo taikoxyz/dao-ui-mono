@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # From version 7.6.x, react-imask doesn't correctly trigger the `onAccept` callback when changing the value
+      # programmatically (see https://github.com/uNmAnNeR/imaskjs/pull/1045)
+      - dependency-name: "react-imask"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "patch"
+          - "minor"
+      storybook:
+        patterns:
+          - "@storybook*"
+          - "storybook"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "patch"
+          - "minor"
