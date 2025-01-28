@@ -17,7 +17,7 @@ import { useMultisigSettings } from "@/plugins/multisig/hooks/useMultisigSetting
 import { useGovernanceSettings } from "@/plugins/optimistic-proposals/hooks/useGovernanceSettings";
 
 const REGISTERED_SIDE_TEXT =
-  "Here you will see the members who have posted their candidacy to be delegated to. Be the first to post an your delegation candidacy!";
+  "Here you will see the members who have posted their candidacy to be delegated to. Be the first to post a delegation candidacy!";
 const VERIFIED_SIDE_TEXT =
   "These are the publicly announced verified delegates. [DEV NOTE: this is updated manually via the static file verified-delegates.json]";
 
@@ -59,9 +59,9 @@ export default function MembersList() {
           <div className="flex flex-col gap-y-3">
             <Heading size="h3">Details</Heading>
             <b>In order to vote, a user must:</b>
-            <ul className="list-inside list-decimal">
-              <li>create their delegation profile (button down below)</li>
-              <li>set themselves as delegates on their profile</li>
+            <ul className="list-inside list-decimal text-neutral-500">
+              <li>Create a delegation profile</li>
+              <li>Set oneself as a delegate on their profile</li>
             </ul>
             <If condition={toggleValue === "all"}>
               <Then>

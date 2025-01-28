@@ -36,7 +36,7 @@ export function useCreateProposal() {
     onSuccessDescription: "The transaction has been validated",
     onSuccess() {
       setTimeout(() => {
-        push("#/");
+        push("/");
         window.scroll(0, 0);
       }, 1000 * 2);
     },

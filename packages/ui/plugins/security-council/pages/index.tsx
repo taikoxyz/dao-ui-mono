@@ -102,13 +102,13 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <Heading size="h3">Details</Heading>
 
             <p className="text-neutral-500">
-              Security council members can create emergency proposals but only externally owned addresses have the means
-              to decrypt confidential data.
+            Security Council member accounts can create emergency proposals, however only externally owned addresses (EOA) have the ability to encrypt and decrypt confidential data.
             </p>
             <p className="text-neutral-500">
-              This section allows Security Council members holding an EOA to register their public key. For smart
-              contract based accounts, it allows to appoint an agent using an EOA that can generate a public key to
-              receive encrypted payloads.
+            The Security Council member account, which must be smart contract based accounts, must also appoint a separate EOA as an agent (“Agent Address”) in order to generate a public key for receiving encrypted payloads.
+            </p>
+            <p className="text-neutral-500">
+            This section allows the Agent Address to register their public key.
             </p>
 
             <div className="flex flex-col gap-y-3">

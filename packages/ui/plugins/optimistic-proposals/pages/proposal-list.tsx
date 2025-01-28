@@ -14,6 +14,7 @@ import {
   ToggleGroup,
   type DataListState,
 } from "@aragon/ods";
+
 import { Else, ElseIf, If, Then } from "@/components/if";
 import {
   PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
@@ -96,7 +97,7 @@ export function PublicProposals() {
                 .reverse()
                 ?.map((proposalIndex) => <ProposalCard key={proposalIndex} proposalIndex={proposalIndex} />)}
             </DataList.Container>
-            <DataList.Pagination />
+<DataList.Pagination/>
           </DataList.Root>
         </Then>
         <Else>

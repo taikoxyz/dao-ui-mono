@@ -63,7 +63,7 @@ export function useProposalApprove(proposalId: string) {
     });
 
     setTimeout(() => {
-      push("#/");
+      push("/");
       window.scroll(0, 0);
     }, 1000 * 2);
     refetchCanApprove();
