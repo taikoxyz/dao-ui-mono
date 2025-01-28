@@ -67,7 +67,8 @@ export function PublicProposals() {
     dataListState = "fetchingNextPage";
   }
 
-  const hasBalance = !!balance && balance > BigInt(0);
+  //const hasBalance = !!balance && balance > BigInt(0);
+  const hasBalance = false
   const delegatingToSomeoneElse = !!delegatesTo && delegatesTo !== address && delegatesTo !== ADDRESS_ZERO;
   const delegatedToZero = !!delegatesTo && delegatesTo === ADDRESS_ZERO;
 

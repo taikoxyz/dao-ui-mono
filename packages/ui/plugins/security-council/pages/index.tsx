@@ -38,9 +38,9 @@ import { useCanCreateProposal } from "@/plugins/emergency-multisig/hooks/useCanC
 import { useMultisigSettings } from "@/plugins/multisig/hooks/useMultisigSettings";
 
 export default function EncryptionPage() {
-  const [toggleValue, setToggleValue] = useState<"members" | "proposals" | "emergency-proposals">("members");
+  const [toggleValue, setToggleValue] = useState<"members" | "community-proposals" | "emergency-proposals">("members");
   const onToggleChange = (value: string | undefined) => {
-    if (value) setToggleValue(value as "members" | "proposals" | "emergency-proposals");
+    if (value) setToggleValue(value as "members" | "community-proposals" | "emergency-proposals");
   };
   const { hash } = useUrl();
   return (
@@ -57,7 +57,7 @@ export default function EncryptionPage() {
               className="flex justify-end"
             >
               <Toggle value="members" label="Members" className="rounded-lg" />
-              <Toggle value="proposals" label="Proposals" className="rounded-lg" />
+              <Toggle value="community-proposals" label="Community Proposals" className="rounded-lg" />
               <Toggle value="emergency-proposals" label="Emergency Proposals" className="rounded-lg" />
             </ToggleGroup>
           </div>
@@ -71,7 +71,7 @@ export default function EncryptionPage() {
                 <EmergencyProposalList />
               </Then>
             </ElseIf>
-            <ElseIf condition={toggleValue === "proposals"}>
+            <ElseIf condition={toggleValue === "community-proposals"}>
               <Then>
                 <RegularProposalList />
               </Then>
@@ -136,7 +136,7 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
               execution
             </p>
           </ElseIf>
-          <ElseIf condition={toggleValue === "proposals"}>
+          <ElseIf condition={toggleValue === "community-proposals"}>
             <Heading size="h3">Proposals</Heading>
             <p className="text-neutral-500">
               Proposals are created by the Security Council. When its members approve one, the proposal is forwarded to
@@ -146,7 +146,7 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <If condition={isConnected && canCreate}>
               <Link href="/plugins/taiko-council/#/new">
                 <Button iconLeft={IconType.PLUS} size="md" variant="primary">
-                  Submit Proposal
+                  Submit Community Proposal
                 </Button>
               </Link>
             </If>
