@@ -57,7 +57,7 @@ export default function EncryptionPage() {
               className="flex justify-end"
             >
               <Toggle value="members" label="Members" className="rounded-lg" />
-              <Toggle value="community-proposals" label="Community Proposals" className="rounded-lg" />
+              <Toggle value="community-proposals" label="Standard Proposals" className="rounded-lg" />
               <Toggle value="emergency-proposals" label="Emergency Proposals" className="rounded-lg" />
             </ToggleGroup>
           </div>
@@ -102,13 +102,11 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <Heading size="h3">Details</Heading>
 
             <p className="text-neutral-500">
-            Security Council member accounts can create emergency proposals, however only externally owned addresses (EOA) have the ability to encrypt and decrypt confidential data.
+            Security Council member accounts can create Standard and Emergency Proposals, however only externally owned addresses (EOA) have the ability to encrypt and decrypt confidential data. The Security Council member accounts are required to be smart contract based, and must appoint a separate EOA as an agent (“Agent Address”)
             </p>
             <p className="text-neutral-500">
-            The Security Council member account, which must be smart contract based accounts, must also appoint a separate EOA as an agent (“Agent Address”) in order to generate a public key for receiving encrypted payloads.
-            </p>
-            <p className="text-neutral-500">
-            This section allows the Agent Address to register their public key.
+            This section allows the Agent Address to register and generate a public key in order to receive encrypted payloads related to Emergency Proposals.
+
             </p>
 
             <div className="flex flex-col gap-y-3">
@@ -120,8 +118,7 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <Heading size="h3">Emergency Proposals</Heading>
 
             <p className="text-neutral-500">
-              Emergency proposals require that both their description and actions remain encrypted until executed.
-            </p>
+            Emergency Proposals are created by the Security Council and are passed immediately after satisfying the voting requirements. Emergency Proposals require that theirits contents remain encrypted until executed.             </p>
             <If condition={isConnected && canCreate}>
               <Link href="/plugins/emergency-council/#/new">
                 <Button iconLeft={IconType.PLUS} size="md" variant="primary">
@@ -131,32 +128,40 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             </If>
             <div className="divider" />
             <Heading size="h4">Voting Requirements</Heading>
-            <p className="text-base leading-tight text-neutral-500">
-              {emergencyMultisigSettings.minApprovals || "-"} out of {multisigMembers?.length || 0} approvals before
-              execution
-            </p>
+            <ul className="list-inside list-disc">
+<li>
+Approved by the lesser of at least 6 or 75% of Security Council Members.
+</li>
+              </ul>
+
           </ElseIf>
           <ElseIf condition={toggleValue === "community-proposals"}>
-            <Heading size="h3">Proposals</Heading>
+            <Heading size="h3">Standard Proposals</Heading>
             <p className="text-neutral-500">
-              Proposals are created by the Security Council. When its members approve one, the proposal is forwarded to
-              the community veto phase for ratification.
+Standard Proposals are created by the Security Council. Following approval by the Security Council Members, the proposal is open to a 9 day public voting period and passed if not vetoed.
+
             </p>
 
             <If condition={isConnected && canCreate}>
               <Link href="/plugins/taiko-council/#/new">
                 <Button iconLeft={IconType.PLUS} size="md" variant="primary">
-                  Submit Community Proposal
+                  Submit Standard Proposal
                 </Button>
               </Link>
             </If>
 
             <div className="divider" />
             <Heading size="h4">Voting Requirements</Heading>
-            <p className="text-base leading-tight text-neutral-500">
-              {multisigSettings.minApprovals || "-"} out of {multisigMembers?.length || 0} before entering public
-              optimistic stage
-            </p>
+            <ul className="list-inside list-disc">
+              <li>Approved by the lesser of at least 3 or 25% of Security Council Members, prior to entering a 9 day public voting period.
+              </li>
+              <li>
+              30% of community votes are required to veto a Standard Proposal
+              </li>
+              <li>
+              Standard Proposal are passed if there is no veto within the public voting period
+              </li>
+            </ul>
           </ElseIf>
           <Else>
             <p className="text-neutral-500">{toggleValue}</p>

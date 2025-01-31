@@ -92,7 +92,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
             option: "Veto",
             voteAmount: formatEther(proposal?.vetoTally || BigInt(0)),
             votePercentage: vetoPercentage,
-            tokenSymbol: tokenSymbol || "TKO",
+            tokenSymbol: tokenSymbol || "TAIKO",
           },
         ],
         proposalId: proposalIdx.toString(),
@@ -147,7 +147,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
             <CardResources resources={proposal.resources} title="Resources" />
             <div>
               <ul className="list-inside list-disc">
-                <li>Tokens must be on the voter's wallet before the proposal is created in order for them to vote.</li>
+                <li>In order to vote, tokens must be held in the voter’s wallet prior to the creation of the proposal.</li>
               </ul>
             </div>
           </div>

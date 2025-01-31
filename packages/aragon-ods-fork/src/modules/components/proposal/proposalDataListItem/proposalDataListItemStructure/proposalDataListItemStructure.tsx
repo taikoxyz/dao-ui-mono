@@ -7,7 +7,7 @@ import { ApprovalThresholdResult } from '../approvalThresholdResult';
 import { MajorityVotingResult } from '../majorityVotingResult';
 import { ProposalDataListItemStatus } from '../proposalDataListItemStatus';
 import { proposalDataListItemUtils } from '../proposalDataListItemUtils';
-import { type IProposalDataListItemStructureProps, type IPublisher } from './proposalDataListItemStructure.api';
+import { IProposalDataListItemStructureBaseProps, type IProposalDataListItemStructureProps, type IPublisher } from './proposalDataListItemStructure.api';
 
 export const maxPublishersDisplayed = 3;
 
@@ -41,8 +41,10 @@ export const ProposalDataListItemStructure: React.FC<IProposalDataListItemStruct
         ...otherProps
     } = props;
 
+    console.log({date, status, title})
     const { address: connectedAddress, isConnected } = useAccount({ config });
     const { copy } = useOdsModulesContext();
+    const isEmergency = !!date
 
     const isOngoing = proposalDataListItemUtils.isOngoingStatus(status);
 
@@ -95,6 +97,7 @@ export const ProposalDataListItemStructure: React.FC<IProposalDataListItemStruct
                         ))}
                 </div>
                 {tag && <Tag label={tag} variant="primary" />}
+                <Tag label={isEmergency ? "Emergency Proposal" : "Standard Proposal"} variant="neutral" />
             </div>
         </DataList.Item>
     );
