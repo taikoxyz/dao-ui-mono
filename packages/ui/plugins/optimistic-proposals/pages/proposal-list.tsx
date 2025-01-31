@@ -66,9 +66,7 @@ export function PublicProposals() {
   } else if (isFetchingNextPage) {
     dataListState = "fetchingNextPage";
   }
-console.log({balance})
   const hasBalance = balance !== undefined && balance > BigInt(0);
-  //const hasBalance = false
   const delegatingToSomeoneElse = !!delegatesTo && delegatesTo !== address && delegatesTo !== ADDRESS_ZERO;
   const delegatedToZero = !!delegatesTo && delegatesTo === ADDRESS_ZERO;
 

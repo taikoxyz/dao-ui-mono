@@ -108,7 +108,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
     },
   ];
 
-  const hasBalance = !!balance && balance > ZERO;
+  const hasBalance = balance !== undefined && balance > ZERO;
   const delegatingToSomeoneElse = !!delegatesTo && delegatesTo !== address && delegatesTo !== ADDRESS_ZERO;
   const delegatedToZero = !!delegatesTo && delegatesTo === ADDRESS_ZERO;
 
