@@ -25,7 +25,7 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
   const isCurrentUser = isConnected && owner && equalAddresses(currentUserAddress, owner);
   const selfAppointed = !appointedAgent || equalAddresses(appointedAgent, ADDRESS_ZERO);
   const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
-  console.log(props);
+
   return (
     <DataList.Item href="#" target={undefined} className="min-w-fit !py-0 px-4 md:px-6" {...otherProps}>
       <div className="flex flex-col items-start justify-center gap-y-3 py-4 md:min-w-44 md:py-6">

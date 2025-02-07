@@ -66,8 +66,7 @@ export function PublicProposals() {
   } else if (isFetchingNextPage) {
     dataListState = "fetchingNextPage";
   }
-
-  const hasBalance = !!balance && balance > BigInt(0);
+  const hasBalance = balance !== undefined && balance > BigInt(0);
   const delegatingToSomeoneElse = !!delegatesTo && delegatesTo !== address && delegatesTo !== ADDRESS_ZERO;
   const delegatedToZero = !!delegatesTo && delegatesTo === ADDRESS_ZERO;
 
@@ -97,7 +96,7 @@ export function PublicProposals() {
                 .reverse()
                 ?.map((proposalIndex) => <ProposalCard key={proposalIndex} proposalIndex={proposalIndex} />)}
             </DataList.Container>
-<DataList.Pagination/>
+            <DataList.Pagination />
           </DataList.Root>
         </Then>
         <Else>
@@ -163,7 +162,7 @@ export default function ProposalList() {
       <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
         <div className="flex flex-1 flex-col gap-y-6">
           <div className="flex items-start justify-between">
-            <Heading size="h1">Proposals</Heading>
+            <Heading size="h1">Standard Proposals</Heading>
           </div>
           <PublicProposals />
         </div>
@@ -178,21 +177,27 @@ function AsideSection() {
     <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
       <div className="flex flex-col gap-y-3">
         <Heading size="h3">Emergency Proposals</Heading>
-        <b> (only shown after execution)</b>
+        <b>(Visible following execution)</b>
 
         <ul className="list-inside list-disc">
-          <li>SC members can create them</li>
-          <li>6 SC approvals makes them automatically approved</li>
-          <li>Any SC member can instantly execute them</li>
+          <li>Initiated only by Security Council Members</li>
+          <li>Executed upon approval from more than 75% of the Security Council members</li>
+          <li>
+            Relates to any issues/actions relating to:
+            <ul className="list-inside list-decimal pl-4">
+              <li>the underlying security of the Taiko protocol</li>
+              <li>modification(s) critical to integrity of the Taiko protocol and the Security Council</li>
+            </ul>
+          </li>
         </ul>
 
-        <Heading size="h3">Community Proposals</Heading>
-        <b>(shown since created)</b>
+        <Heading size="h3">Standard Proposals</Heading>
+        <b>(Visible following cretion)</b>
         <ul className="list-inside list-disc">
-          <li>SC members can create them</li>
-          <li>3 SC approvals makes them go into public voting</li>
-          <li>Token holders can veto with a 30% for the next 9 days</li>
-          <li>If non-vetoed, the proposal can be executed after the 9 days</li>
+          <li>Available for public community voting following approval from 3 or 25% of Security Council Members </li>
+          <li>Executed if the proposal is not vetoed within 9 days</li>
+          <li>30% vote from token holders is required to veto a Standard Proposal</li>
+          <li>Relates to any topics/issues that do not fall within the scope of Emergency Proposals</li>
         </ul>
       </div>
       <div className="flex flex-col items-baseline gap-y-2 py-3 lg:gap-x-6 lg:py-4">

@@ -80,7 +80,7 @@ export default function ProposalCard(props: ProposalInputs) {
       }
       result={{
         option: "Veto",
-        voteAmount: formatEther(proposal.vetoTally) + " " + (tokenSymbol || "TKO"),
+        voteAmount: formatEther(proposal.vetoTally) + " " + (tokenSymbol || "TAIKO"),
         votePercentage: vetoPercentage,
       }}
       publisher={{ address: proposal.creator }}
