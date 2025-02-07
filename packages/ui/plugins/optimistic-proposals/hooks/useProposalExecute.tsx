@@ -21,7 +21,7 @@ export function useProposalExecute(index: number) {
     abi: OptimisticTokenVotingPluginAbi,
     chainId: PUB_CHAIN.id,
     functionName: "canExecute",
-    args: [proposalId ?? BigInt("0")],
+    args: [proposalId || BigInt("0")],
   });
   const {
     writeContract: executeWrite,

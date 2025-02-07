@@ -32,7 +32,7 @@ export function useProposal(proposalId?: bigint, autoRefresh = false) {
     address: PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
     abi: OptimisticTokenVotingPluginAbi,
     functionName: "getProposal",
-    args: [proposalId ?? BigInt(0)],
+    args: [proposalId || BigInt(0)],
     chainId: PUB_CHAIN.id,
   });
   const { data: proposalCreationEvent } = useProposalCreationEvent(proposalId);

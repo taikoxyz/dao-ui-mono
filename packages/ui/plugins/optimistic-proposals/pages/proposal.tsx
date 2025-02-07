@@ -147,7 +147,9 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
             <CardResources resources={proposal.resources} title="Resources" />
             <div>
               <ul className="list-inside list-disc">
-                <li>In order to vote, tokens must be held in the voter’s wallet prior to the creation of the proposal.</li>
+                <li>
+                  In order to vote, tokens must be held in the voter’s wallet prior to the creation of the proposal.
+                </li>
               </ul>
             </div>
           </div>

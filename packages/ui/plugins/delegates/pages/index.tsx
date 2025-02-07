@@ -16,8 +16,7 @@ import { useMultisigSettings as useEmergencyMultisigSettings } from "@/plugins/e
 import { useMultisigSettings } from "@/plugins/multisig/hooks/useMultisigSettings";
 import { useGovernanceSettings } from "@/plugins/optimistic-proposals/hooks/useGovernanceSettings";
 
-const REGISTERED_SIDE_TEXT =
-  "Here you will see the members who have posted their candidacy to be delegated to.";
+const REGISTERED_SIDE_TEXT = "Here you will see the members who have posted their candidacy to be delegated to.";
 const VERIFIED_SIDE_TEXT =
   "These are the publicly announced verified delegates. [DEV NOTE: this is updated manually via the static file verified-delegates.json]";
 
@@ -58,7 +57,9 @@ export default function MembersList() {
         <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
           <div className="flex flex-col gap-y-3">
             <Heading size="h3">Details</Heading>
-            <b>In order to vote, </b>a user must delegate one’s voting power to a delegation profile. The user may also create a delegation profile for oneself. This section displays all delegation profiles posted by members. Post your delegation profile now! (see button below)!
+            <b>In order to vote, </b>a user must delegate one’s voting power to a delegation profile. The user may also
+            create a delegation profile for oneself. This section displays all delegation profiles posted by members.
+            Post your delegation profile now! (see button below)!
             <If condition={toggleValue === "all"}>
               <Then>
                 <p className="text-neutral-500">{REGISTERED_SIDE_TEXT}</p>

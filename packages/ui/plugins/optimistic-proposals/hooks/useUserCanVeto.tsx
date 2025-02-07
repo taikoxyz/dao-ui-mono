@@ -12,7 +12,7 @@ export function useUserCanVeto(proposalId?: bigint) {
     address: PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
     abi: OptimisticTokenVotingPluginAbi,
     functionName: "canVeto",
-    args: [proposalId ?? BigInt(0), address!],
+    args: [proposalId || BigInt(0), address!],
     query: {
       enabled: !!address,
     },

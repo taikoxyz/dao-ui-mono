@@ -94,10 +94,9 @@ export function PublicProposals() {
             <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
               {Array.from(Array(proposalCount || 0)?.keys())
                 .reverse()
-                ?.map((proposalIndex) => <ProposalCard
-                key={proposalIndex} proposalIndex={proposalIndex} />)}
+                ?.map((proposalIndex) => <ProposalCard key={proposalIndex} proposalIndex={proposalIndex} />)}
             </DataList.Container>
-<DataList.Pagination/>
+            <DataList.Pagination />
           </DataList.Root>
         </Then>
         <Else>
@@ -182,15 +181,13 @@ function AsideSection() {
 
         <ul className="list-inside list-disc">
           <li>Initiated only by Security Council Members</li>
-          <li>Executed upon approval from more than 75% of the Security Council members
-          </li>
-          <li>Relates to any issues/actions relating to:
-<ul className="pl-4 list-inside list-decimal">
-  <li>the underlying security of the Taiko protocol</li>
-  <li>modification(s) critical to integrity of the Taiko protocol and the Security Council
-  </li>
-</ul>
-
+          <li>Executed upon approval from more than 75% of the Security Council members</li>
+          <li>
+            Relates to any issues/actions relating to:
+            <ul className="list-inside list-decimal pl-4">
+              <li>the underlying security of the Taiko protocol</li>
+              <li>modification(s) critical to integrity of the Taiko protocol and the Security Council</li>
+            </ul>
           </li>
         </ul>
 
@@ -198,8 +195,7 @@ function AsideSection() {
         <b>(Visible following cretion)</b>
         <ul className="list-inside list-disc">
           <li>Available for public community voting following approval from 3 or 25% of Security Council Members </li>
-          <li>Executed if the proposal is not vetoed within 9 days
-          </li>
+          <li>Executed if the proposal is not vetoed within 9 days</li>
           <li>30% vote from token holders is required to veto a Standard Proposal</li>
           <li>Relates to any topics/issues that do not fall within the scope of Emergency Proposals</li>
         </ul>

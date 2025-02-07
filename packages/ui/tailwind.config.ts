@@ -6,7 +6,7 @@ const config: Config = {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./plugins/**/*.{js,ts,jsx,tsx,mdx}",
-   "../aragon-ods-fork/dist/**/*.js",
+    "../aragon-ods-fork/dist/**/*.js",
   ],
   theme: {
     extend: {

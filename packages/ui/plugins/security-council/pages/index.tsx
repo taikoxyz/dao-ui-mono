@@ -102,11 +102,14 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <Heading size="h3">Details</Heading>
 
             <p className="text-neutral-500">
-            Security Council member accounts can create Standard and Emergency Proposals, however only externally owned addresses (EOA) have the ability to encrypt and decrypt confidential data. The Security Council member accounts are required to be smart contract based, and must appoint a separate EOA as an agent (“Agent Address”)
+              Security Council member accounts can create Standard and Emergency Proposals, however only externally
+              owned addresses (EOA) have the ability to encrypt and decrypt confidential data. The Security Council
+              member accounts are required to be smart contract based, and must appoint a separate EOA as an agent
+              (“Agent Address”)
             </p>
             <p className="text-neutral-500">
-            This section allows the Agent Address to register and generate a public key in order to receive encrypted payloads related to Emergency Proposals.
-
+              This section allows the Agent Address to register and generate a public key in order to receive encrypted
+              payloads related to Emergency Proposals.
             </p>
 
             <div className="flex flex-col gap-y-3">
@@ -118,7 +121,9 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <Heading size="h3">Emergency Proposals</Heading>
 
             <p className="text-neutral-500">
-            Emergency Proposals are created by the Security Council and are passed immediately after satisfying the voting requirements. Emergency Proposals require that theirits contents remain encrypted until executed.             </p>
+              Emergency Proposals are created by the Security Council and are passed immediately after satisfying the
+              voting requirements. Emergency Proposals require that their contents remain encrypted until executed.{" "}
+            </p>
             <If condition={isConnected && canCreate}>
               <Link href="/plugins/emergency-council/#/new">
                 <Button iconLeft={IconType.PLUS} size="md" variant="primary">
@@ -129,17 +134,14 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <div className="divider" />
             <Heading size="h4">Voting Requirements</Heading>
             <ul className="list-inside list-disc">
-<li>
-Approved by the lesser of at least 6 or 75% of Security Council Members.
-</li>
-              </ul>
-
+              <li>Approved by the lesser of at least 6 or 75% of Security Council Members</li>
+            </ul>
           </ElseIf>
           <ElseIf condition={toggleValue === "community-proposals"}>
             <Heading size="h3">Standard Proposals</Heading>
             <p className="text-neutral-500">
-Standard Proposals are created by the Security Council. Following approval by the Security Council Members, the proposal is open to a 9 day public voting period and passed if not vetoed.
-
+              Standard Proposals are created by the Security Council. Following approval by the Security Council
+              Members, the proposal is open to a 9 day public voting period and passed if not vetoed.
             </p>
 
             <If condition={isConnected && canCreate}>
@@ -153,14 +155,12 @@ Standard Proposals are created by the Security Council. Following approval by th
             <div className="divider" />
             <Heading size="h4">Voting Requirements</Heading>
             <ul className="list-inside list-disc">
-              <li>Approved by the lesser of at least 3 or 25% of Security Council Members, prior to entering a 9 day public voting period.
-              </li>
               <li>
-              30% of community votes are required to veto a Standard Proposal
+                Approved by the lesser of at least 3 or 25% of Security Council Members, prior to entering a 9 day
+                public voting period
               </li>
-              <li>
-              Standard Proposal are passed if there is no veto within the public voting period
-              </li>
+              <li>30% of community votes are required to veto a Standard Proposal</li>
+              <li>Standard Proposal are passed if there is no veto within the public voting period</li>
             </ul>
           </ElseIf>
           <Else>
