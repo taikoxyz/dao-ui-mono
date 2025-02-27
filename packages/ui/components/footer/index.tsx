@@ -58,6 +58,11 @@ export const Footer = () => {
               <span className="line-clamp-1 leading-tight text-neutral-500 group-hover:text-neutral-800">Forum</span>
             </a>
           </li>
+          <li className="group py-4 md:py-0">
+            <a className="overflow-hidden" href="/plugins/mission" target="_blank">
+              <span className="line-clamp-1 leading-tight text-neutral-500 group-hover:text-neutral-800">Mission</span>
+            </a>
+          </li>
         </ul>
         <div className="items-center pb-3 pt-6 md:order-3 md:flex md:justify-center md:pb-0 md:pt-0 xl:flex-1 xl:justify-end">
           <span className="text-base leading-tight text-neutral-500">
