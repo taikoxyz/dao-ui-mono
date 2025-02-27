@@ -61,4 +61,11 @@ export const plugins: PluginItem[] = [
     // icon: IconType.BLOCKCHAIN_BLOCKCHAIN,
     pluginAddress: PUB_DELEGATION_WALL_CONTRACT_ADDRESS,
   },
+  {
+    id: 'mission',
+    folderName: 'mission',
+    title: 'Mission',
+    pluginAddress: '',
+    hideFromMenu: true,
+  }
 ];
