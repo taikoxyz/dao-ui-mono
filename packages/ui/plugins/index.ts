@@ -62,10 +62,10 @@ export const plugins: PluginItem[] = [
     pluginAddress: PUB_DELEGATION_WALL_CONTRACT_ADDRESS,
   },
   {
-    id: 'mission',
-    folderName: 'mission',
-    title: 'Mission',
-    pluginAddress: '',
+    id: "mission",
+    folderName: "mission",
+    title: "Mission",
+    pluginAddress: "",
     hideFromMenu: true,
-  }
+  },
 ];
