@@ -1,5 +1,6 @@
 import { PUB_TOKEN_SYMBOL } from "@/constants";
 import { formatHexString, equalAddresses } from "@/utils/evm";
+import { resolveIpfsImage } from "@/utils/ipfs";
 import {
   Breadcrumbs,
   Button,
@@ -23,10 +24,11 @@ interface IHeaderMemberProps {
   name?: string;
   address: Address;
   bio?: string;
+  avatar?: string;
 }
 
 export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
-  const { address: delegateAddress, bio, name } = props;
+  const { address: delegateAddress, bio, avatar, name } = props;
   const breadcrumbs: IBreadcrumbsLink[] = [{ label: "Delegates", href: "#/" }, { label: props.address }];
   const { open } = useWeb3Modal();
   const { address: myAddress, isConnected } = useAccount();
@@ -36,6 +38,7 @@ export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
   const { delegateVotingPower, isLoading: isConfirming } = useDelegateVotingPower(delegateAddress, refetch);
   const formattedAddress = formatHexString(delegateAddress);
   const isVerified = VerifiedDelegates.findIndex((d) => equalAddresses(d.address, delegateAddress)) >= 0;
+  const avatarSrc = resolveIpfsImage(avatar);
 
   return (
     <div className="flex w-full justify-center bg-neutral-0 from-neutral-0 to-transparent">
@@ -74,7 +77,7 @@ export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
               </div>
             </div>
             <span>
-              <MemberAvatar address={delegateAddress} size="lg" responsiveSize={{}} />
+              <MemberAvatar address={delegateAddress} avatarSrc={avatarSrc} size="lg" responsiveSize={{}} />
             </span>
           </div>
           <div>

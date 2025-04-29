@@ -10,7 +10,7 @@ export const DelegateProfile = ({ address }: { address: Address }) => {
 
   return (
     <div className="flex flex-col items-center">
-      <HeaderMember address={address} name={announce?.identifier || formatHexString(address)} bio={announce?.bio} />
+      <HeaderMember address={address} name={announce?.identifier || formatHexString(address)} bio={announce?.bio} avatar={announce?.avatar}/>
       <div className="flex w-full max-w-screen-xl flex-col gap-x-12 gap-y-12 px-4 py-6 md:flex-row md:px-16 md:pb-20">
         {/* Main section */}
         <div className="flex flex-col gap-y-12 md:w-[63%] md:gap-y-20">

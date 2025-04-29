@@ -59,11 +59,13 @@ export function useAnnounceDelegation(onSuccess?: () => void) {
       setUploading(true);
 
       try {
+        console.log("Uploading metadata to IPFS", metadata);
         const ipfsUrl = await uploadToPinata(JSON.stringify(metadata));
 
         if (!ipfsUrl) throw new Error("Empty IPFS URL");
         setTimeout(() => setUploading(false), 1000);
 
+        console.log("IPFS URL", ipfsUrl);
         writeContract({
           abi: DelegateAnnouncerAbi,
           address: PUB_DELEGATION_WALL_CONTRACT_ADDRESS,

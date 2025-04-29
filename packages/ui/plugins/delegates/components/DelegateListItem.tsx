@@ -1,5 +1,6 @@
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { formatHexString, equalAddresses } from "@/utils/evm";
+import { resolveIpfsImage } from "@/utils/ipfs";
 import { type IDataListItemProps, DataList, MemberAvatar, Tag } from "@aragon/ods";
 import { useAccount } from "wagmi";
 import { Address, formatEther } from "viem";
@@ -17,12 +18,13 @@ export interface IDelegateListItemProps extends IDataListItemProps {
 }
 
 export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
-  const { isMyDelegate, avatarSrc, address, ...otherProps } = props;
+  const { isMyDelegate, address, ...otherProps } = props;
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && address && equalAddresses(currentUserAddress, address);
   const { votingPower } = useTokenVotes(address);
   const isVerified = VerifiedDelegates.findIndex((d) => equalAddresses(d.address, address)) >= 0;
   const { announce } = useDelegateAnnounce(address);
+  const avatarSrc = resolveIpfsImage(announce?.avatar);
 
   return (
     <DataList.Item className="min-w-fit !py-0 px-4 md:px-6" {...otherProps}>

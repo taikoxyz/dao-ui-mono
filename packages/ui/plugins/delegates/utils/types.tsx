@@ -9,6 +9,7 @@ export type DelegateAnnounce = {
 };
 
 export interface IAnnouncementMetadata {
+  avatar?: string;
   identifier: string;
   bio: string;
   message: string;
