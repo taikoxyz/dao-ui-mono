@@ -2,7 +2,8 @@
   {
     "address": "0x1dE1A4150B165C0cBf82cE43855e5f16F90D139a",
     "name": "Ben",
-    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam."
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.",
+    "avatarSrc": "ipfs://bafkreibsqgyruagcxagjrl5nse6yhngvxysy4k4nuux4cyjkm7mcjnnyjm"
   },
   {
     "address": "0x3DAb8944A215384acad687B99E6eF4c5b4eEb2c2",

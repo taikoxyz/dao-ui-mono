@@ -81,7 +81,6 @@ export async function getContentCid(strMetadata: string) {
 // Internal helpers
 
 async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
-  console.log("fetchRawIpfs loading", ipfsUri);
   if (!ipfsUri) throw new Error("Invalid IPFS URI");
   else if (ipfsUri.startsWith("0x")) {
     // fallback
