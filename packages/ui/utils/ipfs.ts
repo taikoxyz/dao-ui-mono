@@ -4,7 +4,7 @@ import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
 
-const IPFS_FETCH_TIMEOUT = 1000; // 1 second
+const IPFS_FETCH_TIMEOUT = 5000; // 1 second
 const UPLOAD_FILE_NAME = PUB_APP_NAME.toLowerCase().trim().replaceAll(" ", "-") + ".json";
 
 export function fetchIpfsAsJson(ipfsUri: string) {
@@ -40,6 +40,35 @@ export async function uploadToPinata(strBody: string) {
   if (resData.error) throw new Error("Request failed: " + resData.error);
   else if (!resData.IpfsHash) throw new Error("Could not pin the metadata");
   return "ipfs://" + resData.IpfsHash;
+}
+
+export async function uploadFileToPinata(file: File) {
+  const data = new FormData();
+  data.append("file", file);
+  data.append("pinataMetadata", JSON.stringify({ name: file.name }));
+  data.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
+
+  const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PUB_PINATA_JWT}`,
+    },
+    body: data,
+  });
+
+  const resData = await res.json();
+
+  if (resData.error) throw new Error("Request failed: " + resData.error);
+  else if (!resData.IpfsHash) throw new Error("Could not pin the file");
+  return "ipfs://" + resData.IpfsHash;
+}
+
+export function resolveIpfsImage(uri?: string): string | undefined {
+  if (!uri) return undefined;
+  if (uri.startsWith("ipfs://")) {
+    return uri.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+  }
+  return uri;
 }
 
 export async function getContentCid(strMetadata: string) {

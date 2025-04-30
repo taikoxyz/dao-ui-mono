@@ -1,5 +1,6 @@
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { formatHexString, equalAddresses, ADDRESS_ZERO } from "@/utils/evm";
+import { resolveIpfsImage } from "@/utils/ipfs";
 import { type IDataListItemProps, DataList, Link, MemberAvatar, Tag } from "@aragon/ods";
 import { useAccount } from "wagmi";
 import { Address, Hex } from "viem";
@@ -20,11 +21,12 @@ export interface IAccountListItemProps extends IDataListItemProps {
 }
 
 export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => {
-  const { avatarSrc, owner, appointedAgent, publicKey, ...otherProps } = props;
+  const { owner, appointedAgent, publicKey, ...otherProps } = props;
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && owner && equalAddresses(currentUserAddress, owner);
   const selfAppointed = !appointedAgent || equalAddresses(appointedAgent, ADDRESS_ZERO);
   const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
+  const avatarSrc = resolveIpfsImage(profile?.avatarSrc);
 
   return (
     <DataList.Item href="#" target={undefined} className="min-w-fit !py-0 px-4 md:px-6" {...otherProps}>

@@ -1,5 +1,6 @@
 // import { MemberProfile } from "@/components/nav/routes";
 import { EMAIL_PATTERN, URL_PATTERN, URL_WITH_PROTOCOL_PATTERN } from "@/utils/input-values";
+import { uploadFileToPinata, resolveIpfsImage } from "@/utils/ipfs";
 import {
   Button,
   DialogContent,
@@ -16,6 +17,7 @@ import {
 } from "@aragon/ods";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
+import { useState } from 'react';
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useAccount } from "wagmi";
 import { z } from "zod";
@@ -49,6 +51,7 @@ const ResourceSchema = z
 
 const MetadataSchema = z.object({
   identifier: z.string().min(1, { message: "Identifier is required" }),
+  avatar: z.string().url({ message: "Avatar must be a valid URL" }).optional(),
   bio: z.string().min(1, { message: "A short bio is required" }),
   message: z.string().regex(EmptyParagraphRegex, { message: "Delegation statement is required" }),
   resources: z.array(ResourceSchema).optional(),
@@ -66,6 +69,7 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
     control,
     getValues,
     setValue,
+    watch,
     formState: { errors },
     handleSubmit,
     register,
@@ -75,6 +79,9 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
     defaultValues: { bio: "", message: "<p></p>", resources: [{ name: "", link: "" }] },
   });
   const { fields, append, remove } = useFieldArray({ name: DELEGATE_RESOURCES, control });
+
+  const [localAvatarPreview, setLocalAvatarPreview] = useState<string | undefined>(undefined);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const onSuccessfulAnnouncement = () => {
     router.push("#/delegates/" + address!);
@@ -107,6 +114,72 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
     <DialogRoot {...otherProps} containerClassName="!max-w-[520px]" useFocusTrap={false}>
       <DialogHeader title="Create your delegate profile" onCloseClick={onClose} onBackClick={onClose} />
       <DialogContent className="flex flex-col gap-y-4 md:gap-y-6">
+          
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative">
+            {localAvatarPreview || watch("avatar") ? (
+              <img
+                src={localAvatarPreview || resolveIpfsImage(watch("avatar"))}
+                alt="Avatar preview"
+                className="h-20 w-20 rounded-full object-cover"
+              />
+            ) : (
+              <div className="h-20 w-20 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400">
+                No Avatar
+              </div>
+            )}
+
+            {isUploadingAvatar && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
+                <div className="h-6 w-6 animate-spin border-2 border-gray-400 border-t-transparent rounded-full" />
+              </div>
+            )}
+          </div>
+
+          <label className="cursor-pointer text-sm text-blue-600 underline">
+            Upload Avatar
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                if (e.target.files && e.target.files[0]) {
+                  const file = e.target.files[0];
+                  const max_avatar_size_bytes = 1 * 1024 * 1024;
+                  if (file.size > max_avatar_size_bytes) {
+                    alert(`Avatar image is too large. Max size is ${1}MB.`);
+                    return;
+                  }
+
+                  const localUrl = URL.createObjectURL(file);
+                  setLocalAvatarPreview(localUrl);
+
+                  setIsUploadingAvatar(true);
+
+                  try {
+                    const ipfsUri = await uploadFileToPinata(file); // your function from ipfs.ts
+                    setValue("avatar", ipfsUri);
+                    setLocalAvatarPreview(undefined);
+                  } catch (error) {
+                    console.error(error);
+                  } finally {
+                    setIsUploadingAvatar(false);
+                  }
+                }
+              }}
+            />
+          </label>
+
+          {errors.avatar?.message && (
+            <p className="text-sm text-red-500">{errors.avatar.message}</p>
+          )}
+
+          {/* Optional: Show uploading text */}
+          {isUploadingAvatar && (
+            <p className="text-sm text-neutral-400">Uploading avatar...</p>
+          )}
+        </div>
+
         <InputText
           label="Identifier"
           readOnly={isConfirming}
@@ -217,6 +290,7 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
             variant="primary"
             size="lg"
             isLoading={isConfirming || status === "pending"}
+            disabled={isUploadingAvatar || isConfirming || status === "pending"} // <-- add isUploadingAvatar here
             onClick={handleSubmit(handleAnnouncement)}
           >
             {ctaLabel}
