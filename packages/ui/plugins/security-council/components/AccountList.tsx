@@ -66,6 +66,10 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
                 publicKey={eAcc?.publicKey}
               />
             );
+          }).sort((a,b) => {
+            const _a = SecurityCouncilProfiles.findIndex((profile) => isAddressEqual(profile.address as Address, a.props.owner))
+            const _b = SecurityCouncilProfiles.findIndex((profile) => isAddressEqual(profile.address as Address, b.props.owner))
+            return _a - _b
           })}
       </DataList.Container>
       {/* <DataList.Pagination /> */}
