@@ -106,7 +106,7 @@ export const useAbi = (contractAddress: Address) => {
 function getEtherscanAbiLoader() {
     return new whatsabi.loaders.EtherscanABILoader({
       apiKey: PUB_ETHERSCAN_API_KEY,
-      baseURL: "https://api.etherscan.io/v2/api",
+      baseURL: `https://api.etherscan.io/v2/api?chainid=${PUB_CHAIN.id}`
     });
 }
 
