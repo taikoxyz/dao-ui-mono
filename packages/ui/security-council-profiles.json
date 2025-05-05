@@ -1,4 +1,10 @@
 [
+
+  {
+    "address": "0xb47fE76aC588101BFBdA9E68F66433bA51E8029a",
+    "name": "Daniel Wang",
+    "description": ""
+  },
   {
     "address": "0x436a1075099A145417EBFc74BBaC9605e3e4f1A7",
     "name": "Chainbound",
@@ -11,7 +17,7 @@
   },
   {
     "address": "0xb284810536C0dAB6A8e48153B58588A9B9e0F701",
-    "name": "Aragon X AG ",
+    "name": "Aragon",
     "description": ""
   },
   {
@@ -32,11 +38,6 @@
   {
     "address": "0xa384E224A3F3D664F43eBE33395eF0DCcE67e894",
     "name": "Toni Wahrstätter",
-    "description": ""
-  },
-  {
-    "address": "0xb47fE76aC588101BFBdA9E68F66433bA51E8029a",
-    "name": "Daniel Wang",
     "description": ""
   },
   {
