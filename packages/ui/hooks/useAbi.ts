@@ -46,6 +46,7 @@ export const useAbi = (contractAddress: Address) => {
   } = useQuery<AbiFunction[], Error>({
     queryKey: ["abi", resolvedAddress || "", publicClient?.chain.id],
     queryFn: async () => {
+
       if (!resolvedAddress || !isAddress(resolvedAddress) || !publicClient) {
         return [];
       } else if (!(await isContract(resolvedAddress, publicClient))) {
@@ -60,6 +61,7 @@ export const useAbi = (contractAddress: Address) => {
           enableExperimentalMetadata: true,
         })
         .then(({ abi }) => {
+
           const functionItems: AbiFunction[] = [];
           for (const item of abi) {
             // "event", "error", "constructor", "receive", "fallback"
@@ -102,10 +104,12 @@ export const useAbi = (contractAddress: Address) => {
 };
 
 function getEtherscanAbiLoader() {
+
   switch (CHAIN_NAME) {
     case "mainnet":
       return new whatsabi.loaders.EtherscanABILoader({
         apiKey: PUB_ETHERSCAN_API_KEY,
+        baseURL: "https://api.etherscan.io/api",
       });
     case "polygon":
       return new whatsabi.loaders.EtherscanABILoader({
@@ -133,7 +137,10 @@ function getEtherscanAbiLoader() {
         baseURL: "https://api-mumbai.polygonscan.com/api",
       });
     default:
-      throw new Error("Unknown chain");
+      return new whatsabi.loaders.EtherscanABILoader({
+        apiKey: PUB_ETHERSCAN_API_KEY,
+        baseURL: "https://api.etherscan.io/api",
+      });
   }
 }
 
