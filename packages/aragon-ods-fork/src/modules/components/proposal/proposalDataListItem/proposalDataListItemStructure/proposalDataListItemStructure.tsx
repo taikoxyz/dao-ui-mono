@@ -1,24 +1,12 @@
 import classNames from 'classnames';
-import { useAccount } from 'wagmi';
-import { DataList, Link, Tag } from '../../../../../core';
-import { addressUtils } from '../../../../utils/addressUtils';
-import { useOdsModulesContext } from '../../../odsModulesProvider';
+import { DataList } from '../../../../../core';
 import { ApprovalThresholdResult } from '../approvalThresholdResult';
 import { MajorityVotingResult } from '../majorityVotingResult';
 import { ProposalDataListItemStatus } from '../proposalDataListItemStatus';
 import { proposalDataListItemUtils } from '../proposalDataListItemUtils';
-import { IProposalDataListItemStructureBaseProps, type IProposalDataListItemStructureProps, type IPublisher } from './proposalDataListItemStructure.api';
+import { type IProposalDataListItemStructureProps } from './proposalDataListItemStructure.api';
 
 export const maxPublishersDisplayed = 3;
-
-const parsePublisher = (publisher: IPublisher, isConnected: boolean, connectedAddress: string | undefined) => {
-    const publisherIsConnected = isConnected && addressUtils.isAddressEqual(publisher.address, connectedAddress);
-    const publisherLabel = publisherIsConnected
-        ? 'You'
-        : (publisher.name ?? addressUtils.truncateAddress(publisher.address));
-
-    return { label: publisherLabel, link: publisher.link };
-};
 
 /**
  * `ProposalDataListItemStructure` module component
@@ -41,18 +29,7 @@ export const ProposalDataListItemStructure: React.FC<IProposalDataListItemStruct
         ...otherProps
     } = props;
 
-    console.log({date, status, title})
-    const { address: connectedAddress, isConnected } = useAccount({ config });
-    const { copy } = useOdsModulesContext();
-    const isEmergency = !!date
-
     const isOngoing = proposalDataListItemUtils.isOngoingStatus(status);
-
-    const parsedPublisher = Array.isArray(publisher)
-        ? publisher.map((p) => parsePublisher(p, isConnected, connectedAddress))
-        : [parsePublisher(publisher, isConnected, connectedAddress)];
-
-    const showParsedPublisher = parsedPublisher.length <= maxPublishersDisplayed;
 
     return (
         <DataList.Item className={classNames('flex flex-col gap-y-4', className)} {...otherProps}>
@@ -68,37 +45,6 @@ export const ProposalDataListItemStructure: React.FC<IProposalDataListItemStruct
             {isOngoing && type === 'approvalThreshold' && result && <ApprovalThresholdResult {...result} />}
 
             {isOngoing && type === 'majorityVoting' && result && <MajorityVotingResult {...result} />}
-
-            <div className="flex items-center justify-between gap-x-4 md:gap-x-6">
-                <div
-                    className={classNames(
-                        'inline-grid auto-cols-auto grid-flow-col content-center',
-                        'min-h-5 gap-x-0.5 text-sm leading-tight text-neutral-600 md:min-h-6 md:gap-x-1 md:text-base',
-                    )}
-                >
-                    {copy.proposalDataListItemStructure.by}
-                    {showParsedPublisher === false && (
-                        <span>
-                            {maxPublishersDisplayed}+ {copy.proposalDataListItemStructure.creators}
-                        </span>
-                    )}
-                    {showParsedPublisher &&
-                        parsedPublisher.map(({ label, link }, index) => (
-                            <span key={label} className="truncate">
-                                <object type="disregardType" className="flex shrink">
-                                    {link != null && (
-                                        // using solution from https://kizu.dev/nested-links/ to nest anchor tags
-                                        <Link href={link}>{label}</Link>
-                                    )}
-                                    {link == null && <span className="truncate">{label}</span>}
-                                    {index < parsedPublisher.length - 1 && ','}
-                                </object>
-                            </span>
-                        ))}
-                </div>
-                {tag && <Tag label={tag} variant="primary" />}
-                <Tag label={isEmergency ? "Emergency Proposal" : "Standard Proposal"} variant="neutral" />
-            </div>
         </DataList.Item>
     );
 };

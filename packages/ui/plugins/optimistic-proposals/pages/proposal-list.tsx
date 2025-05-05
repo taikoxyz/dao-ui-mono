@@ -88,7 +88,7 @@ export function PublicProposals() {
             pageSize={DEFAULT_PAGE_SIZE}
             state={dataListState}
             onLoadMore={() => {
-              console.log("load more");
+              //console.log("load more");
             }}
           >
             <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
