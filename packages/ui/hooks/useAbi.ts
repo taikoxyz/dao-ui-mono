@@ -46,7 +46,6 @@ export const useAbi = (contractAddress: Address) => {
   } = useQuery<AbiFunction[], Error>({
     queryKey: ["abi", resolvedAddress || "", publicClient?.chain.id],
     queryFn: async () => {
-
       if (!resolvedAddress || !isAddress(resolvedAddress) || !publicClient) {
         return [];
       } else if (!(await isContract(resolvedAddress, publicClient))) {
@@ -61,7 +60,6 @@ export const useAbi = (contractAddress: Address) => {
           enableExperimentalMetadata: true,
         })
         .then(({ abi }) => {
-
           const functionItems: AbiFunction[] = [];
           for (const item of abi) {
             // "event", "error", "constructor", "receive", "fallback"
@@ -104,10 +102,10 @@ export const useAbi = (contractAddress: Address) => {
 };
 
 function getEtherscanAbiLoader() {
-    return new whatsabi.loaders.EtherscanABILoader({
-      apiKey: PUB_ETHERSCAN_API_KEY,
-      baseURL: `https://api.etherscan.io/v2/api?chainid=${PUB_CHAIN.id}`
-    });
+  return new whatsabi.loaders.EtherscanABILoader({
+    apiKey: PUB_ETHERSCAN_API_KEY,
+    baseURL: `https://api.etherscan.io/v2/api?chainid=${PUB_CHAIN.id}`,
+  });
 }
 
 function abiSortCallback(a: AbiFunction, b: AbiFunction) {
