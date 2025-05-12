@@ -22,7 +22,6 @@ export function useSignerList() {
     if (!publicClient) {
       throw new Error("No public client");
     }
-
     const addedProm = getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersAddedEvent, {}, publicClient);
     const removedProm = getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersRemovedEvent, {}, publicClient);
 
