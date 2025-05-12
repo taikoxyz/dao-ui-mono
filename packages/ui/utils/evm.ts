@@ -1,7 +1,7 @@
 import { PUB_DEPLOYMENT_BLOCK } from "@/constants";
 import { AbiEvent, Address, MaybeAbiEventName, MaybeExtractEventArgsFromAbi, PublicClient } from "viem";
 
-const GET_LOGS_BLOCK_COUNT = 500;
+const GET_LOGS_BLOCK_COUNT = 499;
 
 export const isAddress = (maybeAddress: any) => {
   if (!maybeAddress || typeof maybeAddress !== "string") return false;
