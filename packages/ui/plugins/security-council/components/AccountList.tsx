@@ -27,6 +27,7 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
       />
     );
   }
+  
 
   return (
     <DataList.Root entityLabel={accounts.length === 1 ? "account" : "accounts"} itemsCount={accounts.length}>
