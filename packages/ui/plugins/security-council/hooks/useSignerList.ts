@@ -75,7 +75,7 @@ async function getGqlSigners() {
       return [];
     }
 
-    return res.data.signers.map((s) => s.id);
+    return res.data.signers.map((s:any) => s.id);
   } catch (e) {
     console.error("GQL Error:", e);
   }
