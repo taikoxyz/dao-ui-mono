@@ -27,14 +27,13 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
       />
     );
   }
-  
 
   return (
     <DataList.Root entityLabel={accounts.length === 1 ? "account" : "accounts"} itemsCount={accounts.length}>
       <DataList.Filter onSearchValueChange={setSearchValue} searchValue={searchValue} placeholder="Filter by address" />
       <DataList.Container className="grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-5">
         {accounts
-          .filter((acc) => {
+          .filter((acc: Address) => {
             const profile = SecurityCouncilProfiles.find((profile) => isAddressEqual(profile.address as Address, acc));
             return (
               !searchValue ||
@@ -43,7 +42,7 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
               profile?.description.toLowerCase().includes(searchValue.toLowerCase())
             );
           })
-          .map((account) => {
+          .map((account: Address) => {
             const eAcc = encryptionAccounts.find((a) => a.owner === account);
 
             if (!eAcc || !eAcc.publicKey || eAcc.publicKey === BYTES32_ZERO) {

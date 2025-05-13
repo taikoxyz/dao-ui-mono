@@ -5,6 +5,8 @@ import { Address, getAbiItem, GetLogsReturnType } from "viem";
 import { useQuery } from "@tanstack/react-query";
 import { Config, readContract } from "@wagmi/core";
 import { getLogsUntilNow } from "@/utils/evm";
+import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
+import { PUB_SUBGRAPH_URL } from "@/constants";
 
 const SignersAddedEvent = getAbiItem({
   abi: SignerListAbi,
@@ -16,18 +18,8 @@ const SignersRemovedEvent = getAbiItem({
 });
 
 export function useSignerList() {
-  const publicClient = usePublicClient();
-
-  const getSigners = () => {
-    if (!publicClient) {
-      throw new Error("No public client");
-    }
-    const addedProm = getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersAddedEvent, {}, publicClient);
-    const removedProm = getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersRemovedEvent, {}, publicClient);
-
-    return Promise.all([addedProm, removedProm]).then(([addedLogs, removedLogs]) => {
-      return computeCurrentSignerList(addedLogs, removedLogs);
-    });
+  const getSigners = async () => {
+    return await getGqlSigners();
   };
 
   return useQuery({
@@ -60,44 +52,32 @@ export function useApproverWalletList() {
   });
 }
 
-type SignerAddRemoveItem = {
-  blockNumber: bigint;
-  added: Address[];
-  removed: Address[];
-};
-
-function computeCurrentSignerList(
-  addedLogs: GetLogsReturnType<typeof SignersAddedEvent>,
-  removedLogs: GetLogsReturnType<typeof SignersRemovedEvent>
-) {
-  const merged: Array<SignerAddRemoveItem> = addedLogs
-    .map((item) => ({
-      blockNumber: item.blockNumber,
-      added: item.args.signers || ([] as any),
-      removed: [],
-    }))
-    .concat(
-      removedLogs.map((item) => ({
-        blockNumber: item.blockNumber,
-        added: [],
-        removed: item.args.signers || ([] as any),
-      }))
-    );
-
-  const result = [] as Address[];
-
-  merged.sort((a, b) => {
-    return Number(a.blockNumber - b.blockNumber);
-  });
-
-  for (const item of merged) {
-    for (const addr of item.added) {
-      if (!result.includes(addr)) result.push(addr);
-    }
-    for (const addr of item.removed) {
-      const idx = result.indexOf(addr);
-      if (idx >= 0) result.splice(idx, 1);
-    }
+async function getGqlSigners(): Promise<Address[]> {
+  const query = `
+  query GetSigners {
+  signers {
+    id
   }
-  return result;
+}
+  `;
+
+  try {
+    const client = new ApolloClient({
+      uri: PUB_SUBGRAPH_URL,
+      cache: new InMemoryCache(),
+    });
+
+    const res: any = await client.query({
+      query: gql(query),
+    });
+
+    if (!res.data || !res.data.signers) {
+      return [];
+    }
+
+    return res.data.signers.map((s:any) => s.id);
+  } catch (e) {
+    console.error("GQL Error:", e);
+    return []
+  }
 }
