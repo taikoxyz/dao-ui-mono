@@ -18,6 +18,7 @@ export const PUB_DELEGATION_WALL_CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_DEL
   "") as Address;
 
 export const PUB_TAIKO_BRIDGE_ADDRESS = (process.env.NEXT_PUBLIC_TAIKO_BRIDGE_ADDRESS ?? "") as Address;
+export const PUB_SUBGRAPH_URL = (process.env.NEXT_PUBLIC_SUBGRAPH_URL ?? "") as string;
 
 // Target chain
 export const PUB_CHAIN_NAME = (process.env.NEXT_PUBLIC_CHAIN_NAME ?? "holesky") as ChainName;

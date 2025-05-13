@@ -23,6 +23,7 @@
     ]
   },
   "dependencies": {
+    "@apollo/client": "^3.13.8",
     "@aragon/ods": "workspace:*",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-tabs": "^1.1.2",
@@ -39,6 +40,7 @@
     "classnames": "^2.5.1",
     "dayjs": "^1.11.10",
     "dompurify": "^3.0.11",
+    "graphql": "^16.11.0",
     "libsodium-wrappers": "^0.7.13",
     "multiformats": "^13.1.1",
     "next": "^14.2.0",
