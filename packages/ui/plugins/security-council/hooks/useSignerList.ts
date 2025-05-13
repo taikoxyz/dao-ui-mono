@@ -52,7 +52,7 @@ export function useApproverWalletList() {
   });
 }
 
-async function getGqlSigners() {
+async function getGqlSigners(): Promise<Address[]> {
   const query = `
   query GetSigners {
   signers {
@@ -78,5 +78,6 @@ async function getGqlSigners() {
     return res.data.signers.map((s:any) => s.id);
   } catch (e) {
     console.error("GQL Error:", e);
+    return []
   }
 }
