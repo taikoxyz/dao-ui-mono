@@ -16,6 +16,9 @@ import { getShortTimeDiffFrom } from "@/utils/dates";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { getTagVariantFromStatus } from "@/utils/ui-variants";
 import { capitalizeFirstLetter } from "@/utils/text";
+import { useEncryptionAccounts } from "@/plugins/security-council/hooks/useEncryptionAccounts";
+import { Address, isAddressEqual } from "viem";
+import SecurityCouncilProfiles from "../../../../security-council-profiles.json";
 
 interface ProposalHeaderProps {
   proposalId: string;
@@ -24,11 +27,10 @@ interface ProposalHeaderProps {
 
 const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal }) => {
   const proposalStatus = useProposalStatus(proposal);
-  const tagVariant = getTagVariantFromStatus(proposalStatus);
-  const breadcrumbs: IBreadcrumbsLink[] = [{ label: "Proposals", href: "#/" }, { label: proposalId.toString() }];
   const expired = Number(proposal.parameters.expirationDate) * 1000 <= Date.now();
-  console.log("ProposalHeader", proposal, proposalStatus);
-
+    const { data: encryptionAccounts } = useEncryptionAccounts();
+  const owner = encryptionAccounts?.find(({appointedAgent}) => isAddressEqual(appointedAgent, proposal.creator as Address))?.owner || undefined
+const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
   return (
     <div className="flex w-full justify-center bg-neutral-0">
       {/* Wrapper */}
@@ -56,7 +58,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
         <div className="flex flex-wrap gap-x-10 gap-y-2">
           <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
-            <Publisher publisher={[{ address: proposal.creator }]} />
+            <Publisher publisher={[{ address: proposal.creator, name: profile?.name || '' }]} />
           </div>
           <If condition={proposalStatus !== ProposalStatus.EXECUTED && !expired}>
             <div className="flex items-center gap-x-2">
