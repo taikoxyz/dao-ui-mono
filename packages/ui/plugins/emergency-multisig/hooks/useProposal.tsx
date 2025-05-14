@@ -93,7 +93,7 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       !!publicClient,
     ],
     queryFn: () => {
-      return getGqlCreator(proposalId.toString(16));
+      return getGqlEmergencyMultisigCreator(proposalId.toString(16));
     },
     retry: true,
     refetchOnMount: false,
@@ -143,7 +143,7 @@ function arrangeProposalData(
   };
 }
 
-async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
+export async function getGqlEmergencyMultisigCreator(proposalId: string): Promise<{ creator: Address }> {
   const query = `
   query GetCreator($proposalId: Bytes!) {
   emergencyProposal(id: $proposalId) {

@@ -82,7 +82,7 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       //  !!publicClient,
     ],
     queryFn: async () => {
-      return getGqlCreator(proposalId.toString(16));
+      return getGqlStandardMultisigCreator(proposalId.toString(16));
     },
     retry: true,
     refetchOnMount: true,
@@ -129,7 +129,7 @@ function arrangeProposalData(
   };
 }
 
-async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
+export async function getGqlStandardMultisigCreator(proposalId: string): Promise<{ creator: Address }> {
   const query = `
   query GetCreator($proposalId: Bytes!) {
   standardProposal(id: $proposalId) {
@@ -156,6 +156,6 @@ async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> 
     return res.data.standardProposal;
   } catch (e) {
     console.error("GQL Error:", e);
-    return { creator: "0x85f21919ed6046d7CE1F36a613eBA8f5EaC3d070" };
+    return { creator: zeroAddress };
   }
 }

@@ -1,18 +1,22 @@
 import { useEffect } from "react";
 import { useBlockNumber, usePublicClient, useReadContract } from "wagmi";
-import { fromHex, getAbiItem } from "viem";
+import { Address, fromHex, getAbiItem, isAddressEqual, zeroAddress } from "viem";
 import { ProposalMetadata, type RawAction, type DecodedAction } from "@/utils/types";
 import {
   type OptimisticProposal,
   type OptimisticProposalParameters,
   type OptimisticProposalResultType,
 } from "@/plugins/optimistic-proposals/utils/types";
-import { PUB_CHAIN, PUB_DEPLOYMENT_BLOCK, PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS } from "@/constants";
+import { PUB_CHAIN, PUB_DEPLOYMENT_BLOCK, PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS, PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS, PUB_MULTISIG_PLUGIN_ADDRESS, PUB_SUBGRAPH_URL } from "@/constants";
 import { useMetadata } from "@/hooks/useMetadata";
 import { OptimisticTokenVotingPluginAbi } from "../artifacts/OptimisticTokenVotingPlugin.sol";
 import { parseProposalId } from "../utils/proposal-id";
 import { getLogsUntilNow } from "@/utils/evm";
 import { useQuery } from "@tanstack/react-query";
+import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
+import { getGqlEmergencyMultisigCreator } from "@/plugins/emergency-multisig/hooks/useProposal";
+import { getGqlStandardMultisigCreator } from "@/plugins/multisig/hooks/useProposal";
+import { readContract } from "@wagmi/core";
 
 const ProposalCreatedEvent = getAbiItem({
   abi: OptimisticTokenVotingPluginAbi,
@@ -37,8 +41,24 @@ export function useProposal(proposalId?: bigint, autoRefresh = false) {
   });
   const { data: proposalCreationEvent } = useProposalCreationEvent(proposalId);
 
+  const {
+    data: proposalDetailData,
+    error: proposalDetailError,
+    fetchStatus: proposalDetailFetchStatus,
+    refetch: proposalDetailRefetch,
+  } = useReadContract({
+    address: PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
+    abi: OptimisticTokenVotingPluginAbi,
+    functionName: "parseProposalId",
+    args: [proposalId || BigInt(0)],
+    chainId: PUB_CHAIN.id,
+  })
+
   useEffect(() => {
-    if (autoRefresh) proposalRefetch();
+    if (autoRefresh) {
+      proposalRefetch();
+      proposalDetailRefetch();
+    }
   }, [blockNumber]);
 
   // JSON metadata
@@ -77,9 +97,11 @@ function useProposalCreationEvent(proposalId: bigint | undefined) {
       proposalId?.toString() || "",
       !!publicClient,
     ],
+    /*
     queryFn: () => {
       if (!publicClient || typeof proposalId === "undefined") throw new Error("Not ready");
-      // aapply next fix
+     
+      
       return getLogsUntilNow(
         PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
         ProposalCreatedEvent,
@@ -93,6 +115,10 @@ function useProposalCreationEvent(proposalId: bigint | undefined) {
 
         return logs[0].args;
       });
+    },*/
+    queryFn: async () => {
+      if (!proposalId) throw new Error("Not ready");
+      return getGqlCreator(proposalId.toString(16));
     },
     retry: true,
     refetchOnMount: false,
@@ -146,4 +172,38 @@ function arrangeProposalData(
     description: metadata?.description ?? "",
     resources: metadata?.resources ?? [],
   };
+}
+
+
+
+async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
+  const query = `
+  query GetCreator($proposalId: Bytes!) {
+  optimisticTokenVotingProposal(id: $proposalId) {
+    creator
+}
+}
+  `;
+  try {
+    const client = new ApolloClient({
+      uri: PUB_SUBGRAPH_URL,
+      cache: new InMemoryCache(),
+    });
+
+    const res: any = await client.query({
+      query: gql(query),
+      variables: {
+        proposalId: `0x${proposalId}`,
+      },
+    });
+
+    if (!res.data || !res.data.optimisticTokenVotingProposal || !res.data.optimisticTokenVotingProposal.creator) {
+      throw new Error("No optimisticTokenVotingProposal found");
+    }
+
+   return res.data.optimisticTokenVotingProposal
+  } catch (e) {
+    console.error("GQL Error:", e);
+    return { creator: zeroAddress };
+  }
 }

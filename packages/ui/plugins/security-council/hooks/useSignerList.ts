@@ -18,33 +18,14 @@ const SignersRemovedEvent = getAbiItem({
 });
 
 export function useSignerList() {
-  const getSigners = () => {
-    return getGqlSigners();
-  };
-  /*
-    const publicClient = usePublicClient();
-  
-    const getSigners = () => {
-      if (!publicClient) {
-        throw new Error("No public client");
-      }
-  
-      const addedProm = getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersAddedEvent, {}, publicClient);
-      const removedProm = getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersRemovedEvent, {}, publicClient);
-  
-      return Promise.all([addedProm, removedProm]).then(([addedLogs, removedLogs]) => {
-        return computeCurrentSignerList(addedLogs, removedLogs);
-      });
-    }
-
-*/
-
   return useQuery({
     queryKey: ["signer-list-fetch", PUB_SIGNER_LIST_CONTRACT_ADDRESS],
-    queryFn: getSigners,
+    queryFn: async () => {
+          return getGqlSigners()
+        },
     retry: true,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
     retryOnMount: true,
     staleTime: 1000 * 60 * 5,
   });

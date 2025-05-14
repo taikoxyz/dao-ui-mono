@@ -253,7 +253,9 @@ function AccountStatus() {
     return (
       <>
         <AlertCard message={title} description={description} variant={variant} />
-        {actions}
+        {actions.forEach((action, index) => {
+        <span key={index}>{action}</span>
+        })}
 
         {/* Modal */}
         <AppointDialog open={showAppointModal} onClose={() => setShowAppointModal(false)} />
@@ -317,7 +319,7 @@ function AccountStatus() {
           </dd>
         </div>
       </dl>
-      <div className="flex flex-col gap-y-3">{actions}</div>
+      <div className="flex flex-col gap-y-3"> {actions}</div>
 
       {/* Modal */}
       <AppointDialog open={showAppointModal} onClose={() => setShowAppointModal(false)} />

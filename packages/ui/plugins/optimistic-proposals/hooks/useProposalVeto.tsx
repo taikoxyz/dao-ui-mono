@@ -10,7 +10,6 @@ import { useProposalId } from "./useProposalId";
 
 export function useProposalVeto(index: number) {
   const { proposalId } = useProposalId(index);
-
   const { proposal, status: proposalFetchStatus, refetch: refetchProposal } = useProposal(proposalId, true);
   const { data: vetoes, refetch: refetchVetoes } = useProposalVetoes(proposalId);
 
