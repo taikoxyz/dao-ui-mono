@@ -6,6 +6,7 @@ import { Address, formatEther } from "viem";
 import { useTokenVotes } from "../../../hooks/useTokenVotes";
 import VerifiedDelegates from "../../../verified-delegates.json";
 import { useDelegateAnnounce } from "../hooks/useDelegateAnnounce";
+import BannedDelegates from "../../../banned-delegates.json";
 
 export interface IDelegateListItemProps extends IDataListItemProps {
   /** Whether the member is a delegate of current user or not */
@@ -17,6 +18,10 @@ export interface IDelegateListItemProps extends IDataListItemProps {
 }
 
 export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
+  // ban delegates
+  if (BannedDelegates.find((d) => equalAddresses(d.address, props.address))) {
+    return null;
+  }
   const { isMyDelegate, avatarSrc, address, ...otherProps } = props;
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && address && equalAddresses(currentUserAddress, address);

@@ -6,6 +6,8 @@ import { useDelegates } from "../hooks/useDelegates";
 import { useTokenVotes } from "../../../hooks/useTokenVotes";
 import { useAccount } from "wagmi";
 import VerifiedDelegates from "../../../verified-delegates.json";
+import BannedDelegates from "../../../banned-delegates.json";
+
 import { PleaseWaitSpinner } from "@/components/please-wait";
 // import { generateSortOptions, sortItems } from "./utils";
 
@@ -19,7 +21,12 @@ export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifie
   //   const [activeSort, setActiveSort] = useState<string>();
   const { delegates: fetchedDelegates, status: loadingStatus } = useDelegates();
   const { delegatesTo } = useTokenVotes(address);
-  const delegates = (fetchedDelegates || []).filter((item) => {
+  const delegates = (fetchedDelegates || [])
+  .filter((item) => {
+    if (!verifiedOnly) return true 
+    return BannedDelegates.findIndex((d) => equalAddresses(d.address, item)) < 0;  
+  })
+  .filter((item) => {
     if (!verifiedOnly) return true;
     return VerifiedDelegates.findIndex((d) => equalAddresses(d.address, item)) >= 0;
   });
