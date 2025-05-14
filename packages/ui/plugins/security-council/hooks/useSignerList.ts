@@ -18,9 +18,33 @@ const SignersRemovedEvent = getAbiItem({
 });
 
 export function useSignerList() {
+  console.log('calling useSignerList')
   const getSigners = async () => {
     return await getGqlSigners();
   };
+/*
+    const publicClient = usePublicClient();
+  
+    const getSigners = () => {
+      if (!publicClient) {
+        throw new Error("No public client");
+      }
+  
+      const addedProm = getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersAddedEvent, {}, publicClient);
+      const removedProm = getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersRemovedEvent, {}, publicClient);
+  
+      return Promise.all([addedProm, removedProm]).then(([addedLogs, removedLogs]) => {
+        return computeCurrentSignerList(addedLogs, removedLogs);
+      });
+    }
+
+*/
+
+/*
+
+  const getSigners = async () => {
+    return await getGqlSigners();
+  };*/
 
   return useQuery({
     queryKey: ["signer-list-fetch", PUB_SIGNER_LIST_CONTRACT_ADDRESS],
@@ -81,3 +105,29 @@ async function getGqlSigners(): Promise<Address[]> {
     return []
   }
 }
+
+type SignerAddRemoveItem = {
+  blockNumber: bigint;
+  added: Address[];
+  removed: Address[];
+};
+
+function computeCurrentSignerList(
+  addedLogs: GetLogsReturnType<typeof SignersAddedEvent>,
+  removedLogs: GetLogsReturnType<typeof SignersRemovedEvent>
+) {
+  const merged: Array<SignerAddRemoveItem> = addedLogs
+    .map((item) => ({
+      blockNumber: item.blockNumber,
+      added: item.args.signers || ([] as any),
+      removed: [],
+    }))
+    .concat(
+      removedLogs.map((item) => ({
+        blockNumber: item.blockNumber,
+        added: [],
+        removed: item.args.signers || ([] as any),
+      }))
+    );
+  }
+  

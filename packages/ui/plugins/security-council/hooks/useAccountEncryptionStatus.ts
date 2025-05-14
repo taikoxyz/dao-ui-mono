@@ -1,7 +1,7 @@
 import { useIsContract } from "@/hooks/useIsContract";
 import { useSignerList } from "@/plugins/security-council/hooks/useSignerList";
 import { useEncryptionAccounts } from "./useEncryptionAccounts";
-import { Address, Hex } from "viem";
+import { Address, Hex, isAddressEqual } from "viem";
 import { ADDRESS_ZERO, BYTES32_ZERO } from "@/utils/evm";
 import { useAccount } from "wagmi";
 
@@ -40,8 +40,9 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
   const { data: signers, isLoading: isLoadingSigners, error: error2 } = useSignerList();
   const { isContract } = useIsContract(targetAddress);
 
+
   const encryptionAccount = (encryptionAccounts || []).find(
-    (item) => item.owner === targetAddress || item.appointedAgent === targetAddress
+    (item) => item && (isAddressEqual(item.owner, targetAddress as Address) || isAddressEqual(item.appointedAgent,targetAddress as Address))
   );
   const owner = encryptionAccount?.owner;
   const registeredPublicKey = encryptionAccount?.publicKey;
@@ -53,6 +54,13 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
     appointedAgent = encryptionAccount.appointedAgent;
   }
   let status: AccountEncryptionStatus;
+
+
+  console.log("useAccountEncryptionStatus", {
+    appointedAgent,
+    targetAddress,
+    encryptionAccounts,
+    isContract})
 
   if (isLoadingEncryptionAccounts || isLoadingSigners) {
     // Loading
