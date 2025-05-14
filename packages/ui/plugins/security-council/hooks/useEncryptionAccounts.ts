@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 /**
  * Returns the list of accounts that have been registered on the encryption registry.
  */
+
 export function useEncryptionAccounts() {
   const config = useConfig() as Config;
 
