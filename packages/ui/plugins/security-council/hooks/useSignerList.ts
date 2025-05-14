@@ -18,8 +18,8 @@ const SignersRemovedEvent = getAbiItem({
 });
 
 export function useSignerList() {
-  const getSigners = async () => {
-    return await getGqlSigners();
+  const getSigners = () => {
+    return getGqlSigners();
   };
   /*
     const publicClient = usePublicClient();
@@ -39,15 +39,9 @@ export function useSignerList() {
 
 */
 
-  /*
-
-  const getSigners = async () => {
-    return await getGqlSigners();
-  };*/
-
   return useQuery({
     queryKey: ["signer-list-fetch", PUB_SIGNER_LIST_CONTRACT_ADDRESS],
-    queryFn: () => getSigners(),
+    queryFn: getSigners,
     retry: true,
     refetchOnMount: false,
     refetchOnReconnect: false,

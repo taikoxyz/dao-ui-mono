@@ -35,7 +35,6 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
         {accounts
           .filter((acc: Address) => {
             const profile = SecurityCouncilProfiles.find((profile) => isAddressEqual(profile.address as Address, acc));
-
             return (
               !searchValue ||
               acc.toLowerCase().includes(searchValue.toLowerCase()) ||
@@ -44,8 +43,7 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
             );
           })
           .map((account: Address) => {
-            const eAcc = encryptionAccounts.find((a) => a.owner === account);
-
+            const eAcc = encryptionAccounts.find((a) => isAddressEqual(a.owner, account));
             if (!eAcc || !eAcc.publicKey || eAcc.publicKey === BYTES32_ZERO) {
               return (
                 <AccountListItemPending
@@ -58,7 +56,6 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
                 />
               );
             }
-
             return (
               <AccountListItemReady
                 key={account}

@@ -42,15 +42,14 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
 
   const encryptionAccount = (encryptionAccounts || []).find((item) => {
     return (
-      item &&
-      item.owner &&
+      targetAddress &&
       (isAddressEqual(item.owner, targetAddress as Address) ||
-        isAddressEqual(item.appointedAgent, targetAddress as Address))
+        (item.appointedAgent && isAddressEqual(item.appointedAgent, targetAddress as Address)))
     );
   });
   const owner = encryptionAccount?.owner;
   const registeredPublicKey = encryptionAccount?.publicKey;
-  const isListed = signers?.some((s) => isAddressEqual(s, targetAddress as Address));
+  const isListed = signers?.some((s) => targetAddress && isAddressEqual(s, targetAddress as Address));
   const isAppointed = (encryptionAccounts || []).findIndex((acc) => acc.appointedAgent === targetAddress) >= 0;
 
   let appointedAgent: Address | undefined;

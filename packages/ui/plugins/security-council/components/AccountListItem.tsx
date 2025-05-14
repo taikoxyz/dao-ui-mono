@@ -2,7 +2,7 @@ import { Else, ElseIf, If, Then } from "@/components/if";
 import { formatHexString, equalAddresses, ADDRESS_ZERO } from "@/utils/evm";
 import { type IDataListItemProps, DataList, Link, MemberAvatar, Tag } from "@aragon/ods";
 import { useAccount } from "wagmi";
-import { Address, Hex } from "viem";
+import { Address, Hex, isAddressEqual } from "viem";
 import { AccountEncryptionStatus, useAccountEncryptionStatus } from "../hooks/useAccountEncryptionStatus";
 import { AddressText } from "@/components/text/address";
 import SecurityCouncilProfiles from "../../../security-council-profiles.json";
@@ -63,7 +63,7 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
               </button>
             </Then>
 
-            <ElseIf condition={appointedAgent === currentUserAddress}>
+            <ElseIf condition={isAddressEqual(appointedAgent, currentUserAddress)}>
               <Tag variant="info" label="You" />
             </ElseIf>
 
@@ -136,7 +136,12 @@ export const AccountListItemPending: React.FC<IAccountListItemProps> = (props) =
         <p className="inline-block w-full truncate text-sm text-neutral-400">{formatHexString(owner)}</p>
         <If condition={!!appointedAgent && appointedAgent !== ADDRESS_ZERO}>
           <p className="inline-block w-full text-sm text-neutral-400">
-            Appointed: {appointedAgent === currentUserAddress ? "You" : <AddressText>{appointedAgent}</AddressText>}
+            Appointed:{" "}
+            {isAddressEqual(appointedAgent as Address, currentUserAddress as Address) ? (
+              "You"
+            ) : (
+              <AddressText>{appointedAgent}</AddressText>
+            )}
           </p>
         </If>
         <If condition={!!comment}>
