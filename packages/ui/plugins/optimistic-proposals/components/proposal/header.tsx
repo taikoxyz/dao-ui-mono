@@ -6,6 +6,10 @@ import { getShortTimeDiffFrom } from "@/utils/dates";
 import { HeaderSection } from "@/components/layout/header-section";
 import { getTagVariantFromStatus } from "@/utils/ui-variants";
 import { capitalizeFirstLetter } from "@/utils/text";
+import { Publisher } from "@/components/publisher";
+import { Address, isAddressEqual } from "viem";
+import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
+import SecurityCouncilProfiles from "../../../../security-council-profiles.json";
 
 const DEFAULT_PROPOSAL_TITLE = "(No proposal title)";
 const DEFAULT_PROPOSAL_SUMMARY = "(No proposal summary)";
@@ -29,6 +33,14 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal }
 
   const breadcrumbs: IBreadcrumbsLink[] = [{ label: "Proposals", href: "#/" }, { label: proposalIdx.toString() }];
 
+  const { data: encryptionAccounts } = useEncryptionAccountsEmergency();
+  const creator = proposal.creator as Address;
+  const owner =
+    encryptionAccounts?.find(
+      ({ appointedAgent }) => appointedAgent && creator && isAddressEqual(appointedAgent, creator)
+    )?.owner || undefined;
+  const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
+
   return (
     <div className="flex w-full justify-center bg-neutral-0">
       {/* Wrapper */}
@@ -48,10 +60,10 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal }
         </div>
         {/* Metadata */}
         <div className="flex flex-wrap gap-x-10 gap-y-2">
-          {/* <div className="flex items-center gap-x-2">
+          {/*<div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
-            <Publisher publisher={[{ address: proposal.creator }]} />
-          </div> */}
+            <Publisher publisher={[{ address: proposal.creator, name: profile?.name || "" }]} />
+          </div>*/}
           <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
             <div className="flex gap-x-1 text-base leading-tight">

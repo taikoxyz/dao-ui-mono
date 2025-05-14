@@ -52,7 +52,7 @@ export function useProposal(proposalId: string, autoRefresh = false) {
     isLoading: metadataLoading,
     error: metadataError,
   } = useMetadata<ProposalMetadata>(proposalData?.metadataUri);
-console.log('metadataContent', {metadataContent, proposalData, proposalCreationEvent})
+
   const proposal = arrangeProposalData(proposalData, proposalCreationEvent, metadataContent);
 
   return {
@@ -72,7 +72,7 @@ console.log('metadataContent', {metadataContent, proposalData, proposalCreationE
 // Helpers
 
 function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | undefined) {
- // getGqlCreator(proposalId.toString(16)).then(console.log).catch(console.error);
+  // getGqlCreator(proposalId.toString(16)).then(console.log).catch(console.error);
   return useQuery({
     queryKey: [
       "multisig-proposal-creation-event",
@@ -82,7 +82,7 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       //  !!publicClient,
     ],
     queryFn: async () => {
-      return getGqlCreator(proposalId.toString(16))
+      return getGqlCreator(proposalId.toString(16));
     },
     retry: true,
     refetchOnMount: true,
@@ -110,7 +110,7 @@ function arrangeProposalData(
   metadata?: ProposalMetadata
 ): MultisigProposal | null {
   if (!proposalData) return null;
-console.log('creator', {creationEvent})
+
   return {
     actions: proposalData.actions,
     executed: proposalData.executed,
@@ -156,6 +156,6 @@ async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> 
     return res.data.standardProposal;
   } catch (e) {
     console.error("GQL Error:", e);
-    return { creator: '0x85f21919ed6046d7CE1F36a613eBA8f5EaC3d070' };
+    return { creator: "0x85f21919ed6046d7CE1F36a613eBA8f5EaC3d070" };
   }
 }

@@ -143,7 +143,6 @@ function arrangeProposalData(
   };
 }
 
-
 async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
   const query = `
   query GetCreator($proposalId: Bytes!) {
