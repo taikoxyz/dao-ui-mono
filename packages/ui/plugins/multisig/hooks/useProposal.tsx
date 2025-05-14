@@ -52,7 +52,7 @@ export function useProposal(proposalId: string, autoRefresh = false) {
     isLoading: metadataLoading,
     error: metadataError,
   } = useMetadata<ProposalMetadata>(proposalData?.metadataUri);
-console.log({proposalResult, proposalCreationEvent, proposalData,metadataContent})
+
   const proposal = arrangeProposalData(proposalData, proposalCreationEvent, metadataContent);
 
   return {
@@ -78,10 +78,10 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       PUB_MULTISIG_PLUGIN_ADDRESS,
       proposalId.toString(),
       snapshotBlock?.toString() || "",
-    //  !!publicClient,
+      //  !!publicClient,
     ],
     queryFn: () => {
-      return getGqlCreator(proposalId.toString(16))
+      return getGqlCreator(proposalId.toString(16));
     },
     retry: true,
     refetchOnMount: true,
@@ -128,8 +128,7 @@ function arrangeProposalData(
   };
 }
 
-
-async function getGqlCreator(proposalId: string): Promise<{creator:Address}> {
+export async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
   const query = `
   query GetCreator($proposalId: Bytes!) {
   proposal(id: $proposalId) {
@@ -146,19 +145,16 @@ async function getGqlCreator(proposalId: string): Promise<{creator:Address}> {
     const res: any = await client.query({
       query: gql(query),
       variables: {
-        proposalId: `0x${proposalId}`
-      }
+        proposalId: `0x${proposalId}`,
+      },
     });
-    console.log("GQL Result:", res.data);
-
 
     if (!res.data || !res.data.proposal || !res.data.proposal.creator) {
       throw new Error("No proposal found");
     }
-    return res.data.proposal
+    return res.data.proposal;
   } catch (e) {
     console.error("GQL Error:", e);
-    return {creator: zeroAddress}
-
+    return { creator: zeroAddress };
   }
 }

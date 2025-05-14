@@ -5,6 +5,9 @@ import { getShortTimeDiffFrom } from "@/utils/dates";
 import { EmergencyProposal } from "../../utils/types";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { HeaderSection } from "@/components/layout/header-section";
+import SecurityCouncilProfiles from "../../../../security-council-profiles.json";
+import { useEncryptionAccounts } from "@/plugins/security-council/hooks/useEncryptionAccounts";
+import { Address, isAddressEqual } from "viem";
 
 interface ProposalHeaderProps {
   proposalId: string;
@@ -14,6 +17,13 @@ interface ProposalHeaderProps {
 const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal }) => {
   const proposalStatus = useProposalStatus(proposal);
   const expired = Number(proposal.parameters.expirationDate) * 1000 <= Date.now();
+  const { data: encryptionAccounts } = useEncryptionAccounts();
+  const creator = proposal.creator as Address;
+  const owner =
+    encryptionAccounts?.find(
+      ({ appointedAgent }) => creator && appointedAgent && isAddressEqual(appointedAgent, creator)
+    )?.owner || undefined;
+  const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
 
   return (
     <div className="flex w-full justify-center bg-neutral-0">
@@ -31,7 +41,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
         <div className="flex flex-wrap gap-x-10 gap-y-2">
           <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
-            <Publisher publisher={[{ address: proposal.creator }]} />
+            <Publisher publisher={[{ address: proposal.creator, name: profile?.name || "" }]} />
           </div>
           <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />

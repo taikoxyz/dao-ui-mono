@@ -76,7 +76,6 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
       </section>
     );
   }
-console.log('sending proposal for render', {proposalId, proposal})
   return (
     <section className="flex w-screen min-w-full max-w-full flex-col items-center">
       <ProposalHeader proposalId={proposalId} proposal={proposal} />

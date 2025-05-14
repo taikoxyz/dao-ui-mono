@@ -28,9 +28,11 @@ interface ProposalHeaderProps {
 const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal }) => {
   const proposalStatus = useProposalStatus(proposal);
   const expired = Number(proposal.parameters.expirationDate) * 1000 <= Date.now();
-    const { data: encryptionAccounts } = useEncryptionAccounts();
-  const owner = encryptionAccounts?.find(({appointedAgent}) => isAddressEqual(appointedAgent, proposal.creator as Address))?.owner || undefined
-const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
+  const { data: encryptionAccounts } = useEncryptionAccounts();
+  const creator = proposal.creator as Address;
+  const owner =
+    encryptionAccounts?.find(({ appointedAgent }) => isAddressEqual(appointedAgent, creator))?.owner || undefined;
+  const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
   return (
     <div className="flex w-full justify-center bg-neutral-0">
       {/* Wrapper */}
@@ -58,7 +60,7 @@ const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual
         <div className="flex flex-wrap gap-x-10 gap-y-2">
           <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
-            <Publisher publisher={[{ address: proposal.creator, name: profile?.name || '' }]} />
+            <Publisher publisher={[{ address: proposal.creator, name: profile?.name || "" }]} />
           </div>
           <If condition={proposalStatus !== ProposalStatus.EXECUTED && !expired}>
             <div className="flex items-center gap-x-2">

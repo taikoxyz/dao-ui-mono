@@ -11,7 +11,7 @@ export const Publisher: React.FC<IPublisherProps> = (props) => {
   const { publisher } = props;
 
   const showParsedPublisher = publisher.length <= MAX_PUBLISHERS_SHOWN;
-console.log("Publisher", publisher);
+
   return (
     <div className="flex gap-x-0.5 text-base leading-tight">
       <div className="inline-grid auto-cols-auto grid-flow-col content-center gap-x-1 leading-tight">
