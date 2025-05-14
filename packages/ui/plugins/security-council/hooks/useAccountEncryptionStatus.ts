@@ -40,13 +40,17 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
   const { data: signers, isLoading: isLoadingSigners, error: error2 } = useSignerList();
   const { isContract } = useIsContract(targetAddress);
 
-
-  const encryptionAccount = (encryptionAccounts || []).find(
-    (item) => item && (isAddressEqual(item.owner, targetAddress as Address) || isAddressEqual(item.appointedAgent,targetAddress as Address))
-  );
+  const encryptionAccount = (encryptionAccounts || []).find((item) => {
+    return (
+      item &&
+      item.owner &&
+      (isAddressEqual(item.owner, targetAddress as Address) ||
+        isAddressEqual(item.appointedAgent, targetAddress as Address))
+    );
+  });
   const owner = encryptionAccount?.owner;
   const registeredPublicKey = encryptionAccount?.publicKey;
-  const isListed = signers?.includes(targetAddress!);
+  const isListed = signers?.some((s) => isAddressEqual(s, targetAddress as Address));
   const isAppointed = (encryptionAccounts || []).findIndex((acc) => acc.appointedAgent === targetAddress) >= 0;
 
   let appointedAgent: Address | undefined;
@@ -54,13 +58,6 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
     appointedAgent = encryptionAccount.appointedAgent;
   }
   let status: AccountEncryptionStatus;
-
-
-  console.log("useAccountEncryptionStatus", {
-    appointedAgent,
-    targetAddress,
-    encryptionAccounts,
-    isContract})
 
   if (isLoadingEncryptionAccounts || isLoadingSigners) {
     // Loading
@@ -113,7 +110,6 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
       }
     } else {
       // Address is an EOA
-
       // Is there an appointed agent?
       if (!appointedAgent || appointedAgent === ADDRESS_ZERO) {
         // No appointed agent

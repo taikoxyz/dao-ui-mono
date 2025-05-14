@@ -18,11 +18,10 @@ const SignersRemovedEvent = getAbiItem({
 });
 
 export function useSignerList() {
-  console.log('calling useSignerList')
   const getSigners = async () => {
     return await getGqlSigners();
   };
-/*
+  /*
     const publicClient = usePublicClient();
   
     const getSigners = () => {
@@ -40,7 +39,7 @@ export function useSignerList() {
 
 */
 
-/*
+  /*
 
   const getSigners = async () => {
     return await getGqlSigners();
@@ -99,10 +98,10 @@ async function getGqlSigners(): Promise<Address[]> {
       return [];
     }
 
-    return res.data.signers.map((s:any) => s.id);
+    return res.data.signers.map((s: any) => s.id);
   } catch (e) {
     console.error("GQL Error:", e);
-    return []
+    return [];
   }
 }
 
@@ -129,5 +128,4 @@ function computeCurrentSignerList(
         removed: item.args.signers || ([] as any),
       }))
     );
-  }
-  
+}

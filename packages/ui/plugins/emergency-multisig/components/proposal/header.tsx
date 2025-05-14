@@ -35,7 +35,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
           </div>
           <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
-            <div className="flex gap-x-1 text-base leading-tight ">
+            <div className="flex gap-x-1 text-base leading-tight">
               <If condition={proposalStatus == ProposalStatus.EXECUTED}>
                 <Then>
                   <span className="text-neutral-500">The proposal was sent to the community stage</span>

@@ -78,7 +78,7 @@ export const FunctionParamsForm = ({
         </div>
       </If>
       {functionAbi?.inputs.map((paramAbi, i) => (
-        <div key={i} className=" my-3">
+        <div key={i} className="my-3">
           <InputParameter abi={paramAbi} idx={i} onChange={onParameterChange} />
         </div>
       ))}

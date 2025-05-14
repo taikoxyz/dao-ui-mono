@@ -59,7 +59,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
           </div>
           <If condition={proposalStatus !== ProposalStatus.EXECUTED && !expired}>
             <div className="flex items-center gap-x-2">
-              <div className="flex gap-x-1 text-base leading-tight ">
+              <div className="flex gap-x-1 text-base leading-tight">
                 <span className="text-neutral-800">
                   {getShortTimeDiffFrom(proposal.parameters.expirationDate * 1000n)}
                 </span>

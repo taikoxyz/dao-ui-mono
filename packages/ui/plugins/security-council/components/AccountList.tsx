@@ -28,7 +28,6 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
     );
   }
 
-
   return (
     <DataList.Root entityLabel={accounts.length === 1 ? "account" : "accounts"} itemsCount={accounts.length}>
       <DataList.Filter onSearchValueChange={setSearchValue} searchValue={searchValue} placeholder="Filter by address" />
@@ -36,7 +35,7 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
         {accounts
           .filter((acc: Address) => {
             const profile = SecurityCouncilProfiles.find((profile) => isAddressEqual(profile.address as Address, acc));
-            console.log('found profile', { acc, profile });
+
             return (
               !searchValue ||
               acc.toLowerCase().includes(searchValue.toLowerCase()) ||
