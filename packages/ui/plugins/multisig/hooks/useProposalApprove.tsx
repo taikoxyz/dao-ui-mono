@@ -17,6 +17,8 @@ export function useProposalApprove(proposalId: string) {
     proposal?.parameters.snapshotBlock
   );
 
+  console.log('fetched proposal', {proposalId, proposal})
+
   const { addAlert } = useAlerts() as AlertContextProps;
   const {
     writeContract: approveWrite,

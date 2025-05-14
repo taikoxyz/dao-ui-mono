@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useBlockNumber, usePublicClient, useReadContract } from "wagmi";
-import { getAbiItem } from "viem";
+import { Address, getAbiItem, zeroAddress } from "viem";
 import { EmergencyMultisigPluginAbi } from "@/plugins/emergency-multisig/artifacts/EmergencyMultisigPlugin";
 import { RawAction, ProposalMetadata } from "@/utils/types";
 import {
@@ -8,12 +8,12 @@ import {
   EmergencyProposal,
   EmergencyProposalResultType,
 } from "@/plugins/emergency-multisig/utils/types";
-import { PUB_CHAIN, PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
+import { PUB_CHAIN, PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS, PUB_SUBGRAPH_URL } from "@/constants";
 import { useDecryptedData } from "./useDecryptedData";
 import { useIpfsJsonData } from "@/hooks/useMetadata";
 import { getLogsUntilNow } from "@/utils/evm";
 import { useQuery } from "@tanstack/react-query";
-import { getGqlCreator } from "@/plugins/multisig/hooks/useProposal";
+import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 
 const ProposalCreatedEvent = getAbiItem({
   abi: EmergencyMultisigPluginAbi,
@@ -141,4 +141,36 @@ function arrangeProposalData(
     description: metadata?.description || "",
     resources: metadata?.resources || [],
   };
+}
+
+
+async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
+  const query = `
+  query GetCreator($proposalId: Bytes!) {
+  emergencyProposal(id: $proposalId) {
+    creator
+}
+}
+  `;
+  try {
+    const client = new ApolloClient({
+      uri: PUB_SUBGRAPH_URL,
+      cache: new InMemoryCache(),
+    });
+
+    const res: any = await client.query({
+      query: gql(query),
+      variables: {
+        proposalId: `0x${proposalId}`,
+      },
+    });
+
+    if (!res.data || !res.data.emergencyProposal || !res.data.emergencyProposal.creator) {
+      throw new Error("No emergencyProposal found");
+    }
+    return res.data.emergencyProposal;
+  } catch (e) {
+    console.error("GQL Error:", e);
+    return { creator: zeroAddress };
+  }
 }
