@@ -63,7 +63,7 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
               </button>
             </Then>
 
-            <ElseIf condition={isAddressEqual(appointedAgent, currentUserAddress)}>
+            <ElseIf condition={appointedAgent && currentUserAddress && isAddressEqual(appointedAgent, currentUserAddress)}>
               <Tag variant="info" label="You" />
             </ElseIf>
 
@@ -137,7 +137,7 @@ export const AccountListItemPending: React.FC<IAccountListItemProps> = (props) =
         <If condition={!!appointedAgent && appointedAgent !== ADDRESS_ZERO}>
           <p className="inline-block w-full text-sm text-neutral-400">
             Appointed:{" "}
-            {isAddressEqual(appointedAgent as Address, currentUserAddress as Address) ? (
+            {appointedAgent && currentUserAddress && isAddressEqual(appointedAgent as Address, currentUserAddress as Address) ? (
               "You"
             ) : (
               <AddressText>{appointedAgent}</AddressText>
