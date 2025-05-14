@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useBlockNumber, usePublicClient, useReadContract } from "wagmi";
-import { getAbiItem } from "viem";
+import { Address, getAbiItem, zeroAddress } from "viem";
 import { MultisigPluginAbi } from "@/plugins/multisig/artifacts/MultisigPlugin";
 import { RawAction, ProposalMetadata } from "@/utils/types";
 import {
@@ -8,10 +8,11 @@ import {
   MultisigProposalParameters,
   MultisigProposalResultType,
 } from "@/plugins/multisig/utils/types";
-import { PUB_CHAIN, PUB_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
+import { PUB_CHAIN, PUB_MULTISIG_PLUGIN_ADDRESS, PUB_SUBGRAPH_URL } from "@/constants";
 import { useMetadata } from "@/hooks/useMetadata";
 import { getLogsUntilNow } from "@/utils/evm";
 import { useQuery } from "@tanstack/react-query";
+import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 
 const ProposalCreatedEvent = getAbiItem({
   abi: MultisigPluginAbi,
@@ -51,7 +52,7 @@ export function useProposal(proposalId: string, autoRefresh = false) {
     isLoading: metadataLoading,
     error: metadataError,
   } = useMetadata<ProposalMetadata>(proposalData?.metadataUri);
-
+console.log({proposalResult, proposalCreationEvent, proposalData,metadataContent})
   const proposal = arrangeProposalData(proposalData, proposalCreationEvent, metadataContent);
 
   return {
@@ -71,36 +72,20 @@ export function useProposal(proposalId: string, autoRefresh = false) {
 // Helpers
 
 function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | undefined) {
-  const publicClient = usePublicClient();
-
   return useQuery({
     queryKey: [
       "multisig-proposal-creation-event",
       PUB_MULTISIG_PLUGIN_ADDRESS,
       proposalId.toString(),
       snapshotBlock?.toString() || "",
-      !!publicClient,
+    //  !!publicClient,
     ],
     queryFn: () => {
-      if (!snapshotBlock || !publicClient) throw new Error("Not ready");
-
-      return getLogsUntilNow(
-        PUB_MULTISIG_PLUGIN_ADDRESS,
-        ProposalCreatedEvent,
-        {
-          proposalId: BigInt(proposalId),
-        },
-        publicClient,
-        snapshotBlock
-      ).then((logs) => {
-        if (!logs || !logs.length) throw new Error("No creation logs");
-
-        return logs[0].args;
-      });
+      return getGqlCreator(proposalId.toString(16))
     },
     retry: true,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
     retryOnMount: true,
     staleTime: 1000 * 60 * 10,
   });
@@ -141,4 +126,39 @@ function arrangeProposalData(
     description: metadata?.description || "",
     resources: metadata?.resources || [],
   };
+}
+
+
+async function getGqlCreator(proposalId: string): Promise<{creator:Address}> {
+  const query = `
+  query GetCreator($proposalId: Bytes!) {
+  proposal(id: $proposalId) {
+    creator
+}
+}
+  `;
+  try {
+    const client = new ApolloClient({
+      uri: PUB_SUBGRAPH_URL,
+      cache: new InMemoryCache(),
+    });
+
+    const res: any = await client.query({
+      query: gql(query),
+      variables: {
+        proposalId: `0x${proposalId}`
+      }
+    });
+    console.log("GQL Result:", res.data);
+
+
+    if (!res.data || !res.data.proposal || !res.data.proposal.creator) {
+      throw new Error("No proposal found");
+    }
+    return res.data.proposal
+  } catch (e) {
+    console.error("GQL Error:", e);
+    return {creator: zeroAddress}
+
+  }
 }

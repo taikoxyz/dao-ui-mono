@@ -18,7 +18,6 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
   const tagVariant = getTagVariantFromStatus(proposalStatus);
   const breadcrumbs: IBreadcrumbsLink[] = [{ label: "Proposals", href: "#/" }, { label: proposalId }];
   const expired = Number(proposal.parameters.expirationDate) * 1000 <= Date.now();
-
   return (
     <div className="flex w-full justify-center bg-neutral-0">
       {/* Wrapper */}
