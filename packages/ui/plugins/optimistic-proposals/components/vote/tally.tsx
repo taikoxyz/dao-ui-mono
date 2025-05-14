@@ -22,11 +22,7 @@ const VetoTally: FC<VoteTallyProps> = ({ voteCount, votePercentage }) => (
 // This should be encapsulated as soon as ODS exports this widget
 const Card = function ({ children }: { children: ReactNode }) {
   return (
-    <div
-      className="box-border flex w-full flex-col space-y-6 rounded-xl
-    border border-neutral-100 bg-neutral-0
-    p-4 xl:p-6"
-    >
+    <div className="box-border flex w-full flex-col space-y-6 rounded-xl border border-neutral-100 bg-neutral-0 p-4 xl:p-6">
       {children}
     </div>
   );

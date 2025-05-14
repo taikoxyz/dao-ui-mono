@@ -13,6 +13,7 @@ import { useDecryptedData } from "./useDecryptedData";
 import { useIpfsJsonData } from "@/hooks/useMetadata";
 import { getLogsUntilNow } from "@/utils/evm";
 import { useQuery } from "@tanstack/react-query";
+import { getGqlCreator } from "@/plugins/multisig/hooks/useProposal";
 
 const ProposalCreatedEvent = getAbiItem({
   abi: EmergencyMultisigPluginAbi,
@@ -92,21 +93,7 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       !!publicClient,
     ],
     queryFn: () => {
-      if (!snapshotBlock || !publicClient) throw new Error("Not ready");
-
-      return getLogsUntilNow(
-        PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS,
-        ProposalCreatedEvent,
-        {
-          proposalId: BigInt(proposalId),
-        },
-        publicClient,
-        snapshotBlock
-      ).then((logs) => {
-        if (!logs || !logs.length) throw new Error("No creation logs");
-
-        return logs[0].args;
-      });
+      return getGqlCreator(proposalId.toString(16));
     },
     retry: true,
     refetchOnMount: false,

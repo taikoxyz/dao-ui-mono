@@ -187,7 +187,7 @@ function AccountStatus() {
   let variant: AlertVariant = "warning";
   let title = "";
   let description = "";
-  let actions: JSX.Element[] = [];
+  let actions: React.ReactNode[] = [];
   const { address, isConnected } = useAccount();
   const { publicKey: derivedPublicKey } = useDerivedWallet();
   const { status, owner, appointedAgent, publicKey } = useAccountEncryptionStatus();

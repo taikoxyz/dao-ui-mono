@@ -18,7 +18,6 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
   const tagVariant = getTagVariantFromStatus(proposalStatus);
   const breadcrumbs: IBreadcrumbsLink[] = [{ label: "Proposals", href: "#/" }, { label: proposalId }];
   const expired = Number(proposal.parameters.expirationDate) * 1000 <= Date.now();
-
   return (
     <div className="flex w-full justify-center bg-neutral-0">
       {/* Wrapper */}
@@ -48,7 +47,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
           </div>
           <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
-            <div className="flex gap-x-1 text-base leading-tight ">
+            <div className="flex gap-x-1 text-base leading-tight">
               <If condition={proposalStatus == ProposalStatus.EXECUTED}>
                 <Then>
                   <span className="text-neutral-500">The proposal was sent to the community stage</span>

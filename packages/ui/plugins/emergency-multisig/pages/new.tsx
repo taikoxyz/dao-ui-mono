@@ -240,7 +240,7 @@ export default function Create() {
 
           <div className="mt-6 flex w-full flex-col items-center text-center">
             <div>
-              <span className="text-md mb-2 block font-normal text-neutral-600 ">
+              <span className="text-md mb-2 block font-normal text-neutral-600">
                 The proposal details will remain private until executed
                 <br />
                 {signersWithPubKey || 0} signer(s) registered their public key

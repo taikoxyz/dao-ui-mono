@@ -1,7 +1,7 @@
 import { useIsContract } from "@/hooks/useIsContract";
 import { useSignerList } from "@/plugins/security-council/hooks/useSignerList";
 import { useEncryptionAccounts } from "./useEncryptionAccounts";
-import { Address, Hex } from "viem";
+import { Address, Hex, isAddressEqual } from "viem";
 import { ADDRESS_ZERO, BYTES32_ZERO } from "@/utils/evm";
 import { useAccount } from "wagmi";
 
@@ -40,12 +40,16 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
   const { data: signers, isLoading: isLoadingSigners, error: error2 } = useSignerList();
   const { isContract } = useIsContract(targetAddress);
 
-  const encryptionAccount = (encryptionAccounts || []).find(
-    (item) => item.owner === targetAddress || item.appointedAgent === targetAddress
-  );
+  const encryptionAccount = (encryptionAccounts || []).find((item) => {
+    return (
+      targetAddress &&
+      (isAddressEqual(item.owner, targetAddress as Address) ||
+        (item.appointedAgent && isAddressEqual(item.appointedAgent, targetAddress as Address)))
+    );
+  });
   const owner = encryptionAccount?.owner;
   const registeredPublicKey = encryptionAccount?.publicKey;
-  const isListed = signers?.includes(targetAddress!);
+  const isListed = signers?.some((s) => targetAddress && isAddressEqual(s, targetAddress as Address));
   const isAppointed = (encryptionAccounts || []).findIndex((acc) => acc.appointedAgent === targetAddress) >= 0;
 
   let appointedAgent: Address | undefined;
@@ -105,7 +109,6 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
       }
     } else {
       // Address is an EOA
-
       // Is there an appointed agent?
       if (!appointedAgent || appointedAgent === ADDRESS_ZERO) {
         // No appointed agent

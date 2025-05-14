@@ -227,7 +227,7 @@ export default function Create() {
 
           <div className="mt-6 flex w-full flex-col items-center">
             <div>
-              <span className="text-md mb-2 block font-normal text-neutral-600 ">
+              <span className="text-md mb-2 block font-normal text-neutral-600">
                 The proposal will be publicly visible
               </span>
             </div>
