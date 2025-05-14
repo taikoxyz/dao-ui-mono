@@ -79,7 +79,7 @@ function useProposalCreationEvent(proposalId: bigint | undefined) {
     ],
     queryFn: () => {
       if (!publicClient || typeof proposalId === "undefined") throw new Error("Not ready");
-
+      // aapply next fix
       return getLogsUntilNow(
         PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
         ProposalCreatedEvent,

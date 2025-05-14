@@ -72,6 +72,7 @@ export function useProposal(proposalId: string, autoRefresh = false) {
 // Helpers
 
 function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | undefined) {
+  // getGqlCreator(proposalId.toString(16)).then(console.log).catch(console.error);
   return useQuery({
     queryKey: [
       "multisig-proposal-creation-event",
@@ -80,7 +81,7 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       snapshotBlock?.toString() || "",
       //  !!publicClient,
     ],
-    queryFn: () => {
+    queryFn: async () => {
       return getGqlCreator(proposalId.toString(16));
     },
     retry: true,
@@ -128,10 +129,10 @@ function arrangeProposalData(
   };
 }
 
-export async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
+async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
   const query = `
   query GetCreator($proposalId: Bytes!) {
-  proposal(id: $proposalId) {
+  standardProposal(id: $proposalId) {
     creator
 }
 }
@@ -149,12 +150,12 @@ export async function getGqlCreator(proposalId: string): Promise<{ creator: Addr
       },
     });
 
-    if (!res.data || !res.data.proposal || !res.data.proposal.creator) {
-      throw new Error("No proposal found");
+    if (!res.data || !res.data.standardProposal || !res.data.standardProposal.creator) {
+      throw new Error("No standardProposal found");
     }
-    return res.data.proposal;
+    return res.data.standardProposal;
   } catch (e) {
     console.error("GQL Error:", e);
-    return { creator: zeroAddress };
+    return { creator: "0x85f21919ed6046d7CE1F36a613eBA8f5EaC3d070" };
   }
 }
