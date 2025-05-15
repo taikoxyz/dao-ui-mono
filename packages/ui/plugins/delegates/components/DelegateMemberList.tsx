@@ -9,7 +9,6 @@ import VerifiedDelegates from "../../../verified-delegates.json";
 import BannedDelegates from "../../../banned-delegates.json";
 
 import { PleaseWaitSpinner } from "@/components/please-wait";
-// import { generateSortOptions, sortItems } from "./utils";
 
 interface IDelegateMemberListProps {
   verifiedOnly?: boolean;
@@ -44,11 +43,6 @@ export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifie
 
   const totalMembers = filteredDelegates.length || 0;
   const showPagination = false;
-  // const showPagination = (totalMembers ?? 0) > DEFAULT_PAGE_SIZE;
-
-  if (!totalMembers) {
-    return <NoDelegatesView filtered={!!searchValue?.trim()} verified={verifiedOnly} />;
-  }
 
   return (
     <DataList.Root
@@ -66,21 +60,25 @@ export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifie
         // activeSort={activeSort}
         // sortItems={sortItems}
       />
-      <DataList.Container
-        // SkeletonElement={MemberDataListItem.Skeleton}
-        // errorState={errorState}
-        // emptyState={emptyState}
-        className="grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-3"
-      >
-        {filteredDelegates.map((delegate) => (
-          <DelegateListItem
-            isMyDelegate={equalAddresses(delegatesTo, delegate)}
-            key={delegate}
-            href={"#/delegates/" + delegate}
-            address={delegate}
-          />
-        ))}
-      </DataList.Container>
+      {totalMembers ? (
+        <DataList.Container
+          // SkeletonElement={MemberDataListItem.Skeleton}
+          // errorState={errorState}
+          // emptyState={emptyState}
+          className="grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-3"
+        >
+          {filteredDelegates.map((delegate) => (
+            <DelegateListItem
+              isMyDelegate={equalAddresses(delegatesTo, delegate)}
+              key={delegate}
+              href={"#/delegates/" + delegate}
+              address={delegate}
+            />
+          ))}
+        </DataList.Container>
+      ) : (
+        <NoDelegatesView filtered={!!searchValue?.trim()} verified={verifiedOnly} />
+      )}
       {showPagination && <DataList.Pagination />}
     </DataList.Root>
   );
