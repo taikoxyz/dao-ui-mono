@@ -53,3 +53,13 @@ export const PUB_FORUM_URL = "https://community.taiko.xyz/";
 export const PUB_WALLET_ICON = "https://avatars.githubusercontent.com/u/37784886";
 
 export const PUB_TWITTER_ACCOUNT = "taikoxyz";
+
+export const GlinConfig = {
+  allLanguages: true,
+  allowObfuscatedMatch: false,
+  fuzzyToleranceLevel: 0.7,
+  wordBoundaries: true,
+  severityLevels: true,
+  customWords: ["pidarasi", "PIDARASI"],
+  logProfanity: false,
+};

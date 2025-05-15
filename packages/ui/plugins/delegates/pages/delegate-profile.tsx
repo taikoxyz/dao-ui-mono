@@ -4,19 +4,35 @@ import { DelegationStatement } from "../components/DelegationStatement";
 import { HeaderMember } from "../components/HeaderMember";
 import { useDelegateAnnounce } from "../hooks/useDelegateAnnounce";
 import { formatHexString } from "@/utils/evm";
+import { GlinConfig } from "@/constants";
+import { useEffect } from "react";
+import { useProfanityChecker } from "glin-profanity";
 
 export const DelegateProfile = ({ address }: { address: Address }) => {
   const { announce, isLoading } = useDelegateAnnounce(address);
+  console.log({ announce });
+  const { result, checkText } = useProfanityChecker(GlinConfig);
 
+  console.log({ result });
+  useEffect(() => {
+    if (!announce) return;
+    checkText(`${announce.identifier}\n${announce.bio}\n${announce.message}`);
+  }, [announce]);
   return (
     <div className="flex flex-col items-center">
-      <HeaderMember address={address} name={announce?.identifier || formatHexString(address)} bio={announce?.bio} />
+      {(!result || !result.containsProfanity) && (
+        <HeaderMember address={address} name={announce?.identifier || formatHexString(address)} bio={announce?.bio} />
+      )}
       <div className="flex w-full max-w-screen-xl flex-col gap-x-12 gap-y-12 px-4 py-6 md:flex-row md:px-16 md:pb-20">
         {/* Main section */}
         <div className="flex flex-col gap-y-12 md:w-[63%] md:gap-y-20">
           {/* Delegation Statement */}
           <div className="flex w-full flex-col gap-y-6 overflow-auto">
-            <DelegationStatement message={announce?.message} />
+            {result && result.containsProfanity ? (
+              "PROFILE MODERATED DUE TO PROFANITY"
+            ) : (
+              <DelegationStatement message={announce?.message} />
+            )}
           </div>
         </div>
         {/* Aside */}
