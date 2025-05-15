@@ -22,14 +22,14 @@ export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifie
   const { delegates: fetchedDelegates, status: loadingStatus } = useDelegates();
   const { delegatesTo } = useTokenVotes(address);
   const delegates = (fetchedDelegates || [])
-  .filter((item) => {
-    if (!verifiedOnly) return true 
-    return BannedDelegates.findIndex((d) => equalAddresses(d.address, item)) < 0;  
-  })
-  .filter((item) => {
-    if (!verifiedOnly) return true;
-    return VerifiedDelegates.findIndex((d) => equalAddresses(d.address, item)) >= 0;
-  });
+    .filter((item) => {
+      if (!verifiedOnly) return true;
+      return BannedDelegates.findIndex((d) => equalAddresses(d.address, item)) < 0;
+    })
+    .filter((item) => {
+      if (!verifiedOnly) return true;
+      return VerifiedDelegates.findIndex((d) => equalAddresses(d.address, item)) >= 0;
+    });
 
   if (loadingStatus === "pending" && !delegates?.length) {
     return <PleaseWaitSpinner fullMessage="Please wait, loading candidates" />;
