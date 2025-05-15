@@ -30,7 +30,7 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
   const { announce } = useDelegateAnnounce(address);
 
   return (
-    <DataList.Item className="min-w-fit !py-0 px-4 md:px-6" {...otherProps}>
+    <DataList.Item className="w-full !py-0 px-4 md:px-6" {...otherProps}>
       <div className="flex flex-col items-start justify-center gap-y-3 py-4 md:min-w-44 md:py-6">
         <div className="flex w-full items-center justify-between">
           <MemberAvatar address={address} avatarSrc={avatarSrc} responsiveSize={{ md: "md" }} />
@@ -50,16 +50,19 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
           </If>
         </div>
 
-        <p className="inline-block w-full truncate text-lg text-neutral-800 md:text-xl">
+        <div className="w-full text-lg text-neutral-800 md:text-xl">
           <If condition={announce?.identifier}>
             <Then>
-              <span>{announce?.identifier}</span>
-              <br />
-              <span className="text-sm text-neutral-400">{formatHexString(address)}</span>
+              <div className="block w-full overflow-hidden truncate">{announce?.identifier}</div>
+              <span className="block text-sm text-neutral-400">{formatHexString(address)}</span>
             </Then>
-            <Else>{formatHexString(address)}</Else>
+            <Else>
+              <span className="block w-full overflow-hidden truncate text-ellipsis whitespace-nowrap">
+                {formatHexString(address)}
+              </span>
+            </Else>
           </If>
-        </p>
+        </div>
 
         <If condition={votingPower}>
           <div className="flex h-12 flex-col gap-y-2">
