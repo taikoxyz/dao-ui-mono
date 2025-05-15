@@ -6,7 +6,9 @@ import { Address, formatEther } from "viem";
 import { useTokenVotes } from "../../../hooks/useTokenVotes";
 import VerifiedDelegates from "../../../verified-delegates.json";
 import { useDelegateAnnounce } from "../hooks/useDelegateAnnounce";
-import BannedDelegates from "../../../banned-delegates.json";
+import { useProfanityChecker } from "glin-profanity";
+import { GlinConfig } from "@/constants";
+import { useEffect } from "react";
 
 export interface IDelegateListItemProps extends IDataListItemProps {
   /** Whether the member is a delegate of current user or not */
@@ -18,16 +20,19 @@ export interface IDelegateListItemProps extends IDataListItemProps {
 }
 
 export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
-  // ban delegates
-  if (BannedDelegates.find((d) => equalAddresses(d.address, props.address))) {
-    return null;
-  }
   const { isMyDelegate, avatarSrc, address, ...otherProps } = props;
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && address && equalAddresses(currentUserAddress, address);
   const { votingPower } = useTokenVotes(address);
   const isVerified = VerifiedDelegates.findIndex((d) => equalAddresses(d.address, address)) >= 0;
   const { announce } = useDelegateAnnounce(address);
+
+  const { result, checkText } = useProfanityChecker(GlinConfig);
+
+  useEffect(() => {
+    if (!announce) return;
+    checkText(`${announce.identifier}\n${announce.bio}\n${announce.message}`);
+  }, [announce]);
 
   return (
     <DataList.Item className="w-full !py-0 px-4 md:px-6" {...otherProps}>
@@ -51,17 +56,21 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
         </div>
 
         <div className="w-full text-lg text-neutral-800 md:text-xl">
-          <If condition={announce?.identifier}>
-            <Then>
-              <div className="block w-full overflow-hidden truncate">{announce?.identifier}</div>
-              <span className="block text-sm text-neutral-400">{formatHexString(address)}</span>
-            </Then>
-            <Else>
-              <span className="block w-full overflow-hidden truncate text-ellipsis whitespace-nowrap">
-                {formatHexString(address)}
-              </span>
-            </Else>
-          </If>
+          {result && result.containsProfanity ? (
+            <span className="text-red-500">[PROFILE MODERATED]</span>
+          ) : (
+            <If condition={announce?.identifier}>
+              <Then>
+                <div className="block w-full overflow-hidden truncate">{announce?.identifier}</div>
+                <span className="block text-sm text-neutral-400">{formatHexString(address)}</span>
+              </Then>
+              <Else>
+                <span className="block w-full overflow-hidden truncate text-ellipsis whitespace-nowrap">
+                  {formatHexString(address)}
+                </span>
+              </Else>
+            </If>
+          )}
         </div>
 
         <If condition={votingPower}>
