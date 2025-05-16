@@ -23,9 +23,9 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
   const { avatarSrc, owner, appointedAgent, publicKey, ...otherProps } = props;
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && owner && equalAddresses(currentUserAddress, owner);
-  const selfAppointed = !appointedAgent || equalAddresses(appointedAgent, ADDRESS_ZERO);
+  const selfAppointed = appointedAgent && equalAddresses(appointedAgent, ADDRESS_ZERO);
   const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
-
+  console.log("profile", { appointedAgent, profile });
   return (
     <DataList.Item href="#" target={undefined} className="min-w-fit !py-0 px-4 md:px-6" {...otherProps}>
       <div className="flex flex-col items-start justify-center gap-y-3 py-4 md:min-w-44 md:py-6">
@@ -62,13 +62,6 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
                 <Tag variant="info" label={`Self-appointed`} />
               </button>
             </Then>
-
-            <ElseIf
-              condition={appointedAgent && currentUserAddress && isAddressEqual(appointedAgent, currentUserAddress)}
-            >
-              <Tag variant="info" label="You" />
-            </ElseIf>
-
             <Else>
               <button
                 className="flex flex-col p-0"
