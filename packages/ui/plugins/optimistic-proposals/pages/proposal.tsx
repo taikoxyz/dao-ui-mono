@@ -21,7 +21,7 @@ import { useAccount } from "wagmi";
 import { useTokenVotes } from "@/hooks/useTokenVotes";
 import { ADDRESS_ZERO } from "@/utils/evm";
 import { AddressText } from "@/components/text/address";
-
+import EmergencyProposal from '../../emergency-multisig/pages/proposal'
 const ZERO = BigInt(0);
 
 export default function ProposalDetail({ index: proposalIdx }: { index: number }) {
