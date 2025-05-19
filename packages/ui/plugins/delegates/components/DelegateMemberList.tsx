@@ -7,12 +7,10 @@ import { useTokenVotes } from "../../../hooks/useTokenVotes";
 import { useAccount } from "wagmi";
 import VerifiedDelegates from "../../../verified-delegates.json";
 import { PleaseWaitSpinner } from "@/components/please-wait";
-import { useDelegateAnnounce } from "../hooks/useDelegateAnnounce";
-import { GlinConfig } from "@/constants";
-import { useProfanityChecker } from "glin-profanity";
 
 interface IDelegateMemberListProps {
   verifiedOnly?: boolean;
+  moderatedOnly?: boolean;
 }
 
 export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifiedOnly, moderatedOnly }) => {

@@ -143,7 +143,6 @@ export default function MembersList() {
             <Then>
               <Button onClick={() => open()}>Connect to create your profile</Button>
             </Then>
-            <ElseIf condition={toggleValue === "multisig"}>{/* nop */}</ElseIf>
             <ElseIf condition={announce}>
               <Button onClick={() => setShowProfileCreationDialog(true)}>Update my delegate profile</Button>
             </ElseIf>
