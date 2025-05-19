@@ -28,7 +28,15 @@ export function getShortTimeDiffFromDate(value?: Dayjs) {
   } else if (Math.abs(diffMins) < 60) {
     return `${Math.abs(diffMins)} ${Math.abs(diffMins) === 1 ? "minute" : "minutes"}`;
   } else if (Math.abs(diffHours) < 24) {
-    return `${Math.abs(diffHours)} ${Math.abs(diffHours) === 1 ? "hour" : "hours"}`;
+     // Calculate remaining minutes after hours
+     const remainingMins = Math.abs(diffMins) % 60;
+     const hourText = `${Math.abs(diffHours)} ${Math.abs(diffHours) === 1 ? "hour" : "hours"}`;
+     
+     if (remainingMins === 0) {
+       return hourText;
+     } else {
+       return `${hourText}, ${remainingMins} ${remainingMins === 1 ? "minute" : "minutes"}`;
+     }
   } else if (Math.abs(diffDays) >= 15) {
     return `${Math.abs(diffWeeks)} ${Math.abs(diffWeeks) === 1 ? "week" : "weeks"}`;
   } else {
