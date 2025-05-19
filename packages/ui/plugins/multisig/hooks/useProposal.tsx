@@ -82,7 +82,7 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       //  !!publicClient,
     ],
     queryFn: async () => {
-      return getGqlCreator(proposalId.toString(16));
+      return getGqlCreator(proposalId);
     },
     retry: true,
     refetchOnMount: true,
@@ -129,10 +129,10 @@ function arrangeProposalData(
   };
 }
 
-async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
+async function getGqlCreator(proposalId: bigint): Promise<{ creator: Address }> {
   const query = `
-  query GetCreator($proposalId: Bytes!) {
-  standardProposal(id: $proposalId) {
+   query GetCreator($proposalId: Bytes!) {
+  proposalMixins(where: { isStandard: true, proposalId: $proposalId }) {
     creator
 }
 }
@@ -146,16 +146,16 @@ async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> 
     const res: any = await client.query({
       query: gql(query),
       variables: {
-        proposalId: `0x${proposalId}`,
+        proposalId: proposalId.toString()
       },
     });
 
-    if (!res.data || !res.data.standardProposal || !res.data.standardProposal.creator) {
-      throw new Error("No standardProposal found");
+    if (!res.data || !res.data.proposalMixins || !res.data.proposalMixins.length) {
+      throw new Error("No proposalMixins found");
     }
-    return res.data.standardProposal;
+    return res.data.proposalMixins[0];
   } catch (e) {
     console.error("GQL Error:", e);
-    return { creator: "0x85f21919ed6046d7CE1F36a613eBA8f5EaC3d070" };
+    return { creator: zeroAddress };
   }
 }

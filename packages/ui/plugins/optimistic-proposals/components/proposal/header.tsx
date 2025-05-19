@@ -10,6 +10,8 @@ import { Publisher } from "@/components/publisher";
 import { Address, isAddressEqual } from "viem";
 import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import SecurityCouncilProfiles from "../../../../security-council-profiles.json";
+import { useProposalAuthor } from "../../hooks/useProposalAuthor";
+import { useProposalId } from "../../hooks/useProposalId";
 
 const DEFAULT_PROPOSAL_TITLE = "(No proposal title)";
 const DEFAULT_PROPOSAL_SUMMARY = "(No proposal summary)";
@@ -32,16 +34,19 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal }
   const tagVariant = getTagVariantFromStatus(proposalStatus);
 
   const breadcrumbs: IBreadcrumbsLink[] = [{ label: "Proposals", href: "#/" }, { label: proposalIdx.toString() }];
+  const { proposalId } = useProposalId(proposalIdx);
+
+  const {creator} = useProposalAuthor(proposalId)
+console.log("author", creator);
 
   const { data: encryptionAccounts } = useEncryptionAccountsEmergency();
-  const creator = proposal.creator as Address;
   const owner =
     encryptionAccounts?.find(
       ({ appointedAgent }) => appointedAgent && creator && isAddressEqual(appointedAgent, creator)
     )?.owner || undefined;
   const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
 
-  return (
+  return creator && (
     <div className="flex w-full justify-center bg-neutral-0">
       {/* Wrapper */}
       <HeaderSection>

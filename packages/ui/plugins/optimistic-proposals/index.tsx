@@ -12,6 +12,8 @@ export default function PluginPage() {
     const index = parseInt(hash.replace("#/proposals/", ""));
     if (isNaN(index)) return <NotFound />;
 
+    
+
     return <ProposalDetail index={index} />;
   }
 
