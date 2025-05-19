@@ -39,7 +39,7 @@ export const proposalStatusToVotingStatus: Record<ProposalStatus, ProposalVoting
 };
 
 export const proposalStatusToTagVariant: Record<ProposalStatus, TagVariant> = {
-    [ProposalStatus.ACCEPTED]: 'success',
+    [ProposalStatus.ACCEPTED]: 'warning',
     [ProposalStatus.ACTIVE]: 'info',
     [ProposalStatus.CHALLENGED]: 'warning',
     [ProposalStatus.DRAFT]: 'neutral',
@@ -50,5 +50,5 @@ export const proposalStatusToTagVariant: Record<ProposalStatus, TagVariant> = {
     [ProposalStatus.PENDING]: 'neutral',
     [ProposalStatus.EXECUTABLE]: 'info',
     [ProposalStatus.REJECTED]: 'critical',
-    [ProposalStatus.VETOED]: 'warning',
+    [ProposalStatus.VETOED]: 'critical',
 };
