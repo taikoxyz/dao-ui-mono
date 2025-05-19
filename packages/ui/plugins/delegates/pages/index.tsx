@@ -31,7 +31,7 @@ export default function MembersList() {
   const { settings: multisigSettings } = useMultisigSettings();
   const { governanceSettings: optimisticSettings } = useGovernanceSettings();
 
-  const [toggleValue, setToggleValue] = useState<"all" | "verified" | "multisig">("all");
+  const [toggleValue, setToggleValue] = useState<"all" | "verified" | "banned">("all");
   const onToggleChange = (value: string | undefined) => {
     if (value) setToggleValue(value as "all" | "verified");
   };
@@ -60,7 +60,7 @@ export default function MembersList() {
             >
               <Toggle value="all" label="Registered" className="rounded-lg" />
               <Toggle value="verified" label="Verified" className="rounded-lg" />
-              <Toggle value="banned" label="Moderated profiles" className="rounded-lg" />
+              <Toggle value="banned" label="Moderated" className="rounded-lg" />
             </ToggleGroup>
           </div>
           <DelegateMemberList verifiedOnly={toggleValue === "verified"} moderatedOnly={toggleValue === "banned"} />
