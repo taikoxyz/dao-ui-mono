@@ -54,7 +54,7 @@ export const ProposalDataListItemStatus: React.FC<IProposalDataListItemStatusPro
                     <span
                         className={classNames('text-sm leading-tight md:text-base', {
                             'text-info-800': status === ProposalStatus.ACTIVE,
-                            'text-warning-800':
+                            'text-error-800':
                                 status === ProposalStatus.CHALLENGED || status === ProposalStatus.VETOED,
                             'text-neutral-800': isOngoing === false,
                         })}
