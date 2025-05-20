@@ -31,7 +31,7 @@ export default function MembersList() {
   const { settings: multisigSettings } = useMultisigSettings();
   const { governanceSettings: optimisticSettings } = useGovernanceSettings();
 
-  const [toggleValue, setToggleValue] = useState<"all" | "verified" | "multisig">("all");
+  const [toggleValue, setToggleValue] = useState<"all" | "verified" | "banned">("all");
   const onToggleChange = (value: string | undefined) => {
     if (value) setToggleValue(value as "all" | "verified");
   };
@@ -51,8 +51,19 @@ export default function MembersList() {
                 <Heading size="h1">Security council</Heading>
               </Else>
             </If>
+
+            <ToggleGroup
+              isMultiSelect={false}
+              onChange={onToggleChange}
+              value={toggleValue}
+              className="flex justify-end"
+            >
+              <Toggle value="all" label="Registered" className="rounded-lg" />
+              <Toggle value="verified" label="Verified" className="rounded-lg" />
+              <Toggle value="banned" label="Moderated" className="rounded-lg" />
+            </ToggleGroup>
           </div>
-          <DelegateMemberList verifiedOnly={toggleValue === "verified"} />
+          <DelegateMemberList verifiedOnly={toggleValue === "verified"} moderatedOnly={toggleValue === "banned"} />
         </div>
         <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
           <div className="flex flex-col gap-y-3">
@@ -132,7 +143,6 @@ export default function MembersList() {
             <Then>
               <Button onClick={() => open()}>Connect to create your profile</Button>
             </Then>
-            <ElseIf condition={toggleValue === "multisig"}>{/* nop */}</ElseIf>
             <ElseIf condition={announce}>
               <Button onClick={() => setShowProfileCreationDialog(true)}>Update my delegate profile</Button>
             </ElseIf>

@@ -17,10 +17,11 @@ export interface IDelegateListItemProps extends IDataListItemProps {
   address: Address;
   /** Direct URL src of the user avatar image to be rendered */
   avatarSrc?: string;
+  moderatedOnly?: boolean;
 }
 
 export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
-  const { isMyDelegate, avatarSrc, address, ...otherProps } = props;
+  const { isMyDelegate, avatarSrc, address, moderatedOnly, ...otherProps } = props;
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && address && equalAddresses(currentUserAddress, address);
   const { votingPower } = useTokenVotes(address);
@@ -33,6 +34,14 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
     if (!announce) return;
     checkText(`${announce.identifier}\n${announce.bio}\n${announce.message}`);
   }, [announce]);
+
+  if (moderatedOnly && result && !result.containsProfanity) {
+    return null;
+  }
+
+  if (!moderatedOnly && result && result.containsProfanity) {
+    return null;
+  }
 
   return (
     <DataList.Item className="w-full !py-0 px-4 md:px-6" {...otherProps}>

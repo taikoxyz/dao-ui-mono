@@ -10,9 +10,10 @@ import { PleaseWaitSpinner } from "@/components/please-wait";
 
 interface IDelegateMemberListProps {
   verifiedOnly?: boolean;
+  moderatedOnly?: boolean;
 }
 
-export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifiedOnly }) => {
+export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifiedOnly, moderatedOnly }) => {
   const { address } = useAccount();
   const [searchValue, setSearchValue] = useState<string>();
   //   const [activeSort, setActiveSort] = useState<string>();
@@ -62,6 +63,7 @@ export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifie
         >
           {filteredDelegates.map((delegate) => (
             <DelegateListItem
+              moderatedOnly={moderatedOnly}
               isMyDelegate={equalAddresses(delegatesTo, delegate)}
               key={delegate}
               href={"#/delegates/" + delegate}
