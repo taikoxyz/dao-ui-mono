@@ -111,7 +111,7 @@ function AsideSection({ toggleValue, onEditAvatarClick }: {
   const { settings: multisigSettings } = useMultisigSettings();
   const { address, isConnected } = useAccount();
   const { canCreate } = useCanCreateProposal();
-  const isSigner = multisigMembers?.some((a) => a.address?.toLowerCase() === address?.toLowerCase());
+  const isSigner = multisigMembers?.some((member) => member?.toLowerCase() === address?.toLowerCase());
 
   return (
     <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
