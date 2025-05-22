@@ -13,4 +13,5 @@ export interface IAnnouncementMetadata {
   bio: string;
   message: string;
   resources?: IResource[];
+  avatar?: string;
 }

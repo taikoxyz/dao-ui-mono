@@ -89,8 +89,8 @@ export const AccountListItemPending: React.FC<IAccountListItemProps> = (props) =
   const { status } = useAccountEncryptionStatus(owner);
   const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
 
-  const { announce } = useDelegateAnnounce(profile.address);
-  const avatarSrc = resolveIpfsImage(announce?.avatar);
+  const { announce } = useDelegateAnnounce(profile?.address as `0x${string}` | undefined);
+  const avatarSrc = resolveIpfsImage(announce?.avatar ?? "");
 
   let comment = "";
   switch (status) {
