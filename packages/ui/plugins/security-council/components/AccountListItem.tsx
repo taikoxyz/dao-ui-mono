@@ -1,5 +1,6 @@
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { formatHexString, equalAddresses, ADDRESS_ZERO } from "@/utils/evm";
+import { resolveIpfsImage } from "@/utils/ipfs";
 import { type IDataListItemProps, DataList, Link, MemberAvatar, Tag } from "@aragon/ods";
 import { useAccount } from "wagmi";
 import { Address, Hex, isAddressEqual } from "viem";
@@ -7,6 +8,7 @@ import { AccountEncryptionStatus, useAccountEncryptionStatus } from "../hooks/us
 import { AddressText } from "@/components/text/address";
 import SecurityCouncilProfiles from "../../../security-council-profiles.json";
 import { PUB_CHAIN } from "@/constants";
+import { useDelegateAnnounce } from "../../delegates/hooks/useDelegateAnnounce";
 
 export interface IAccountListItemProps extends IDataListItemProps {
   /** 0x address of the account owner */
@@ -81,11 +83,14 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
 };
 
 export const AccountListItemPending: React.FC<IAccountListItemProps> = (props) => {
-  const { avatarSrc, owner, appointedAgent, publicKey, ...otherProps } = props;
+  const { owner, appointedAgent, publicKey, ...otherProps } = props;
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && owner && equalAddresses(currentUserAddress, owner);
   const { status } = useAccountEncryptionStatus(owner);
   const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
+
+  const { announce } = useDelegateAnnounce(profile.address);
+  const avatarSrc = resolveIpfsImage(announce?.avatar);
 
   let comment = "";
   switch (status) {

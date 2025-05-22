@@ -36,6 +36,7 @@ import RegularProposalDetail from "../../multisig/pages/proposal";
 import { useUrl } from "@/hooks/useUrl";
 import { useCanCreateProposal } from "@/plugins/emergency-multisig/hooks/useCanCreateProposal";
 import { useMultisigSettings } from "@/plugins/multisig/hooks/useMultisigSettings";
+import { EditAvatarDialog } from "../components/EditAvatarDialog";
 
 export default function EncryptionPage() {
   const [toggleValue, setToggleValue] = useState<"members" | "community-proposals" | "emergency-proposals">("members");
@@ -43,6 +44,13 @@ export default function EncryptionPage() {
     if (value) setToggleValue(value as "members" | "community-proposals" | "emergency-proposals");
   };
   const { hash } = useUrl();
+
+  const [accountListKey, setAccountListKey] = useState(0);
+  const [isEditAvatarOpen, setEditAvatarOpen] = useState(false);
+  const handleAvatarSave = () => {
+    setAccountListKey((prev) => prev + 1); // force remount
+  };
+
   return (
     <MainSection>
       <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
@@ -64,7 +72,7 @@ export default function EncryptionPage() {
 
           <If condition={toggleValue === "members"}>
             <Then>
-              <AccountList />
+              <AccountList key={accountListKey} />
             </Then>
             <ElseIf condition={toggleValue === "emergency-proposals"}>
               <Then>
@@ -81,18 +89,29 @@ export default function EncryptionPage() {
             </Else>
           </If>
         </div>
-        <AsideSection toggleValue={toggleValue} />
+
+        <AsideSection toggleValue={toggleValue} onEditAvatarClick={() => setEditAvatarOpen(true)} />
+
+        <EditAvatarDialog
+          open={isEditAvatarOpen}
+          onClose={() => setEditAvatarOpen(false)}
+          onSave={handleAvatarSave}
+        />
       </div>
     </MainSection>
   );
 }
 
-function AsideSection({ toggleValue }: { toggleValue: string }) {
+function AsideSection({ toggleValue, onEditAvatarClick }: { 
+  toggleValue: string;
+  onEditAvatarClick: () => void;
+ }) {
   const { data: multisigMembers, isLoading: isLoadingMultisigMembers } = useSignerList();
   const { settings: emergencyMultisigSettings } = useEmergencyMultisigSettings();
   const { settings: multisigSettings } = useMultisigSettings();
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const { canCreate } = useCanCreateProposal();
+  const isSigner = multisigMembers?.some((a) => a.address?.toLowerCase() === address?.toLowerCase());
 
   return (
     <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
@@ -179,6 +198,12 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
           </a>
         </dd>
       </div>
+
+      {isSigner && (
+        <div className="mt-2">
+          <Button onClick={onEditAvatarClick}>Edit Avatar</Button>
+        </div>
+      )}
     </aside>
   );
 }
