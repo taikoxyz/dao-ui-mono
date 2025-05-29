@@ -42,6 +42,35 @@ export async function uploadToPinata(strBody: string) {
   return "ipfs://" + resData.IpfsHash;
 }
 
+export async function uploadFileToPinata(file: File) {
+  const data = new FormData();
+  data.append("file", file);
+  data.append("pinataMetadata", JSON.stringify({ name: file.name }));
+  data.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
+
+  const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${PUB_PINATA_JWT}`,
+    },
+    body: data,
+  });
+
+  const resData = await res.json();
+
+  if (resData.error) throw new Error("Request failed: " + resData.error);
+  else if (!resData.IpfsHash) throw new Error("Could not pin the file");
+  return "ipfs://" + resData.IpfsHash;
+}
+
+export function resolveIpfsImage(uri?: string): string | undefined {
+  if (!uri) return undefined;
+  if (uri.startsWith("ipfs://")) {
+    return uri.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/");
+  }
+  return uri;
+}
+
 export async function getContentCid(strMetadata: string) {
   const bytes = raw.encode(toBytes(strMetadata));
   const hash = await sha256.digest(bytes);
