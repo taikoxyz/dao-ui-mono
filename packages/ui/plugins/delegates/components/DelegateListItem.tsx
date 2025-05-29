@@ -86,7 +86,7 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
           <div className="flex h-12 flex-col gap-y-2">
             <p className="text-sm md:text-base">
               <span className="text-neutral-500">Voting Power: </span>
-              {formatEther(votingPower || BigInt(0))}
+              {formatEther(votingPower || 0n).split(".")[0]}
             </p>
           </div>
         </If>
