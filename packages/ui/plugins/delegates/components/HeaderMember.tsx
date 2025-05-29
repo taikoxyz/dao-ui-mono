@@ -57,7 +57,7 @@ export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
                 {/* Voting power */}
                 <div className="flex flex-col gap-y-1 leading-tight">
                   <div className="flex items-baseline gap-x-1">
-                    <span className="text-2xl text-neutral-800">{formatEther(votingPower || BigInt(0))}</span>
+                    <span className="text-2xl text-neutral-800">{formatEther(votingPower || 0n).split(".")[0]}</span>
                     <span className="text-base text-neutral-500">{PUB_TOKEN_SYMBOL}</span>
                   </div>
                   <span className="text-sm text-neutral-500">Voting power</span>
