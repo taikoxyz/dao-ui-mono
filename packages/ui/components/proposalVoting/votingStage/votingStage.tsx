@@ -12,6 +12,8 @@ import type { IVote, IVotingStageDetails, ProposalStages } from "@/utils/types";
 import { VotesDataList } from "../votesDataList/votesDataList";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 import { useProposalId } from "@/plugins/optimistic-proposals/hooks/useProposalId";
+import { useProposalVeto } from "@/plugins/optimistic-proposals/hooks/useProposalVeto";
+import { usePastSupply } from "@/plugins/optimistic-proposals/hooks/usePastSupply";
 
 export interface IVotingStageProps<TType extends ProposalType = ProposalType> {
   title: string;
@@ -28,7 +30,9 @@ export interface IVotingStageProps<TType extends ProposalType = ProposalType> {
 
 export const VotingStage: React.FC<IVotingStageProps> = (props) => {
   const { details, disabled, title, number, result, proposalId = "", status, variant, votes } = props;
+  const { proposal } = useProposalVeto(Number(proposalId));
 
+  const pastSupply = usePastSupply(proposal);
   const [node, setNode] = useState<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -120,7 +124,7 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
           </Tabs.List>
           <Tabs.Content value="breakdown">
             <div className="py-4 pb-8">
-              {result && <VotingBreakdown cta={result.cta} variant={variant} result={result} />}
+              {result && <VotingBreakdown pastSupply={pastSupply} cta={result.cta} variant={variant} result={result} />}
             </div>
           </Tabs.Content>
           <Tabs.Content value="votes">

@@ -72,36 +72,36 @@ export default function ProposalCard(props: ProposalInputs) {
     // Example: 15% of the token supply (adjusted for decimal precision, 10^6)
     const defeatThreshold = (pastSupply * BigInt(proposal.parameters.minVetoRatio)) / BigInt(1000000);
     vetoPercentage = Number((10000n * proposal.vetoTally) / defeatThreshold) / 100;
-
   }
 
-  const pastSupplyDisplay = formatEther(pastSupply / BigInt(1000000))
+  const pastSupplyDisplay = formatEther(pastSupply / BigInt(1000000));
   return (
     <div className="relative">
-    <ProposalDataListItem.Structure
-      className="!p-6"
-      title={proposal.title}
-      summary={proposal.summary}
-      href={`${prefix}#/proposals/${props.proposalIndex}`}
-      voted={hasVetoed}
-      date={
-        [ProposalStatus.ACTIVE, ProposalStatus.ACCEPTED].includes(proposalStatus!) && proposal.parameters.vetoEndDate
-          ? Number(proposal.parameters.vetoEndDate) * 1000
-          : undefined
-      }
-      result={{
-        option: "Veto",
-        voteAmount: formatEther(proposal.vetoTally) + " / " + pastSupplyDisplay + " " + (tokenSymbol || "TAIKO"),
-        votePercentage: vetoPercentage,
-      }}
-      publisher={{ address: proposal.creator }}
-      status={proposalStatus!}
-      type={"majorityVoting"}
-    />
-     <div className="absolute left-[125px] top-6 text-sm">
+      <ProposalDataListItem.Structure
+        className="!p-6"
+        title={proposal.title}
+        summary={proposal.summary}
+        href={`${prefix}#/proposals/${props.proposalIndex}`}
+        voted={hasVetoed}
+        date={
+          [ProposalStatus.ACTIVE, ProposalStatus.ACCEPTED].includes(proposalStatus!) && proposal.parameters.vetoEndDate
+            ? Number(proposal.parameters.vetoEndDate) * 1000
+            : undefined
+        }
+        result={{
+          option: "Veto",
+          voteAmount: formatEther(proposal.vetoTally) + " / " + pastSupplyDisplay + " " + (tokenSymbol || "TAIKO"),
+          votePercentage: vetoPercentage,
+        }}
+        publisher={{ address: proposal.creator }}
+        status={proposalStatus!}
+        type={"majorityVoting"}
+      />
+      <div className="absolute left-[125px] top-6 text-sm">
         {isEmergency && "Emergency Proposal"}
         {isStandard && "Standard Proposal"}
-      </div></div>
+      </div>
+    </div>
   );
 }
 
