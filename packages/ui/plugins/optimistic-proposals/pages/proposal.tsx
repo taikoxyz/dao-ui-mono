@@ -21,6 +21,7 @@ import { useAccount } from "wagmi";
 import { useTokenVotes } from "@/hooks/useTokenVotes";
 import { ADDRESS_ZERO } from "@/utils/evm";
 import { AddressText } from "@/components/text/address";
+import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 
 const ZERO = BigInt(0);
 
@@ -74,6 +75,13 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
       onClick: vetoProposal,
     };
   }
+
+  const { data: gqlProposal } = useGqlProposalSingle({
+    proposalId: proposalIdx.toString(),
+    isStandard: false,
+    isOptimistic: true,
+    isEmergency: false,
+  });
 
   const proposalStage: ITransformedStage[] = [
     {

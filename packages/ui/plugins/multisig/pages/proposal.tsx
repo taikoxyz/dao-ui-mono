@@ -29,9 +29,9 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
 
   const { data: gqlProposal } = useGqlProposalSingle({
     proposalId: proposalId,
-    isStandard: false,
+    isStandard: true,
     isOptimistic: false,
-    isEmergency: true,
+    isEmergency: false,
   });
 
   // TODO: This is not revelant anymore

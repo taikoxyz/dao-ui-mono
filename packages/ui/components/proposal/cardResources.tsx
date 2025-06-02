@@ -25,13 +25,10 @@ export const CardResources: React.FC<ICardResourcesProps> = (props) => {
 };
 
 const CreationCard: React.FC<ICardResourcesProps> = (props) => {
+  if (!props.gqlProposal || !props.gqlProposal.creationTxHash) {
+    return null;
+  }
   const { gqlProposal } = props;
-  const resource = {
-    url: "url",
-    name: "name",
-  };
-
-  const creator = gqlProposal?.creator;
   const creationTx = gqlProposal?.creationTxHash;
 
   return (
@@ -44,7 +41,7 @@ const CreationCard: React.FC<ICardResourcesProps> = (props) => {
           variant="primary"
           iconRight={IconType.LINK_EXTERNAL}
         >
-          Etherscan
+          View on Etherscan
         </Link>
       </div>
     </Card>

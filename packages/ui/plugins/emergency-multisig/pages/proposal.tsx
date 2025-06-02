@@ -41,8 +41,6 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     isEmergency: true,
   });
 
-  console.log("aaa", { gqlProposal });
-
   const proposalStage: ITransformedStage[] = [
     {
       id: "1",
