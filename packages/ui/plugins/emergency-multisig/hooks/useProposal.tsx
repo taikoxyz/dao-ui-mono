@@ -15,6 +15,7 @@ import { getLogsUntilNow } from "@/utils/evm";
 import { useQuery } from "@tanstack/react-query";
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 import { GQL_GET_PROPOSAL_MULTIPLE } from "@/utils/gql/queries.gql";
+import { getGqlProposalSingle } from "@/utils/gql/getGqProposal";
 
 const ProposalCreatedEvent = getAbiItem({
   abi: EmergencyMultisigPluginAbi,
@@ -93,7 +94,17 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       !!publicClient,
     ],
     queryFn: () => {
-      //return getGqlCreator(proposalId.toString(16));
+      getGqlProposalSingle(
+        proposalId.toString(),
+        false, // isStandard
+        true, // isEmergency
+        false // isOptimistic
+      ).then((proposal) => {
+        if (!proposal || !proposal.creator) {
+          return { creator: zeroAddress };
+        }
+        return { creator: proposal.creator as Address };
+      });
     },
     retry: true,
     refetchOnMount: false,
@@ -135,7 +146,7 @@ function arrangeProposalData(
     },
     approvals: proposalData.approvals,
     allowFailureMap: BigInt(0),
-    creator: creationEvent?.creator || "",
+    creator: "",
     title: metadata?.title || "",
     summary: metadata?.summary || "",
     description: metadata?.description || "",

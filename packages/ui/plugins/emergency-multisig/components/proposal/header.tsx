@@ -8,6 +8,7 @@ import { HeaderSection } from "@/components/layout/header-section";
 import SecurityCouncilProfiles from "../../../../security-council-profiles.json";
 import { useEncryptionAccounts } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import { Address, isAddressEqual } from "viem";
+import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 
 interface ProposalHeaderProps {
   proposalId: string;
@@ -18,13 +19,22 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
   const proposalStatus = useProposalStatus(proposal);
   const expired = Number(proposal.parameters.expirationDate) * 1000 <= Date.now();
   const { data: encryptionAccounts } = useEncryptionAccounts();
-  const creator = proposal.creator as Address;
+
+  const { data: gqlProposal } = useGqlProposalSingle({
+    proposalId: proposalId,
+    isStandard: false,
+    isOptimistic: false,
+    isEmergency: true,
+  });
+
+  const creator = gqlProposal?.creator as Address;
   const owner =
     encryptionAccounts?.find(
       ({ appointedAgent }) => creator && appointedAgent && isAddressEqual(appointedAgent, creator)
     )?.owner || undefined;
   const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
 
+  console.log("header", { owner, gqlProposal });
   return (
     <div className="flex w-full justify-center bg-neutral-0">
       {/* Wrapper */}
@@ -41,7 +51,10 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
         <div className="flex flex-wrap gap-x-10 gap-y-2">
           <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
-            <Publisher publisher={[{ address: proposal.creator, name: profile?.name || "" }]} />
+            <Publisher
+              gqlProposal={gqlProposal}
+              publisher={[{ address: proposal.creator, name: profile?.name || "" }]}
+            />
           </div>
           <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
