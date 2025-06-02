@@ -5,12 +5,13 @@ import {
   PUB_APP_DESCRIPTION,
   PUB_APP_NAME,
   PUB_CHAIN,
+  PUB_CHAIN_NAME,
   PUB_PROJECT_URL,
   PUB_WALLET_CONNECT_PROJECT_ID,
   PUB_WALLET_ICON,
   PUB_WEB3_ENDPOINT,
 } from "@/constants";
-import { mainnet } from "viem/chains";
+import { holesky, mainnet } from "viem/chains";
 
 // wagmi config
 const metadata = {
@@ -20,12 +21,13 @@ const metadata = {
   icons: [PUB_WALLET_ICON],
 };
 
+
 export const config = createConfig({
-  chains: [mainnet],
+  chains: [PUB_CHAIN_NAME === 'mainnet' ? mainnet : holesky],
   ssr: true,
   transports: {
-    [mainnet.id]: http(PUB_WEB3_ENDPOINT, { batch: true }),
-  },
+    [PUB_CHAIN_NAME === 'mainnet' ? mainnet.id: holesky.id]: http(PUB_WEB3_ENDPOINT, { batch: true }),
+  } as any,
   connectors: [
     walletConnect({
       projectId: PUB_WALLET_CONNECT_PROJECT_ID,
