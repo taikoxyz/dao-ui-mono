@@ -64,8 +64,10 @@ export default function ProposalCard(props: ProposalInputs) {
     // Example: 15% of the token supply (adjusted for decimal precision, 10^6)
     const defeatThreshold = (pastSupply * BigInt(proposal.parameters.minVetoRatio)) / BigInt(1000000);
     vetoPercentage = Number((10000n * proposal.vetoTally) / defeatThreshold) / 100;
+
   }
 
+  const pastSupplyDisplay = formatEther(pastSupply / BigInt(1000000))
   return (
     <ProposalDataListItem.Structure
       className="!p-6"
@@ -80,7 +82,7 @@ export default function ProposalCard(props: ProposalInputs) {
       }
       result={{
         option: "Veto",
-        voteAmount: formatEther(proposal.vetoTally) + " " + (tokenSymbol || "TAIKO"),
+        voteAmount: formatEther(proposal.vetoTally) + " / " + pastSupplyDisplay + " " + (tokenSymbol || "TAIKO"),
         votePercentage: vetoPercentage,
       }}
       publisher={{ address: proposal.creator }}
