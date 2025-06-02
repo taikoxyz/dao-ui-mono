@@ -7,7 +7,7 @@ export async function getGqlProposalMultiple(
   isStandard: boolean = false,
   isEmergency: boolean = false,
   isOptimistic: boolean = false
-) {
+): Promise<IGqlProposalMixin[] | undefined> {
   try {
     const client = new ApolloClient({
       uri: PUB_SUBGRAPH_URL,
@@ -23,15 +23,12 @@ export async function getGqlProposalMultiple(
       },
     });
 
-    console.log("GQL multiple Response:", res);
-
-    if (!res.data || !res.data.emergencyProposal || !res.data.emergencyProposal.creator) {
-      throw new Error("No emergencyProposal found");
+    if (!res.data || !res.data.proposalMixins || !res.data.proposalMixins.length) {
+      throw new Error("No proposalMixins found");
     }
-    return res.data.emergencyProposal;
+    return res.data.proposalMixins as IGqlProposalMixin[];
   } catch (e) {
     console.error("GQL Error:", GQL_GET_PROPOSAL_MULTIPLE, e);
-    return { creator: zeroAddress };
   }
 }
 
@@ -56,8 +53,6 @@ export async function getGqlProposalSingle(
         isOptimistic: isOptimistic,
       },
     });
-
-    console.log("GQL single Response:", res);
 
     if (!res.data || !res.data.proposalMixins || !res.data.proposalMixins.length) {
       throw new Error("No proposalMixins found");

@@ -28,8 +28,6 @@ export default function ProposalCard(props: ProposalInputs) {
     isEmergency: true,
   });
 
-  console.log({ gqlProposal });
-
   if (!proposal && showLoading) {
     return (
       <section className="w-full">
