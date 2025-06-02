@@ -4,12 +4,14 @@ import { AccordionItem, AccordionItemContent, AccordionItemHeader, Heading, Tabs
 import { Tabs as RadixTabsRoot } from "@radix-ui/react-tabs";
 import dayjs from "dayjs";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { VotingBreakdown, type IBreakdownMajorityVotingResult, type ProposalType } from "../votingBreakdown";
+import { VotingBreakdown, type IBreakdownMajorityVotingResult, ProposalType } from "../votingBreakdown";
 import { type IBreakdownApprovalThresholdResult } from "../votingBreakdown/approvalThresholdResult";
 import { VotingDetails } from "../votingDetails";
 import { VotingStageStatus } from "./votingStageStatus";
 import type { IVote, IVotingStageDetails, ProposalStages } from "@/utils/types";
 import { VotesDataList } from "../votesDataList/votesDataList";
+import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
+import { useProposalId } from "@/plugins/optimistic-proposals/hooks/useProposalId";
 
 export interface IVotingStageProps<TType extends ProposalType = ProposalType> {
   title: string;
@@ -36,6 +38,15 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
       setNode(node);
     }
   }, []);
+
+  const { proposalId: proposalChainId } = useProposalId(Number(proposalId));
+
+  const { data: gqlProposal } = useGqlProposalSingle({
+    proposalId: (proposalChainId || 0).toString(),
+    isStandard: false,
+    isOptimistic: true,
+    isEmergency: false,
+  });
 
   const resize = useCallback(() => {
     if (node) {
@@ -75,6 +86,13 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
     : "";
   const endDate = details?.endDate ? dayjs(details?.endDate) : undefined;
 
+  const vetoes = gqlProposal?.vetoes.map(
+    (veto) =>
+      ({
+        address: veto.address,
+        variant: "no",
+      }) as IVote
+  );
   return (
     <AccordionItem
       key={stageKey}
@@ -107,7 +125,7 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
           </Tabs.Content>
           <Tabs.Content value="votes">
             <div className="py-4 pb-8">
-              <VotesDataList votes={votes || []} />
+              <VotesDataList votes={vetoes || []} />
             </div>
           </Tabs.Content>
           <Tabs.Content value="details">

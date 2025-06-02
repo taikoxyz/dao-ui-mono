@@ -4,9 +4,13 @@ import { Card, ProposalStatus, ProposalDataListItem } from "@aragon/ods";
 import { PleaseWaitSpinner } from "@/components/please-wait";
 import { useProposalStatus } from "../../hooks/useProposalVariantStatus";
 import { useAccount } from "wagmi";
-import { formatEther } from "viem";
+import { formatEther, isAddressEqual, zeroAddress } from "viem";
 import { usePastSupply } from "../../hooks/usePastSupply";
 import { useToken } from "../../hooks/useToken";
+import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
+import { useProposalId } from "../../hooks/useProposalId";
+import { IGqlProposalMixin } from "@/utils/gql/getGqProposal";
+import { PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS, PUB_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
 
 const DEFAULT_PROPOSAL_METADATA_TITLE = "(No proposal title)";
 const DEFAULT_PROPOSAL_METADATA_SUMMARY = "(The metadata of the proposal is not available)";
@@ -14,6 +18,7 @@ const DEFAULT_PROPOSAL_METADATA_SUMMARY = "(The metadata of the proposal is not 
 type ProposalInputs = {
   proposalIndex: number;
   linkPrefix?: string;
+  gqlProposal?: IGqlProposalMixin | undefined;
 };
 
 export default function ProposalCard(props: ProposalInputs) {
@@ -26,6 +31,9 @@ export default function ProposalCard(props: ProposalInputs) {
   const showLoading = getShowProposalLoading(proposal, proposalFetchStatus);
   const hasVetoed = vetoes?.some((veto) => veto.voter === address);
   const prefix = props.linkPrefix ? props.linkPrefix + "/" : "";
+
+  const isEmergency = isAddressEqual(props.gqlProposal?.creator || zeroAddress, PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS);
+  const isStandard = isAddressEqual(props.gqlProposal?.creator || zeroAddress, PUB_MULTISIG_PLUGIN_ADDRESS);
 
   if (!proposal && showLoading) {
     return (
@@ -69,6 +77,7 @@ export default function ProposalCard(props: ProposalInputs) {
 
   const pastSupplyDisplay = formatEther(pastSupply / BigInt(1000000))
   return (
+    <div className="relative">
     <ProposalDataListItem.Structure
       className="!p-6"
       title={proposal.title}
@@ -89,6 +98,10 @@ export default function ProposalCard(props: ProposalInputs) {
       status={proposalStatus!}
       type={"majorityVoting"}
     />
+     <div className="absolute left-[125px] top-6 text-sm">
+        {isEmergency && "Emergency Proposal"}
+        {isStandard && "Standard Proposal"}
+      </div></div>
   );
 }
 

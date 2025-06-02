@@ -34,7 +34,6 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
     )?.owner || undefined;
   const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
 
-  console.log("header", { owner, gqlProposal });
   return (
     <div className="flex w-full justify-center bg-neutral-0">
       {/* Wrapper */}
