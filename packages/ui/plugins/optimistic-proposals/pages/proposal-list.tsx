@@ -31,6 +31,7 @@ import { useTokenVotes } from "@/hooks/useTokenVotes";
 import { AddressText } from "@/components/text/address";
 import { Address } from "viem";
 import { useGovernanceSettings } from "../hooks/useGovernanceSettings";
+import { useGqlProposalMultiple } from "@/utils/gql/hooks/useGetGqlProposalMultiple";
 const DEFAULT_PAGE_SIZE = 6;
 
 export function PublicProposals() {
@@ -70,6 +71,12 @@ export function PublicProposals() {
   const delegatingToSomeoneElse = !!delegatesTo && delegatesTo !== address && delegatesTo !== ADDRESS_ZERO;
   const delegatedToZero = !!delegatesTo && delegatesTo === ADDRESS_ZERO;
 
+  const { data: gqlProposals } = useGqlProposalMultiple({
+    isStandard: false,
+    isEmergency: false,
+    isOptimistic: true,
+  });
+
   return (
     <>
       <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
@@ -94,7 +101,13 @@ export function PublicProposals() {
             <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
               {Array.from(Array(proposalCount || 0)?.keys())
                 .reverse()
-                ?.map((proposalIndex) => <ProposalCard key={proposalIndex} proposalIndex={proposalIndex} />)}
+                ?.map((proposalIndex) => (
+                  <ProposalCard
+                    gqlProposal={gqlProposals?.[proposalIndex]}
+                    key={proposalIndex}
+                    proposalIndex={proposalIndex}
+                  />
+                ))}
             </DataList.Container>
             <DataList.Pagination />
           </DataList.Root>
@@ -162,7 +175,7 @@ export default function ProposalList() {
       <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
         <div className="flex flex-1 flex-col gap-y-6">
           <div className="flex items-start justify-between">
-            <Heading size="h1">Standard Proposals</Heading>
+            <Heading size="h1">Public Stage</Heading>
           </div>
           <PublicProposals />
         </div>

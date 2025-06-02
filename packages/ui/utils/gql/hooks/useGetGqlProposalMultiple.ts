@@ -1,14 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { zeroAddress } from "viem";
-import { getGqlProposalMultiple } from "../getGqProposal";
-
-interface ProposalData {
-  creator: string;
-  // Add other properties based on your actual emergencyProposal structure
-}
+import { getGqlProposalMultiple, IGqlProposalMixin } from "../getGqProposal";
 
 interface UseGqlProposalMultipleResult {
-  data: ProposalData | null;
+  data: IGqlProposalMixin[] | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -27,7 +22,7 @@ export function useGqlProposalMultiple({
   isOptimistic = false,
   enabled = true,
 }: UseGqlProposalMultipleParams = {}): UseGqlProposalMultipleResult {
-  const [data, setData] = useState<ProposalData | null>(null);
+  const [data, setData] = useState<IGqlProposalMixin[] | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,11 +34,14 @@ export function useGqlProposalMultiple({
 
     try {
       const result = await getGqlProposalMultiple(isStandard, isEmergency, isOptimistic);
+      if (!result || result.length === 0) {
+        throw new Error("No proposals found");
+      }
       setData(result);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       setError(errorMessage);
-      setData({ creator: zeroAddress });
+      setData(null);
     } finally {
       setLoading(false);
     }
