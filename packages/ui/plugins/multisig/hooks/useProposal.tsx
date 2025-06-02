@@ -72,7 +72,6 @@ export function useProposal(proposalId: string, autoRefresh = false) {
 // Helpers
 
 function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | undefined) {
-  // getGqlCreator(proposalId.toString(16)).then(console.log).catch(console.error);
   return useQuery({
     queryKey: [
       "multisig-proposal-creation-event",

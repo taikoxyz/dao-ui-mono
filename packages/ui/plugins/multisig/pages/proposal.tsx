@@ -10,6 +10,7 @@ import { useProposalStatus } from "../hooks/useProposalVariantStatus";
 import dayjs from "dayjs";
 import { ProposalActions } from "@/components/proposalActions/proposalActions";
 import { CardResources } from "@/components/proposal/cardResources";
+import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 
 export default function ProposalDetail({ id: proposalId }: { id: string }) {
   const {
@@ -25,6 +26,13 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
 
   const showProposalLoading = getShowProposalLoading(proposal, proposalFetchStatus);
   const proposalStatus = useProposalStatus(proposal!);
+
+  const { data: gqlProposal } = useGqlProposalSingle({
+    proposalId: proposalId,
+    isStandard: true,
+    isOptimistic: false,
+    isEmergency: false,
+  });
 
   // TODO: This is not revelant anymore
   const proposalStage: ITransformedStage[] = [
@@ -92,7 +100,7 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
             <ProposalActions actions={proposal.actions} />
           </div>
           <div className="flex flex-col gap-y-6 md:w-[33%]">
-            <CardResources resources={proposal.resources} title="Resources" />
+            <CardResources gqlProposal={gqlProposal} resources={proposal.resources} title="Resources" />
           </div>
         </div>
       </div>

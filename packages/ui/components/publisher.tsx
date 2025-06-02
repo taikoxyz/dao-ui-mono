@@ -1,16 +1,20 @@
 import { formatHexString } from "@/utils/evm";
+import { IGqlProposalMixin } from "@/utils/gql/getGqProposal";
 import { Link, type IPublisher } from "@aragon/ods";
 
 const MAX_PUBLISHERS_SHOWN = 3;
 
 interface IPublisherProps {
   publisher: IPublisher[];
+  gqlProposal?: IGqlProposalMixin;
 }
 
 export const Publisher: React.FC<IPublisherProps> = (props) => {
-  const { publisher } = props;
+  const { publisher, gqlProposal } = props;
 
   const showParsedPublisher = publisher.length <= MAX_PUBLISHERS_SHOWN;
+
+  console.log("published by", { publisher, gqlProposal });
 
   return (
     <div className="flex gap-x-0.5 text-base leading-tight">

@@ -14,6 +14,8 @@ import { useIpfsJsonData } from "@/hooks/useMetadata";
 import { getLogsUntilNow } from "@/utils/evm";
 import { useQuery } from "@tanstack/react-query";
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
+import { GQL_GET_PROPOSAL_MULTIPLE } from "@/utils/gql/queries.gql";
+import { getGqlProposalSingle } from "@/utils/gql/getGqProposal";
 
 const ProposalCreatedEvent = getAbiItem({
   abi: EmergencyMultisigPluginAbi,
@@ -83,7 +85,6 @@ export function useProposal(proposalId: string, autoRefresh = false) {
 
 function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | undefined) {
   const publicClient = usePublicClient();
-
   return useQuery({
     queryKey: [
       "emergency-proposal-creation-event",
@@ -93,7 +94,17 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       !!publicClient,
     ],
     queryFn: () => {
-      return getGqlCreator(proposalId.toString(16));
+      getGqlProposalSingle(
+        proposalId.toString(),
+        false, // isStandard
+        true, // isEmergency
+        false // isOptimistic
+      ).then((proposal) => {
+        if (!proposal || !proposal.creator) {
+          return { creator: zeroAddress };
+        }
+        return { creator: proposal.creator as Address };
+      });
     },
     retry: true,
     refetchOnMount: false,
@@ -135,7 +146,7 @@ function arrangeProposalData(
     },
     approvals: proposalData.approvals,
     allowFailureMap: BigInt(0),
-    creator: creationEvent?.creator || "",
+    creator: "",
     title: metadata?.title || "",
     summary: metadata?.summary || "",
     description: metadata?.description || "",
@@ -144,13 +155,6 @@ function arrangeProposalData(
 }
 
 async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
-  const query = `
-  query GetCreator($proposalId: Bytes!) {
-  emergencyProposal(id: $proposalId) {
-    creator
-}
-}
-  `;
   try {
     const client = new ApolloClient({
       uri: PUB_SUBGRAPH_URL,
@@ -158,9 +162,12 @@ async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> 
     });
 
     const res: any = await client.query({
-      query: gql(query),
+      query: gql(GQL_GET_PROPOSAL_MULTIPLE),
       variables: {
         proposalId: `0x${proposalId}`,
+        isStandard: false,
+        isEmergency: true,
+        isOptimistic: false,
       },
     });
 
