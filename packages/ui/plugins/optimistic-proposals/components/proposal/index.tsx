@@ -18,7 +18,7 @@ const DEFAULT_PROPOSAL_METADATA_SUMMARY = "(The metadata of the proposal is not 
 type ProposalInputs = {
   proposalIndex: number;
   linkPrefix?: string;
-  gqlProposal: IGqlProposalMixin | undefined;
+  gqlProposal?: IGqlProposalMixin | undefined;
 };
 
 export default function ProposalCard(props: ProposalInputs) {
