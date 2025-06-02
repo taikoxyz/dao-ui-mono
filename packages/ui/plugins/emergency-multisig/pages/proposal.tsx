@@ -15,6 +15,7 @@ import { useAccount } from "wagmi";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { CardEmptyState } from "@aragon/ods";
+import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 
 export default function ProposalDetail({ id: proposalId }: { id: string }) {
   const { isConnected } = useAccount();
@@ -32,6 +33,15 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
 
   const showProposalLoading = getShowProposalLoading(proposal, proposalFetchStatus);
   const proposalStatus = useProposalStatus(proposal!);
+
+  const { data: gqlProposal } = useGqlProposalSingle({
+    proposalId: proposalId,
+    isStandard: false,
+    isOptimistic: false,
+    isEmergency: true,
+  });
+
+  console.log("aaa", { gqlProposal });
 
   const proposalStage: ITransformedStage[] = [
     {
@@ -133,7 +143,7 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
                 />
               </div>
               <div className="flex flex-col gap-y-6 md:w-[33%]">
-                <CardResources resources={proposal.resources} title="Resources" />
+                <CardResources gqlProposal={gqlProposal} resources={proposal.resources} title="Resources" />
               </div>
             </div>
           </div>

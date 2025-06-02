@@ -14,6 +14,7 @@ import { useIpfsJsonData } from "@/hooks/useMetadata";
 import { getLogsUntilNow } from "@/utils/evm";
 import { useQuery } from "@tanstack/react-query";
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
+import { GQL_GET_PROPOSAL_MULTIPLE } from "@/utils/gql/queries.gql";
 
 const ProposalCreatedEvent = getAbiItem({
   abi: EmergencyMultisigPluginAbi,
@@ -83,7 +84,6 @@ export function useProposal(proposalId: string, autoRefresh = false) {
 
 function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | undefined) {
   const publicClient = usePublicClient();
-
   return useQuery({
     queryKey: [
       "emergency-proposal-creation-event",
@@ -93,7 +93,7 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       !!publicClient,
     ],
     queryFn: () => {
-      return getGqlCreator(proposalId.toString(16));
+      //return getGqlCreator(proposalId.toString(16));
     },
     retry: true,
     refetchOnMount: false,
@@ -144,13 +144,6 @@ function arrangeProposalData(
 }
 
 async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
-  const query = `
-  query GetCreator($proposalId: Bytes!) {
-  emergencyProposal(id: $proposalId) {
-    creator
-}
-}
-  `;
   try {
     const client = new ApolloClient({
       uri: PUB_SUBGRAPH_URL,
@@ -158,9 +151,12 @@ async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> 
     });
 
     const res: any = await client.query({
-      query: gql(query),
+      query: gql(GQL_GET_PROPOSAL_MULTIPLE),
       variables: {
         proposalId: `0x${proposalId}`,
+        isStandard: false,
+        isEmergency: true,
+        isOptimistic: false,
       },
     });
 
