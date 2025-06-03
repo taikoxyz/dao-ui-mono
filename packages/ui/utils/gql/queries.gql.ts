@@ -17,6 +17,8 @@ export const GQL_GET_PROPOSAL_MULTIPLE = `query getProposals(
         isEmergency,
         isStandard,
         isOptimistic,
+        creationBlockNumber,
+        executionBlockNumber,
         approvers {
         id, 
         txHash,
@@ -48,6 +50,42 @@ $proposalId: BigInt,
         isEmergency,
         isStandard,
         isOptimistic,
+        creationBlockNumber,
+        executionBlockNumber,
+        approvers {
+        id, 
+        txHash,
+        address 
+},
+executor {
+id, txHash, address},
+vetoes { id, txHash, address },
+creationTxHash
+}
+    }`;
+
+
+
+
+export const GQL_GET_RELATED_PROPOSAL_SINGLE = `query getProposal(
+$executionBlockNumber: BigInt,
+    $isStandard: Boolean,
+    $isEmergency: Boolean
+) {
+    proposalMixins(where: {
+    executionBlockNumber: $executionBlockNumber,
+        isStandard: $isStandard,
+        isEmergency: $isEmergency
+    }) {
+        id,
+        proposalId,
+        metadata,
+        creator,
+        isEmergency,
+        isStandard,
+        isOptimistic,
+        creationBlockNumber,
+        executionBlockNumber,
         approvers {
         id, 
         txHash,

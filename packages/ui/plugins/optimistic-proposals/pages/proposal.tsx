@@ -22,6 +22,9 @@ import { useTokenVotes } from "@/hooks/useTokenVotes";
 import { ADDRESS_ZERO } from "@/utils/evm";
 import { AddressText } from "@/components/text/address";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
+import { useProposalId } from "../hooks/useProposalId";
+import { useGetGqlRelatedProposal } from "@/utils/gql/hooks/useGetGqlRelatedProposal";
+import { getRelatedProposalTo } from "@/utils/gql/getGqProposal";
 
 const ZERO = BigInt(0);
 
@@ -38,7 +41,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   const pastSupply = usePastSupply(proposal);
   const { symbol: tokenSymbol } = useToken();
   const { balance, delegatesTo } = useTokenVotes(address);
-
+const {proposalId} = useProposalId(proposalIdx);
   const { executeProposal, canExecute, isConfirming: isConfirmingExecution } = useProposalExecute(proposalIdx);
 
   const startDate = dayjs(Number(proposal?.parameters.vetoStartDate) * 1000).toString();
@@ -77,11 +80,25 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   }
 
   const { data: gqlProposal } = useGqlProposalSingle({
-    proposalId: proposalIdx.toString(),
+    proposalId: proposalId?.toString(),
     isStandard: false,
     isOptimistic: true,
     isEmergency: false,
   });
+
+  const {
+      isEmergency,
+    } = useProposalStatus(proposal);
+  
+  const {data: relatedProposal} = useGetGqlRelatedProposal({
+    executionBlockNumber: gqlProposal?.creationBlockNumber || 0,
+    isStandard: !isEmergency,
+    isEmergency: isEmergency,
+  })
+
+  console.log('gql prop',
+    {proposal},
+    { gqlProposal, relatedProposal, execution: gqlProposal?.executionBlockNumber});
 
   const proposalStage: ITransformedStage[] = [
     {
