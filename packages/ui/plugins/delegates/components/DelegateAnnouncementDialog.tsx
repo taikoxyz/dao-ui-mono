@@ -25,7 +25,9 @@ import { useDelegates } from "../hooks/useDelegates";
 import { isAddressEqual } from "viem";
 import { useDelegateAnnounce } from "../hooks/useDelegateAnnounce";
 import { useEffect } from "react";
-
+import { useProfanityChecker } from "glin-profanity";
+import { GlinConfig } from "@/constants";
+import { useAlerts } from "@/context/Alerts";
 const DELEGATE_RESOURCES = "resources";
 
 const UrlRegex = new RegExp(URL_PATTERN);
@@ -67,9 +69,9 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
   const router = useRouter();
   const { address } = useAccount();
 
-
   const { announce, isLoading: isDelegateAnnounceLoading } = useDelegateAnnounce(address);
-  console.log("Existing profile:", announce);
+
+  const { checkTextAsync } = useProfanityChecker(GlinConfig);
 
   const {
     control,
@@ -78,27 +80,48 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
     formState: { errors },
     handleSubmit,
     register,
-    reset
+    reset,
   } = useForm<z.infer<typeof MetadataSchema>>({
     resolver: zodResolver(MetadataSchema),
     mode: "onTouched",
-    defaultValues: {} ,
+    defaultValues: {},
   });
 
   useEffect(() => {
-   if (!isDelegateAnnounceLoading && announce) {
-    reset(announce);
-  }
-}, [isDelegateAnnounceLoading, announce, reset]);
-  
+    if (!isDelegateAnnounceLoading && announce) {
+      reset(announce);
+    }
+  }, [isDelegateAnnounceLoading, announce, reset]);
+
   const { fields, append, remove } = useFieldArray({ name: DELEGATE_RESOURCES, control });
 
   const onSuccessfulAnnouncement = () => {
     router.push("#/delegates/" + address!);
   };
   const { isConfirming, status, announceDelegation } = useAnnounceDelegation(onSuccessfulAnnouncement);
+  const { addAlert } = useAlerts();
 
   const handleAnnouncement = async (values: z.infer<typeof MetadataSchema>) => {
+    const foundProfanity: Record<string, string[]> = {};
+    for (let i = 0; i < Object.entries(values).length; i++) {
+      const [key, value] = Object.entries(values)[i];
+
+      const { containsProfanity, profaneWords } = await checkTextAsync(value as string);
+      if (containsProfanity) {
+        foundProfanity[key] = profaneWords;
+      }
+    }
+
+    if (Object.keys(foundProfanity).length) {
+      for (const [key, words] of Object.entries(foundProfanity)) {
+        addAlert(`Profanity word(s) found in ${key}:`, {
+          description: `${words.join(", ")}`,
+          type: "error",
+        });
+      }
+      return;
+    }
+
     announceDelegation({
       ...values,
       resources: values.resources?.filter((r) => !!r.link && !!r.name) as IAnnouncementMetadata["resources"],
@@ -118,8 +141,9 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
     ? "Creating profile"
     : status === "pending"
       ? "Waiting for confirmation"
-      : announce ? 'Update profile'
-      : "Create profile";
+      : announce
+        ? "Update profile"
+        : "Create profile";
 
   return (
     <DialogRoot {...otherProps} containerClassName="!max-w-[520px] top-24 h-max" useFocusTrap={false}>
