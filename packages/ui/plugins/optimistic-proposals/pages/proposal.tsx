@@ -163,7 +163,12 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
             <ProposalActions actions={proposal.actions} />
           </div>
           <div className="flex flex-col gap-y-6 md:w-[33%]">
-            <CardResources gqlProposal={relatedProposal} resources={proposal.resources} title="Resources" />
+            <CardResources
+              gqlProposal={gqlProposal}
+              relatedProposal={relatedProposal}
+              resources={proposal.resources}
+              title="Resources"
+            />
             <div>
               <ul className="list-inside list-disc">
                 <li>

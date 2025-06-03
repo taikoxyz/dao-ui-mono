@@ -91,11 +91,6 @@ export async function getRelatedProposalTo(
   isStandard: boolean = false,
   isEmergency: boolean = false
 ): Promise<IGqlProposalMixin | undefined> {
-  console.log("apollo fetching", {
-    executionBlockNumber,
-    isStandard,
-    isEmergency,
-  });
   try {
     const client = new ApolloClient({
       uri: PUB_SUBGRAPH_URL,
@@ -110,7 +105,7 @@ export async function getRelatedProposalTo(
         isEmergency: isEmergency,
       },
     });
-    console.log("fetched", res);
+
     if (!res.data || !res.data.proposalMixins || !res.data.proposalMixins.length) {
       throw new Error("No proposalMixins found");
     }
