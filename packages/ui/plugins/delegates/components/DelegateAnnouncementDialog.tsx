@@ -21,6 +21,10 @@ import { useAccount } from "wagmi";
 import { z } from "zod";
 import { useAnnounceDelegation } from "../hooks/useAnnounceDelegation";
 import { IAnnouncementMetadata } from "../utils/types";
+import { useDelegates } from "../hooks/useDelegates";
+import { isAddressEqual } from "viem";
+import { useDelegateAnnounce } from "../hooks/useDelegateAnnounce";
+import { useEffect } from "react";
 
 const DELEGATE_RESOURCES = "resources";
 
@@ -62,6 +66,11 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
   const { onClose, ...otherProps } = props;
   const router = useRouter();
   const { address } = useAccount();
+
+
+  const { announce, isLoading: isDelegateAnnounceLoading } = useDelegateAnnounce(address);
+  console.log("Existing profile:", announce);
+
   const {
     control,
     getValues,
@@ -69,11 +78,19 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
     formState: { errors },
     handleSubmit,
     register,
+    reset
   } = useForm<z.infer<typeof MetadataSchema>>({
     resolver: zodResolver(MetadataSchema),
     mode: "onTouched",
-    defaultValues: { bio: "", message: "<p></p>", resources: [{ name: "", link: "" }] },
+    defaultValues: {} ,
   });
+
+  useEffect(() => {
+   if (!isDelegateAnnounceLoading && announce) {
+    reset(announce);
+  }
+}, [isDelegateAnnounceLoading, announce, reset]);
+  
   const { fields, append, remove } = useFieldArray({ name: DELEGATE_RESOURCES, control });
 
   const onSuccessfulAnnouncement = () => {
@@ -101,10 +118,11 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
     ? "Creating profile"
     : status === "pending"
       ? "Waiting for confirmation"
+      : announce ? 'Update profile'
       : "Create profile";
 
   return (
-    <DialogRoot {...otherProps} containerClassName="!max-w-[520px]" useFocusTrap={false}>
+    <DialogRoot {...otherProps} containerClassName="!max-w-[520px] top-24 h-max" useFocusTrap={false}>
       <DialogHeader title="Create your delegate profile" onCloseClick={onClose} onBackClick={onClose} />
       <DialogContent className="flex flex-col gap-y-4 md:gap-y-6">
         <InputText
