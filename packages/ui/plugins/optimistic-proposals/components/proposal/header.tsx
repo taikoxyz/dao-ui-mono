@@ -10,6 +10,7 @@ import { Publisher } from "@/components/publisher";
 import { Address, isAddressEqual } from "viem";
 import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import SecurityCouncilProfiles from "../../../../security-council-profiles.json";
+import { IGqlProposalMixin } from "@/utils/gql/getGqProposal";
 
 const DEFAULT_PROPOSAL_TITLE = "(No proposal title)";
 const DEFAULT_PROPOSAL_SUMMARY = "(No proposal summary)";
@@ -17,9 +18,10 @@ const DEFAULT_PROPOSAL_SUMMARY = "(No proposal summary)";
 interface ProposalHeaderProps {
   proposalIdx: number;
   proposal: OptimisticProposal;
+  gqlProposal?: IGqlProposalMixin | undefined;
 }
 
-const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal }) => {
+const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal, gqlProposal }) => {
   const {
     status: proposalStatus,
     isEmergency,
@@ -34,7 +36,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal }
   const breadcrumbs: IBreadcrumbsLink[] = [{ label: "Proposals", href: "#/" }, { label: proposalIdx.toString() }];
 
   const { data: encryptionAccounts } = useEncryptionAccountsEmergency();
-  const creator = proposal.creator as Address;
+  const creator = gqlProposal?.creator as Address;
   const owner =
     encryptionAccounts?.find(
       ({ appointedAgent }) => appointedAgent && creator && isAddressEqual(appointedAgent, creator)
@@ -60,10 +62,13 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal }
         </div>
         {/* Metadata */}
         <div className="flex flex-wrap gap-x-10 gap-y-2">
-          {/*<div className="flex items-center gap-x-2">
+          <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
-            <Publisher publisher={[{ address: proposal.creator, name: profile?.name || "" }]} />
-          </div>*/}
+            <Publisher
+              gqlProposal={gqlProposal}
+              publisher={[{ address: proposal.creator, name: profile?.name || "" }]}
+            />
+          </div>
           <div className="flex items-center gap-x-2">
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
             <div className="flex gap-x-1 text-base leading-tight">

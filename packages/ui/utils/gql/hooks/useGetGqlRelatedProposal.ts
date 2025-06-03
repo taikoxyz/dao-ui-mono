@@ -39,7 +39,7 @@ export function useGetGqlRelatedProposal({
 
     try {
       const result = await getRelatedProposalTo(executionBlockNumber, isStandard, isEmergency);
-     setData(result);
+      setData(result);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       setError(errorMessage);

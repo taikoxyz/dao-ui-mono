@@ -64,9 +64,6 @@ creationTxHash
 }
     }`;
 
-
-
-
 export const GQL_GET_RELATED_PROPOSAL_SINGLE = `query getProposal(
 $executionBlockNumber: BigInt,
     $isStandard: Boolean,

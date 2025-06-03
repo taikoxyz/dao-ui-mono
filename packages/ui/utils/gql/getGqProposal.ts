@@ -87,18 +87,17 @@ export interface IGqlProposalMixin {
 }
 
 export async function getRelatedProposalTo(
- executionBlockNumber: number,
+  executionBlockNumber: number,
   isStandard: boolean = false,
   isEmergency: boolean = false
-
 ): Promise<IGqlProposalMixin | undefined> {
-console.log('apollo fetching', {
+  console.log("apollo fetching", {
     executionBlockNumber,
     isStandard,
     isEmergency,
-})
+  });
   try {
-const client = new ApolloClient({
+    const client = new ApolloClient({
       uri: PUB_SUBGRAPH_URL,
       cache: new InMemoryCache(),
     });
@@ -111,13 +110,13 @@ const client = new ApolloClient({
         isEmergency: isEmergency,
       },
     });
-console.log('fetched', res)
+    console.log("fetched", res);
     if (!res.data || !res.data.proposalMixins || !res.data.proposalMixins.length) {
       throw new Error("No proposalMixins found");
     }
 
     return res.data.proposalMixins[0] as IGqlProposalMixin;
-  } catch (e){
+  } catch (e) {
     console.error("GQL Error:", e);
   }
 }

@@ -35,7 +35,6 @@ export default function ProposalCard(props: ProposalInputs) {
   const isEmergency = isAddressEqual(props.gqlProposal?.creator || zeroAddress, PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS);
   const isStandard = isAddressEqual(props.gqlProposal?.creator || zeroAddress, PUB_MULTISIG_PLUGIN_ADDRESS);
 
-  console.log('gql prop', props.gqlProposal)
   if (!proposal && showLoading) {
     return (
       <section className="w-full">

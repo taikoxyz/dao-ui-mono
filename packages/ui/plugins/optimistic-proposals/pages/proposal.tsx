@@ -41,7 +41,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   const pastSupply = usePastSupply(proposal);
   const { symbol: tokenSymbol } = useToken();
   const { balance, delegatesTo } = useTokenVotes(address);
-const {proposalId} = useProposalId(proposalIdx);
+  const { proposalId } = useProposalId(proposalIdx);
   const { executeProposal, canExecute, isConfirming: isConfirmingExecution } = useProposalExecute(proposalIdx);
 
   const startDate = dayjs(Number(proposal?.parameters.vetoStartDate) * 1000).toString();
@@ -80,25 +80,19 @@ const {proposalId} = useProposalId(proposalIdx);
   }
 
   const { data: gqlProposal } = useGqlProposalSingle({
-    proposalId: proposalId?.toString(),
+    proposalId: proposalId?.toString() || "",
     isStandard: false,
     isOptimistic: true,
     isEmergency: false,
   });
 
-  const {
-      isEmergency,
-    } = useProposalStatus(proposal);
-  
-  const {data: relatedProposal} = useGetGqlRelatedProposal({
+  const { isEmergency } = useProposalStatus(proposal);
+
+  const { data: relatedProposal } = useGetGqlRelatedProposal({
     executionBlockNumber: gqlProposal?.creationBlockNumber || 0,
     isStandard: !isEmergency,
     isEmergency: isEmergency,
-  })
-
-  console.log('gql prop',
-    {proposal},
-    { gqlProposal, relatedProposal, execution: gqlProposal?.executionBlockNumber});
+  });
 
   const proposalStage: ITransformedStage[] = [
     {
@@ -147,7 +141,7 @@ const {proposalId} = useProposalId(proposalIdx);
 
   return (
     <section className="flex w-screen min-w-full max-w-full flex-col items-center">
-      <ProposalHeader proposalIdx={proposalIdx} proposal={proposal} />
+      <ProposalHeader gqlProposal={relatedProposal} proposalIdx={proposalIdx} proposal={proposal} />
 
       <div className="mx-auto w-full max-w-screen-xl px-4 py-6 md:px-16 md:pb-20 md:pt-10">
         <div className="flex w-full flex-col gap-x-12 gap-y-6 md:flex-row">
@@ -169,7 +163,7 @@ const {proposalId} = useProposalId(proposalIdx);
             <ProposalActions actions={proposal.actions} />
           </div>
           <div className="flex flex-col gap-y-6 md:w-[33%]">
-            <CardResources resources={proposal.resources} title="Resources" />
+            <CardResources gqlProposal={relatedProposal} resources={proposal.resources} title="Resources" />
             <div>
               <ul className="list-inside list-disc">
                 <li>
