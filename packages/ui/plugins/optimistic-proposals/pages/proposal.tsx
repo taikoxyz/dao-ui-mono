@@ -147,6 +147,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
         <div className="flex w-full flex-col gap-x-12 gap-y-6 md:flex-row">
           <div className="flex flex-col gap-y-6 md:w-[63%] md:shrink-0">
             <BodySection body={proposal.description || "No description was provided"} />
+            {!isEmergency && (<>
             <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
               <NoVetoPowerWarning
                 delegatingToSomeoneElse={delegatingToSomeoneElse}
@@ -159,7 +160,8 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
             <ProposalVoting
               stages={proposalStage}
               description="Proposals approved by the Security Council become eventually executable, unless the community reaches the veto threshold during the community veto stage."
-            />
+            /></>
+            )}
             <ProposalActions actions={proposal.actions} />
           </div>
           <div className="flex flex-col gap-y-6 md:w-[33%]">
