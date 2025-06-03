@@ -1,4 +1,4 @@
-import { PUB_ALCHEMY_API_KEY, PUB_CHAIN } from "@/constants";
+import { PUB_ALCHEMY_API_KEY, PUB_CHAIN, PUB_CHAIN_NAME, PUB_WEB3_ENDPOINT } from "@/constants";
 import { formatHexString } from "@/utils/evm";
 import { MemberAvatar } from "@aragon/ods";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
@@ -7,15 +7,17 @@ import { useEffect } from "react";
 import { createClient, http } from "viem";
 import { normalize } from "viem/ens";
 import { createConfig, useAccount, useEnsAvatar, useEnsName, useSwitchChain } from "wagmi";
-import { mainnet } from "wagmi/chains";
+import { holesky, mainnet } from "wagmi/chains";
+
+const activeChain = PUB_CHAIN_NAME === "holesky" ? holesky : mainnet;
 
 const config = createConfig({
-  chains: [mainnet],
+  chains: [mainnet, holesky],
   ssr: true,
   client({ chain }) {
     return createClient({
       chain,
-      transport: http(`https://eth-mainnet.g.alchemy.com/v2/${PUB_ALCHEMY_API_KEY}`, { batch: true }),
+      transport: http(PUB_WEB3_ENDPOINT, { batch: true }),
     });
   },
 });
@@ -28,14 +30,14 @@ const WalletContainer = () => {
 
   const { data: ensName } = useEnsName({
     config,
-    chainId: mainnet.id,
+    chainId: activeChain.id,
     address: address,
   });
 
   const { data: ensAvatar } = useEnsAvatar({
     config,
     name: normalize(ensName!),
-    chainId: mainnet.id,
+    chainId: activeChain.id,
     gatewayUrls: ["https://cloudflare-ipfs.com"],
     query: { enabled: !!ensName },
   });
