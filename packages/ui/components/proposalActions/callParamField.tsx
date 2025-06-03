@@ -1,5 +1,5 @@
 import { decodeCamelCase } from "@/utils/case";
-import { InputText } from "@aragon/ods";
+import { InputText, TextArea } from "@aragon/ods";
 import { toFunctionSignature, type AbiFunction } from "viem";
 import { resolveFieldTitle, resolveParamValue, type CallParameterFieldType } from "@/utils/abi-helpers";
 
@@ -18,6 +18,14 @@ export const CallParamField: React.FC<ICallParamFiledProps> = ({ value, idx, fun
   const resolvedValue = resolveParamValue(value, functionAbi.inputs?.[idx]);
   const label = resolveFieldTitle(functionAbi.inputs?.[idx].name ?? "", functionAbi.inputs?.[idx].type, idx);
 
+  if ((resolvedValue.length > 42)){
+    return <TextArea
+    label={decodeCamelCase(label)}
+    className="w-full h-full"
+    value={resolvedValue}
+    disabled={true}
+  />;
+  }
   return <InputText label={decodeCamelCase(label)} className="w-full" value={resolvedValue} disabled={true} />;
 };
 
