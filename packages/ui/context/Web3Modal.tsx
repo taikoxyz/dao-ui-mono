@@ -21,12 +21,11 @@ const metadata = {
   icons: [PUB_WALLET_ICON],
 };
 
-
 export const config = createConfig({
-  chains: [PUB_CHAIN_NAME === 'mainnet' ? mainnet : holesky],
+  chains: [PUB_CHAIN_NAME === "mainnet" ? mainnet : holesky],
   ssr: true,
   transports: {
-    [PUB_CHAIN_NAME === 'mainnet' ? mainnet.id: holesky.id]: http(PUB_WEB3_ENDPOINT, { batch: true }),
+    [PUB_CHAIN_NAME === "mainnet" ? mainnet.id : holesky.id]: http(PUB_WEB3_ENDPOINT, { batch: true }),
   } as any,
   connectors: [
     walletConnect({
