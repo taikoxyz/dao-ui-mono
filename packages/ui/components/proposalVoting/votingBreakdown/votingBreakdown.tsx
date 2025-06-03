@@ -32,8 +32,8 @@ export const VotingBreakdown: React.FC<IVotingBreakdownProps> = (props) => {
           votingScores={(result as IBreakdownMajorityVotingResult).votingScores}
           cta={cta}
         />
-        <div className="absolute bottom-6 right-6 text-sm">
-          Voting Supply: {pastSupply ? `${formatEther(pastSupply / BigInt(1000000))} TAIKO` : "N/A"}
+        <div className="absolute right-6 top-4 text-sm md:bottom-6 md:top-[auto]">
+          Voting Supply: {pastSupply ? `${formatEther(pastSupply / BigInt(1000000)).split(".")[0]} TAIKO` : "N/A"}
         </div>
       </div>
     );
