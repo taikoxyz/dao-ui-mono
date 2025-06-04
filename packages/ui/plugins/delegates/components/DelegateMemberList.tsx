@@ -7,6 +7,7 @@ import { useTokenVotes } from "../../../hooks/useTokenVotes";
 import { useAccount } from "wagmi";
 import VerifiedDelegates from "../../../verified-delegates.json";
 import { PleaseWaitSpinner } from "@/components/please-wait";
+import BannedDelegates from "../../../banned-delegates.json";
 
 interface IDelegateMemberListProps {
   verifiedOnly?: boolean;
@@ -17,9 +18,11 @@ export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifie
   const { address } = useAccount();
   const [searchValue, setSearchValue] = useState<string>();
   //   const [activeSort, setActiveSort] = useState<string>();
-  const { delegates: fetchedDelegates, status: loadingStatus } = useDelegates();
+  const { delegates: _fetchedDelegates, status: loadingStatus } = useDelegates();
+  const fetchedDelegates = _fetchedDelegates || [];
   const { delegatesTo } = useTokenVotes(address);
   const delegates = (fetchedDelegates || []).filter((item) => {
+    if (BannedDelegates.findIndex((d) => equalAddresses(d.address, item)) >= 0) return false;
     if (!verifiedOnly) return true;
     return VerifiedDelegates.findIndex((d) => equalAddresses(d.address, item)) >= 0;
   });
@@ -31,12 +34,13 @@ export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifie
   }
 
   const filteredDelegates = (delegates || []).filter((item) => {
+    if (BannedDelegates.findIndex((d) => equalAddresses(d.address, item)) >= 0) return false;
     if (!searchValue?.trim()) return true;
     return item.toLowerCase().includes(searchValue.toLowerCase());
   });
 
   const totalMembers = filteredDelegates.length || 0;
-  const showPagination = false;
+  const showPagination = true;
 
   return (
     <DataList.Root
