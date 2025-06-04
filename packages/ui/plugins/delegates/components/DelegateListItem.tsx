@@ -5,6 +5,7 @@ import { useAccount } from "wagmi";
 import { Address, formatEther } from "viem";
 import { useTokenVotes } from "../../../hooks/useTokenVotes";
 import VerifiedDelegates from "../../../verified-delegates.json";
+import BannedDelegates from "../../../banned-delegates.json";
 import { useDelegateAnnounce } from "../hooks/useDelegateAnnounce";
 import { useProfanityChecker } from "glin-profanity";
 import { GlinConfig } from "@/constants";
@@ -27,7 +28,7 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
   const { votingPower } = useTokenVotes(address);
   const isVerified = VerifiedDelegates.findIndex((d) => equalAddresses(d.address, address)) >= 0;
   const { announce } = useDelegateAnnounce(address);
-
+  const isBanned = BannedDelegates.findIndex((d) => equalAddresses(d.address, address)) >= 0;
   const { result, checkText } = useProfanityChecker(GlinConfig);
 
   useEffect(() => {
@@ -35,6 +36,9 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
     checkText(`${announce.identifier}\n${announce.bio}\n${announce.message}`);
   }, [announce]);
 
+  if (isBanned) {
+    return null;
+  }
   if (moderatedOnly && result && !result.containsProfanity) {
     return null;
   }
