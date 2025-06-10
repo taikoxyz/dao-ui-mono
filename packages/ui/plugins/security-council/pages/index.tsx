@@ -156,10 +156,10 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <Heading size="h4">Voting Requirements</Heading>
             <ul className="list-inside list-disc">
               <li>
-                Approved by the lesser of at least 3 or 25% of Security Council Members, prior to entering a 9 day
+                Approved by the lesser of at least 5 or 62.5% of Security Council Members, prior to entering a 21 day
                 public voting period
               </li>
-              <li>30% of community votes are required to veto a Standard Proposal</li>
+              <li>10% of community votes are required to veto a Standard Proposal</li>
               <li>Standard Proposal are passed if there is no veto within the public voting period</li>
             </ul>
           </ElseIf>
