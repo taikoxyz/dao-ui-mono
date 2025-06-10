@@ -38,7 +38,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
     isConfirming: isConfirmingVeto,
     vetoProposal,
   } = useProposalVeto(proposalIdx);
-  const pastSupply = usePastSupply(proposal);
+
   const { symbol: tokenSymbol } = useToken();
   const { balance, delegatesTo } = useTokenVotes(address);
   const { proposalId } = useProposalId(proposalIdx);
@@ -49,6 +49,15 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
 
   const showProposalLoading = getShowProposalLoading(proposal, proposalFetchStatus);
   const { status: proposalStatus } = useProposalStatus(proposal!);
+
+  const { data: gqlProposal } = useGqlProposalSingle({
+    proposalId: proposalId?.toString() || "",
+    isStandard: false,
+    isOptimistic: true,
+    isEmergency: false,
+  });
+  const pastSupply = usePastSupply(BigInt(gqlProposal?.creationBlockNumber || 0));
+
   let vetoPercentage = 0;
   if (proposal?.vetoTally && pastSupply && proposal.parameters.minVetoRatio) {
     // Example: 15% of the token supply (adjusted for decimal precision, 10^6)
@@ -78,13 +87,6 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
       onClick: vetoProposal,
     };
   }
-
-  const { data: gqlProposal } = useGqlProposalSingle({
-    proposalId: proposalId?.toString() || "",
-    isStandard: false,
-    isOptimistic: true,
-    isEmergency: false,
-  });
 
   const { isEmergency } = useProposalStatus(proposal);
 

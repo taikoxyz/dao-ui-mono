@@ -3,6 +3,7 @@ import { Button, Heading, VetoProgress, RadioCard, RadioGroup } from "@aragon/od
 import classNames from "classnames";
 import { useEffect, useState } from "react";
 import { type VotingCta } from "./types";
+import formatLargeNumber from "@/utils/formatLArgeNumber";
 
 type Choices = "yes" | "no" | "abstain";
 
@@ -46,6 +47,10 @@ export const BreakdownMajorityVotingResult: React.FC<IBreakdownMajorityVotingRes
   const label = showOptions && !cta?.isLoading ? "Submit vote" : cta?.label;
   const disabled = (!!showOptions && !option) || cta?.disabled;
 
+  function formatVoteAmount(amount: string): string {
+    const bigInt = BigInt(amount.split(".").join(""));
+    return formatLargeNumber(bigInt)[1];
+  }
   return (
     <div className="flex flex-col gap-y-4">
       <div className="flex flex-col gap-y-3 rounded-xl border border-neutral-100 p-3 shadow-neutral-sm md:flex-row md:gap-x-6 md:p-6">
@@ -62,7 +67,7 @@ export const BreakdownMajorityVotingResult: React.FC<IBreakdownMajorityVotingRes
               </span>
               <VetoProgress value={choice.votePercentage} className={choiceClassNames[choice.option as Choices]} />
               <div className="flex gap-x-1">
-                <span className="text-neutral-800">{choice.voteAmount}</span>
+                <span className="text-neutral-800">{formatVoteAmount(choice.voteAmount)}</span>
                 <span className="text-neutral-500">{choice.tokenSymbol}</span>
               </div>
             </div>

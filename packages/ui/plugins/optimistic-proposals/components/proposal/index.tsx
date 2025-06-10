@@ -11,6 +11,7 @@ import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle"
 import { useProposalId } from "../../hooks/useProposalId";
 import { IGqlProposalMixin } from "@/utils/gql/getGqProposal";
 import { PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS, PUB_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
+import formatLargeNumber from "@/utils/formatLArgeNumber";
 
 const DEFAULT_PROPOSAL_METADATA_TITLE = "(No proposal title)";
 const DEFAULT_PROPOSAL_METADATA_SUMMARY = "(The metadata of the proposal is not available)";
@@ -24,7 +25,16 @@ type ProposalInputs = {
 export default function ProposalCard(props: ProposalInputs) {
   const { address } = useAccount();
   const { proposal, proposalFetchStatus, vetoes } = useProposalVeto(props.proposalIndex);
-  const pastSupply = usePastSupply(proposal);
+  const { proposalId } = useProposalId(props.proposalIndex);
+
+  const { data: gqlProposal } = useGqlProposalSingle({
+    proposalId: proposalId?.toString() || "",
+    isStandard: false,
+    isOptimistic: true,
+    isEmergency: false,
+  });
+  const pastSupply = usePastSupply(BigInt(gqlProposal?.creationBlockNumber || 0));
+
   const { symbol: tokenSymbol } = useToken();
 
   const { status: proposalStatus } = useProposalStatus(proposal);
@@ -74,7 +84,6 @@ export default function ProposalCard(props: ProposalInputs) {
     vetoPercentage = Number((10000n * proposal.vetoTally) / defeatThreshold) / 100;
   }
 
-  const pastSupplyDisplay = formatEther(pastSupply / BigInt(1000000));
   return (
     <div className="relative">
       <ProposalDataListItem.Structure
@@ -90,7 +99,14 @@ export default function ProposalCard(props: ProposalInputs) {
         }
         result={{
           option: "Veto",
-          voteAmount: formatEther(proposal.vetoTally) + " / " + pastSupplyDisplay + " " + (tokenSymbol || "TAIKO"),
+          voteAmount: [
+            formatLargeNumber(proposal.vetoTally)[1],
+            "/",
+            formatLargeNumber(pastSupply)[1],
+            tokenSymbol,
+          ].join(" "),
+
+          //   formatEther(proposal.vetoTally) + " / " + pastSupplyDisplay + " " + (tokenSymbol || "TAIKO"),
           votePercentage: vetoPercentage,
         }}
         publisher={{ address: proposal.creator }}
