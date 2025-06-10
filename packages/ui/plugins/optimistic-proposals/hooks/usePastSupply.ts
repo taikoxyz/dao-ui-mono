@@ -5,13 +5,13 @@ import { OptimisticProposal } from "../utils/types";
 import { useBlockByTimestamp } from "./useBlockByTimestamp";
 
 const erc20Votes = parseAbi(["function getPastTotalSupply(uint256 blockNumber) view returns (uint256)"]);
-
-export function usePastSupply(blockNumber: bigint) {
+// not a block number???
+export function usePastSupply(timePoint: bigint) {
   const { data: pastSupply } = useReadContract({
     address: PUB_TOKEN_ADDRESS,
     abi: erc20Votes,
     functionName: "getPastTotalSupply",
-    args: [blockNumber],
+    args: [timePoint],
   });
 
   return pastSupply || BigInt(0);

@@ -40,7 +40,7 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
     isOptimistic: true,
     isEmergency: false,
   });
-  const pastSupply = usePastSupply(BigInt(gqlProposal?.creationBlockNumber || 0));
+  const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp || BigInt(0));
   const [node, setNode] = useState<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
