@@ -37,7 +37,7 @@ export const CardResources: React.FC<ICardResourcesProps> = (props) => {
 
 const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
   if (!props.gqlProposal || !props.gqlProposal.creationTxHash || !props.relatedProposal) {
-    return null;
+    return <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">Loading tx info...</Card>;
   }
   const { gqlProposal, relatedProposal } = props;
 
