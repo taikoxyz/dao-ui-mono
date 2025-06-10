@@ -1,8 +1,7 @@
-import { usePastSupply } from "@/plugins/optimistic-proposals/hooks/usePastSupply";
 import { BreakdownApprovalThresholdResult, type IBreakdownApprovalThresholdResult } from "./approvalThresholdResult";
 import { BreakdownMajorityVotingResult, type IBreakdownMajorityVotingResult } from "./majorityVotingResult";
 import { type VotingCta } from "./types";
-import { formatEther } from "viem";
+import formatLargeNumber from "@/utils/formatLArgeNumber";
 
 export type ProposalType = "majorityVoting" | "approvalThreshold";
 
@@ -15,6 +14,7 @@ export interface IVotingBreakdownProps<TType extends ProposalType = ProposalType
 
 export const VotingBreakdown: React.FC<IVotingBreakdownProps> = (props) => {
   const { result, cta, variant, pastSupply } = props;
+  const [supplyText, supplyFormatted] = formatLargeNumber(pastSupply ?? BigInt(0));
   if (!result) return <></>;
   else if (variant === "approvalThreshold") {
     return (
@@ -33,7 +33,7 @@ export const VotingBreakdown: React.FC<IVotingBreakdownProps> = (props) => {
           cta={cta}
         />
         <div className="absolute right-6 top-4 text-sm md:bottom-6 md:top-[auto]">
-          Voting Supply: {pastSupply ? `${formatEther(pastSupply / BigInt(1000000)).split(".")[0]} TAIKO` : "N/A"}
+          Voting Supply: {pastSupply ? `${supplyFormatted} TAIKO` : "N/A"}
         </div>
       </div>
     );

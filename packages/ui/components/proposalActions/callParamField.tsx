@@ -18,13 +18,8 @@ export const CallParamField: React.FC<ICallParamFiledProps> = ({ value, idx, fun
   const resolvedValue = resolveParamValue(value, functionAbi.inputs?.[idx]);
   const label = resolveFieldTitle(functionAbi.inputs?.[idx].name ?? "", functionAbi.inputs?.[idx].type, idx);
 
-  if ((resolvedValue.length > 42)){
-    return <TextArea
-    label={decodeCamelCase(label)}
-    className="w-full h-full"
-    value={resolvedValue}
-    disabled={true}
-  />;
+  if (resolvedValue.length > 42) {
+    return <TextArea label={decodeCamelCase(label)} className="h-full w-full" value={resolvedValue} disabled={true} />;
   }
   return <InputText label={decodeCamelCase(label)} className="w-full" value={resolvedValue} disabled={true} />;
 };

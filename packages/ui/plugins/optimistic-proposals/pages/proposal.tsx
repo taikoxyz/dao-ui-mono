@@ -38,7 +38,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
     isConfirming: isConfirmingVeto,
     vetoProposal,
   } = useProposalVeto(proposalIdx);
-  const pastSupply = usePastSupply(proposal);
+
   const { symbol: tokenSymbol } = useToken();
   const { balance, delegatesTo } = useTokenVotes(address);
   const { proposalId } = useProposalId(proposalIdx);
@@ -49,6 +49,15 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
 
   const showProposalLoading = getShowProposalLoading(proposal, proposalFetchStatus);
   const { status: proposalStatus } = useProposalStatus(proposal!);
+
+  const { data: gqlProposal } = useGqlProposalSingle({
+    proposalId: proposalId?.toString() || "",
+    isStandard: false,
+    isOptimistic: true,
+    isEmergency: false,
+  });
+  const pastSupply = usePastSupply(BigInt(gqlProposal?.creationBlockNumber || 0));
+
   let vetoPercentage = 0;
   if (proposal?.vetoTally && pastSupply && proposal.parameters.minVetoRatio) {
     // Example: 15% of the token supply (adjusted for decimal precision, 10^6)
@@ -78,13 +87,6 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
       onClick: vetoProposal,
     };
   }
-
-  const { data: gqlProposal } = useGqlProposalSingle({
-    proposalId: proposalId?.toString() || "",
-    isStandard: false,
-    isOptimistic: true,
-    isEmergency: false,
-  });
 
   const { isEmergency } = useProposalStatus(proposal);
 
@@ -147,20 +149,22 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
         <div className="flex w-full flex-col gap-x-12 gap-y-6 md:flex-row">
           <div className="flex flex-col gap-y-6 md:w-[63%] md:shrink-0">
             <BodySection body={proposal.description || "No description was provided"} />
-            {!isEmergency && (<>
-            <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
-              <NoVetoPowerWarning
-                delegatingToSomeoneElse={delegatingToSomeoneElse}
-                delegatesTo={delegatesTo}
-                delegatedToZero={delegatedToZero}
-                address={address}
-                canVeto={canVeto}
-              />
-            </If>
-            <ProposalVoting
-              stages={proposalStage}
-              description="Proposals approved by the Security Council become eventually executable, unless the community reaches the veto threshold during the community veto stage."
-            /></>
+            {!isEmergency && (
+              <>
+                <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
+                  <NoVetoPowerWarning
+                    delegatingToSomeoneElse={delegatingToSomeoneElse}
+                    delegatesTo={delegatesTo}
+                    delegatedToZero={delegatedToZero}
+                    address={address}
+                    canVeto={canVeto}
+                  />
+                </If>
+                <ProposalVoting
+                  stages={proposalStage}
+                  description="Proposals approved by the Security Council become eventually executable, unless the community reaches the veto threshold during the community veto stage."
+                />
+              </>
             )}
             <ProposalActions actions={proposal.actions} />
           </div>
