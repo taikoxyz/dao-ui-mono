@@ -1,4 +1,4 @@
-import { type Address } from "viem";
+import { isAddressEqual, type Address } from "viem";
 import { ProfileAside } from "../components/ProfileAside";
 import { DelegationStatement } from "../components/DelegationStatement";
 import { HeaderMember } from "../components/HeaderMember";
@@ -7,6 +7,7 @@ import { formatHexString } from "@/utils/evm";
 import { GlinConfig } from "@/constants";
 import { useEffect } from "react";
 import { useProfanityChecker } from "glin-profanity";
+import BannedDelegates from "../../../banned-delegates.json";
 
 export const DelegateProfile = ({ address }: { address: Address }) => {
   const { announce } = useDelegateAnnounce(address);
@@ -16,6 +17,10 @@ export const DelegateProfile = ({ address }: { address: Address }) => {
     if (!announce) return;
     checkText(`${announce.identifier}\n${announce.bio}\n${announce.message}`);
   }, [announce]);
+
+  if (BannedDelegates.findIndex((d) => isAddressEqual(d.address as Address, address)) >= 0) {
+    return null;
+  }
   return (
     <div className="flex flex-col items-center">
       {(!result || !result.containsProfanity) && (
