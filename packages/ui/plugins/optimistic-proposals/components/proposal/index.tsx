@@ -33,7 +33,7 @@ export default function ProposalCard(props: ProposalInputs) {
     isOptimistic: true,
     isEmergency: false,
   });
-  const pastSupply = usePastSupply(BigInt(gqlProposal?.creationBlockNumber || 0));
+  const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp || BigInt(0));
 
   const { symbol: tokenSymbol } = useToken();
 
