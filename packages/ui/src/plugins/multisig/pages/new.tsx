@@ -68,7 +68,7 @@ export default function Create() {
   };
 
   return (
-    <MainSection narrow>
+    <MainSection narrow={true}>
       <div className="w-full justify-between">
         <h1 className="mb-8 line-clamp-1 flex flex-1 shrink-0 text-2xl font-normal leading-tight text-neutral-800 md:text-3xl">
           Create Standard Proposal

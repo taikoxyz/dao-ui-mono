@@ -1,20 +1,11 @@
-import { useAccount, useBlockNumber, useReadContract } from "wagmi";
-import { type ReactNode, useEffect } from "react";
+import { useBlockNumber, useReadContract } from "wagmi";
+import { useEffect } from "react";
 import ProposalCard from "@/plugins/multisig/components/proposal";
 import { MultisigPluginAbi } from "@/plugins/multisig/artifacts/MultisigPlugin";
-import {
-  Button,
-  CardEmptyState,
-  DataList,
-  IconType,
-  ProposalDataListItemSkeleton,
-  type DataListState,
-} from "@aragon/ods";
+import { CardEmptyState, DataList, ProposalDataListItemSkeleton, type DataListState } from "@aragon/ods";
 import { useCanCreateProposal } from "@/plugins/multisig/hooks/useCanCreateProposal";
-import Link from "next/link";
 import { Else, If, Then } from "@/components/if";
 import { PUB_MULTISIG_PLUGIN_ADDRESS, PUB_CHAIN } from "@/constants";
-import { MainSection } from "@/components/layout/main-section";
 import { useRouter } from "next/router";
 import { EncryptionPlaceholderOrChildren } from "@/plugins/emergency-multisig/components/encryption-check-or-children";
 
@@ -22,7 +13,6 @@ const DEFAULT_PAGE_SIZE = 6;
 
 export default function Proposals() {
   const { push } = useRouter();
-  const { isConnected } = useAccount();
   const { data: blockNumber } = useBlockNumber({ watch: true });
   const { canCreate } = useCanCreateProposal();
   const {
@@ -41,7 +31,7 @@ export default function Proposals() {
 
   useEffect(() => {
     refetch();
-  }, [blockNumber]);
+  }, [blockNumber, refetch]);
 
   const entityLabel = proposalCount === 1 ? "Proposal" : "Proposals";
 
@@ -106,8 +96,4 @@ export default function Proposals() {
       </If>
     </EncryptionPlaceholderOrChildren>
   );
-}
-
-function SectionView({ children }: { children: ReactNode }) {
-  return <div className="flex w-full flex-row content-center justify-between">{children}</div>;
 }

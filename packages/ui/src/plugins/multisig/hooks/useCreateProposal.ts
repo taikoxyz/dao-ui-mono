@@ -1,7 +1,6 @@
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ProposalMetadata, RawAction } from "@/utils/types";
-import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { useAlerts } from "@/context/Alerts";
 import {
   PUB_APP_NAME,
@@ -96,6 +95,7 @@ export function useCreateProposal() {
         args: [toHex(ipfsPin), actions, PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS, false],
       });
     } catch (err) {
+      console.warn(err);
       setIsCreating(false);
     }
   };

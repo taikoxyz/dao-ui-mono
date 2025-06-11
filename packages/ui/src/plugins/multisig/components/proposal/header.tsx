@@ -1,23 +1,12 @@
-import {
-  AvatarIcon,
-  Breadcrumbs,
-  Heading,
-  IBreadcrumbsLink,
-  IconType,
-  ProposalStatus,
-  Tag,
-  TagVariant,
-} from "@aragon/ods";
+import { AvatarIcon, Heading, IconType, ProposalStatus, Tag } from "@aragon/ods";
 import { MultisigProposal } from "@/plugins/multisig/utils/types";
 import { useProposalStatus } from "@/plugins/multisig/hooks/useProposalVariantStatus";
 import { HeaderSection } from "@/components/layout/header-section";
 import { Publisher } from "@/components/publisher";
 import { getShortTimeDiffFrom } from "@/utils/dates";
 import { Else, ElseIf, If, Then } from "@/components/if";
-import { getTagVariantFromStatus } from "@/utils/ui-variants";
-import { capitalizeFirstLetter } from "@/utils/text";
 import { useEncryptionAccounts } from "@/plugins/security-council/hooks/useEncryptionAccounts";
-import { Address, isAddressEqual, zeroAddress } from "viem";
+import { isAddressEqual, zeroAddress } from "viem";
 import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 

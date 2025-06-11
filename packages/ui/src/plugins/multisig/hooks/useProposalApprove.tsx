@@ -28,7 +28,7 @@ export function useProposalApprove(proposalId: string) {
   const { canApprove, refetch: refetchCanApprove } = useUserCanApprove(proposalId);
 
   useEffect(() => {
-    if (approveStatus === "idle" ?? approveStatus === "pending") return;
+    if (approveStatus === "idle" || approveStatus === "pending") return;
     else if (approveStatus === "error") {
       if (approveError?.message?.startsWith("User rejected the request")) {
         addAlert("The transaction signature was declined", {
@@ -69,7 +69,18 @@ export function useProposalApprove(proposalId: string) {
     refetchCanApprove();
     refetchProposal();
     refetchApprovals();
-  }, [approveStatus, approveTxHash, isConfirming, isConfirmed]);
+  }, [
+    approveStatus,
+    approveTxHash,
+    isConfirming,
+    isConfirmed,
+    addAlert,
+    approveError,
+    push,
+    refetchApprovals,
+    refetchCanApprove,
+    refetchProposal,
+  ]);
 
   const approveProposal = () => {
     approveWrite({
@@ -85,7 +96,7 @@ export function useProposalApprove(proposalId: string) {
     proposalFetchStatus,
     approvals,
     canApprove: !!canApprove,
-    isConfirming: approveStatus === "pending" ?? isConfirming,
+    isConfirming: approveStatus === "pending" || isConfirming,
     isConfirmed,
     approveProposal,
   };

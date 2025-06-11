@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useBlockNumber, usePublicClient, useReadContract } from "wagmi";
-import { Address, getAbiItem, zeroAddress } from "viem";
+import { useBlockNumber, useReadContract } from "wagmi";
+import { Address } from "viem";
 import { MultisigPluginAbi } from "@/plugins/multisig/artifacts/MultisigPlugin";
 import { RawAction, ProposalMetadata } from "@/utils/types";
 import {
@@ -10,14 +10,8 @@ import {
 } from "@/plugins/multisig/utils/types";
 import { PUB_CHAIN, PUB_MULTISIG_PLUGIN_ADDRESS, PUB_SUBGRAPH_URL } from "@/constants";
 import { useMetadata } from "@/hooks/useMetadata";
-import { getLogsUntilNow } from "@/utils/evm";
 import { useQuery } from "@tanstack/react-query";
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
-
-const ProposalCreatedEvent = getAbiItem({
-  abi: MultisigPluginAbi,
-  name: "ProposalCreated",
-});
 
 export function useProposal(proposalId: string, autoRefresh = false) {
   const { data: blockNumber } = useBlockNumber({ watch: true });
@@ -44,7 +38,7 @@ export function useProposal(proposalId: string, autoRefresh = false) {
 
   useEffect(() => {
     if (autoRefresh) proposalRefetch();
-  }, [blockNumber]);
+  }, [blockNumber, autoRefresh, proposalRefetch]);
 
   // JSON metadata
   const {
