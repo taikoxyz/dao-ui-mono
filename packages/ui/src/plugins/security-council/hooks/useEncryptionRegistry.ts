@@ -136,7 +136,7 @@ export function useEncryptionRegistry({ onAppointSuccess }: { onAppointSuccess?:
   };
 
   const appointAgent = (agentToAppoint: Address) => {
-    if (!address ?? isLoading) {
+    if (!address || isLoading) {
       addAlert("Please connect your wallet");
       return;
     } else if (!signers?.includes(address)) {

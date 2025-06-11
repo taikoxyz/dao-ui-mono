@@ -4,7 +4,7 @@ import { AbiEvent, Address, MaybeAbiEventName, MaybeExtractEventArgsFromAbi, Pub
 const GET_LOGS_BLOCK_COUNT = 2000;
 
 export const isAddress = (maybeAddress: any) => {
-  if (!maybeAddress ?? typeof maybeAddress !== "string") return false;
+  if (!maybeAddress || typeof maybeAddress !== "string") return false;
   else if (!maybeAddress.match(/^0x[0-9a-fA-F]{40}$/)) return false;
   return true;
 };
@@ -16,7 +16,7 @@ export function equalAddresses(value1?: string, value2?: string): boolean {
 }
 
 export function formatHexString(address: string | undefined): string {
-  if (!address ?? address.length < 12) {
+  if (!address || address.length < 12) {
     return address ?? "";
   }
 

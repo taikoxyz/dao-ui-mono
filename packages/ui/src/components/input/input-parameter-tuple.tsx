@@ -31,7 +31,7 @@ export const InputParameterTuple = ({ abi, idx, onChange, hideTitle }: IInputPar
 
     for (let i = 0; i < components.length; i++) {
       // Skip if incomplete
-      if (newValues[i] === undefined ?? newValues[i] === null) return;
+      if (newValues[i] === undefined || newValues[i] === null) return;
       // Arrange as an object
       result[components[i].name!] = newValues[i]!;
     }

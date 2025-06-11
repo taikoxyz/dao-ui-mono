@@ -1,4 +1,4 @@
-import { encodeAbiParameters, keccak256, toHex } from "viem";
+import { encodeAbiParameters, isAddressEqual, keccak256, toHex } from "viem";
 import { EncryptedProposalMetadata } from "../utils/types";
 import { hexToUint8Array } from "@/utils/hex";
 import { encryptProposal, encryptSymmetricKey } from "@/utils/encryption";
@@ -18,9 +18,11 @@ export function useEncryptedData() {
 
   const encryptProposalData = async (privateMetadata: ProposalMetadata, actions: RawAction[]) => {
     const actionsBytes = encodeAbiParameters(RawActionListAbi, [actions]);
-    if (isLoadingPubKeys ?? (isLoadingSigners || !encryptionRecipients))
-      throw new Error("The list of signers is not available yet");
-    else if (signerListError) throw signerListError;
+    if (isLoadingPubKeys || isLoadingSigners || !encryptionRecipients) {
+    throw new Error("The list of signers is not available yet");
+} else if (signerListError){
+      throw signerListError;
+    }
 
     // Encrypt data and generate an ephemeral symkey
     const strMetadata = JSON.stringify(privateMetadata);
@@ -30,7 +32,9 @@ export function useEncryptedData() {
     const encryptionPubKeys: Uint8Array[] = [];
     if (encryptionAccounts) {
       for (const recipient of encryptionRecipients) {
-        const account = encryptionAccounts.find((a) => a.owner === recipient ?? a.appointedAgent === recipient);
+        const account = encryptionAccounts.find(
+          (a) => isAddressEqual(a.owner, recipient) || isAddressEqual(a.appointedAgent, recipient)
+        );
         if (!account) continue;
 
         encryptionPubKeys.push(hexToUint8Array(account.publicKey));

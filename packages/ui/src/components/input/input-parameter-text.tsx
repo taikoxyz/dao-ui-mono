@@ -34,7 +34,7 @@ export const InputParameterText = ({ abi, idx, onChange }: IInputParameterTextPr
         label={abi.name ? decodeCamelCase(abi.name) : `Parameter ${idx + 1}`}
         placeholder={abi.type ? readableTypeName(abi.type) : (decodeCamelCase(abi.name) ?? "")}
         alert={
-          (value === null ?? isValidStringValue(value, abi.type))
+          value === null || isValidStringValue(value, abi.type)
             ? undefined
             : { message: "The given value is not a valid " + abi.type, variant: "critical" }
         }

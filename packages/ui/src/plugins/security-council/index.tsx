@@ -6,7 +6,7 @@ export default function PluginPage() {
   // Select the inner pages to display depending on the URL hash
   const { hash } = useUrl();
 
-  if (!hash ?? hash === "#/") return <EncryptionPage />;
+  if (!hash || hash === "#/") return <EncryptionPage />;
 
   // Default not found page
   return <NotFound />;

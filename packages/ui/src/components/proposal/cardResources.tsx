@@ -62,14 +62,14 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
           </tr>
           <tr>
             <td>
-              <Link target="_blank" href={`https://etherscan.io/address/${relatedProposal.creator}`} variant="primary">
+              <Link target="_blank" href={`https://etherscan.io/address/${relatedProposal?.creator}`} variant="primary">
                 {creatorProfile?.name}
               </Link>
             </td>
             <td>
               <Link
                 target="_blank"
-                href={`https://etherscan.io/tx/${relatedProposal.creationTxHash}`}
+                href={`https://etherscan.io/tx/${relatedProposal?.creationTxHash}`}
                 variant="primary"
                 iconRight={IconType.LINK_EXTERNAL}
               >

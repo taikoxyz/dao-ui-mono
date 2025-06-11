@@ -1,5 +1,5 @@
 import { formatHexString } from "@/utils/evm";
-import { IGqlProposalMixin } from "@/utils/gql/getGqProposal";
+import { IGqlProposalMixin } from "@/utils/gql/types";
 import { Link, type IPublisher } from "@aragon/ods";
 
 const MAX_PUBLISHERS_SHOWN = 3;

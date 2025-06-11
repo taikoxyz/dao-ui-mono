@@ -77,7 +77,7 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     },
   ];
 
-  if (!proposal ?? showProposalLoading) {
+  if (!proposal || showProposalLoading) {
     return (
       <section className="justify-left items-left flex w-screen min-w-full max-w-full">
         <PleaseWaitSpinner />

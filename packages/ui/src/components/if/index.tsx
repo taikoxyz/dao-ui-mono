@@ -195,5 +195,5 @@ function hasConditionalChildren(children: ReactNode): boolean {
 }
 
 function isConditionalChild(node: ReactElement) {
-  return node.type === Then ?? node.type === ElseIf ?? node.type === Else;
+  return node.type === Then || node.type === ElseIf || node.type === Else;
 }

@@ -7,7 +7,7 @@ export default function PluginPage() {
   // Select the inner pages to display depending on the URL hash
   const { hash } = useUrl();
 
-  if (!hash ?? hash === "#/") return <ProposalList />;
+  if (!hash || hash === "#/") return <ProposalList />;
   else if (hash.startsWith("#/proposals/")) {
     const index = parseInt(hash.replace("#/proposals/", ""));
     if (isNaN(index)) return <NotFound />;

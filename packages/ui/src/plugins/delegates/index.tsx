@@ -8,7 +8,7 @@ export default function PluginPage() {
   // Select the inner pages to display depending on the URL hash
   const { hash } = useUrl();
 
-  if (!hash ?? hash === "#/") return <MembersPage />;
+  if (!hash || hash === "#/") return <MembersPage />;
   else if (hash.startsWith("#/delegates/")) {
     const address = hash.replace("#/delegates/", "") as Address;
     return <DelegateProfile address={address} />;

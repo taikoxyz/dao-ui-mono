@@ -43,7 +43,7 @@ export default function MembersList() {
       <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
         <div className="flex flex-1 flex-col gap-y-6">
           <div className="flex items-start justify-between">
-            <If condition={toggleValue === "all" ?? toggleValue === "verified"}>
+            <If condition={toggleValue === "all" || toggleValue === "verified"}>
               <Then>
                 <Heading size="h1">Delegates</Heading>
               </Then>
@@ -91,7 +91,7 @@ export default function MembersList() {
                 </a>
               </dd>
             </div>
-            <If condition={toggleValue === "all" ?? toggleValue === "verified"}>
+            <If condition={toggleValue === "all" || toggleValue === "verified"}>
               <Then>
                 <div className="flex flex-col items-baseline gap-y-2 py-3 lg:gap-x-6 lg:py-4">
                   <dt className="line-clamp-1 shrink-0 text-lg leading-tight text-neutral-800 lg:line-clamp-6 lg:w-40">

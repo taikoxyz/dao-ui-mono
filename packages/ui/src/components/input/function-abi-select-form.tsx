@@ -44,7 +44,7 @@ export const FunctionAbiSelectForm: FC<FunctionAbiSelectFormProps> = ({ onChange
         <InputText
           label="Contract address"
           placeholder="0x1234..."
-          variant={(!targetContract ?? isAddress(targetContract)) ? "default" : "critical"}
+          variant={!targetContract || isAddress(targetContract) ? "default" : "critical"}
           value={targetContract}
           onChange={(e) => {
             setTargetContract(e.target.value ?? "");
@@ -143,7 +143,7 @@ const FunctionSelect = ({
     <InputContainer id="func-abi-select" label="Select the function to call" className="my-4">
       <dl className="w-full divide-y divide-neutral-100">
         {functionAbiList.map((func, idx) => (
-          <If condition={!["pure", "view"].includes(func.stateMutability) ?? showReadOnly} key={idx}>
+          <If condition={!["pure", "view"].includes(func.stateMutability) || showReadOnly} key={idx}>
             <div
               onClick={() => onSelect(func)}
               className="flex cursor-pointer flex-col items-baseline gap-y-2 py-3 first:rounded-t-xl last:rounded-b-xl hover:bg-neutral-50 lg:gap-x-6 lg:py-4"

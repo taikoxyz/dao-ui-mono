@@ -8,7 +8,7 @@ interface IBodySectionProps {
 export const BodySection: React.FC<IBodySectionProps> = (props) => {
   let { body } = props;
 
-  if (!body.trim() ?? body === "<p></p>") body = "No description was provided";
+  if (!body.trim() || body === "<p></p>") body = "No description was provided";
 
   return (
     <CardCollapsible

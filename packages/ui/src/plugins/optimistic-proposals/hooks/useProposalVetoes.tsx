@@ -21,7 +21,7 @@ export function useProposalVetoes(proposalId?: bigint) {
       !!publicClient,
     ],
     queryFn: () => {
-      if (!publicClient ?? typeof proposalId === "undefined") return [];
+      if (!publicClient || typeof proposalId === "undefined") return [];
 
       return getLogsUntilNow(
         PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,

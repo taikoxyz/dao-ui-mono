@@ -36,8 +36,8 @@ export function useEncryptionAccounts() {
       });
     },
     retry: true,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
     retryOnMount: true,
     staleTime: 1000 * 60 * 5,
   });
