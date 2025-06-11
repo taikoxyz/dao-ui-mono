@@ -1,6 +1,3 @@
-import { useUrl } from "@/hooks/useUrl";
-import { NotFound } from "@/components/not-found";
-import { Address } from "viem";
 import { MainSection } from "@/components/layout/main-section";
 
 export default function MissionPage() {
@@ -8,17 +5,17 @@ export default function MissionPage() {
     <MainSection>
       <h1 className="text-lg">Mission</h1>
       <p>
-        The Taiko Security Council's mission is to safeguard the protocol through proactive security measures that
-        maintain the highest industry standards while ensuring seamless alignment with Ethereum's security framework.
-        The council leverages its members' expertise to continuously improve security practices specifically tailored
-        for Taiko's ZK-rollup architecture.
+        The Taiko Security Council′s mission is to safeguard the protocol through proactive security measures that
+        maintain the highest industry standards while ensuring seamless alignment with Ethereum′s security framework.
+        The council leverages its members′ expertise to continuously improve security practices specifically tailored
+        for Taiko′s ZK-rollup architecture.
       </p>
       <h1 className="mt-4 text-lg">Core Values</h1>
       <p>
         <ul className="list-inside list-decimal">
           <li>
-            <b>Ethereum Alignment:</b> We maintain unwavering commitment to Ethereum's security standards and
-            developments, ensuring Taiko's security framework evolves in harmony with the broader Ethereum ecosystem.
+            <b>Ethereum Alignment:</b> We maintain unwavering commitment to Ethereum′s security standards and
+            developments, ensuring Taiko′s security framework evolves in harmony with the broader Ethereum ecosystem.
           </li>
           <li>
             <b>Collective Expertise:</b> We leverage the diverse technical knowledge and industry experience of our
