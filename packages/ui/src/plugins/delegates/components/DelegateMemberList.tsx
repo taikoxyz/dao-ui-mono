@@ -5,9 +5,9 @@ import { equalAddresses } from "@/utils/evm";
 import { useDelegates } from "../hooks/useDelegates";
 import { useTokenVotes } from "../../../hooks/useTokenVotes";
 import { useAccount } from "wagmi";
-import VerifiedDelegates from "../../../verified-delegates.json";
+import VerifiedDelegates from "@/data/verified-delegates.json";
 import { PleaseWaitSpinner } from "@/components/please-wait";
-import BannedDelegates from "../../../banned-delegates.json";
+import BannedDelegates from "@/data/banned-delegates.json";
 
 interface IDelegateMemberListProps {
   verifiedOnly?: boolean;

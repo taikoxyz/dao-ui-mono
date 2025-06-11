@@ -6,7 +6,7 @@ import { PUB_CHAIN } from "@/constants";
 import { useSignerList } from "@/plugins/security-council/hooks/useSignerList";
 import { useEncryptionAccounts } from "../hooks/useEncryptionAccounts";
 import { BYTES32_ZERO } from "@/utils/evm";
-import SecurityCouncilProfiles from "../../../security-council-profiles.json";
+import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { Address, isAddressEqual } from "viem";
 
 interface IAccountListProps {}

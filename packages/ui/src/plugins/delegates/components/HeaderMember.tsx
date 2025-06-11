@@ -17,7 +17,7 @@ import { useTokenVotes } from "../../../hooks/useTokenVotes";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useDelegateVotingPower } from "../hooks/useDelegateVotingPower";
-import VerifiedDelegates from "../../../verified-delegates.json";
+import VerifiedDelegates from "@/data/verified-delegates.json";
 
 interface IHeaderMemberProps {
   name?: string;

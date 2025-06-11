@@ -9,7 +9,7 @@ import { capitalizeFirstLetter } from "@/utils/text";
 import { Publisher } from "@/components/publisher";
 import { Address, isAddressEqual } from "viem";
 import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
-import SecurityCouncilProfiles from "../../../../security-council-profiles.json";
+import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { IGqlProposalMixin } from "@/utils/gql/getGqProposal";
 
 const DEFAULT_PROPOSAL_TITLE = "(No proposal title)";

@@ -5,7 +5,7 @@ import { useAccount } from "wagmi";
 import { Address, Hex, isAddressEqual } from "viem";
 import { AccountEncryptionStatus, useAccountEncryptionStatus } from "../hooks/useAccountEncryptionStatus";
 import { AddressText } from "@/components/text/address";
-import SecurityCouncilProfiles from "../../../security-council-profiles.json";
+import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { PUB_CHAIN } from "@/constants";
 
 export interface IAccountListItemProps extends IDataListItemProps {

@@ -4,8 +4,8 @@ import { type IDataListItemProps, DataList, MemberAvatar, Tag } from "@aragon/od
 import { useAccount } from "wagmi";
 import { Address, formatEther } from "viem";
 import { useTokenVotes } from "../../../hooks/useTokenVotes";
-import VerifiedDelegates from "../../../verified-delegates.json";
-import BannedDelegates from "../../../banned-delegates.json";
+import VerifiedDelegates from "@/data/verified-delegates.json";
+import BannedDelegates from "@/data/banned-delegates.json";
 import { useDelegateAnnounce } from "../hooks/useDelegateAnnounce";
 import { useProfanityChecker } from "glin-profanity";
 import { GlinConfig } from "@/constants";

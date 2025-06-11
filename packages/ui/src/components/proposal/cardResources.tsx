@@ -5,7 +5,7 @@ import { gql } from "@apollo/client";
 import { Card, CardEmptyState, Heading, IconType, Link } from "@aragon/ods";
 import React from "react";
 import { Address, zeroAddress } from "viem";
-import SecurityCouncilProfiles from "../../security-council-profiles.json";
+import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 
 import { OptimisticProposal } from "@/plugins/optimistic-proposals/utils/types";
 import { useProposalStatus } from "@/plugins/optimistic-proposals/hooks/useProposalVariantStatus";

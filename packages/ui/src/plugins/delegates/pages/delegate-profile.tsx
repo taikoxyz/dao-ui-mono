@@ -7,7 +7,7 @@ import { formatHexString } from "@/utils/evm";
 import { GlinConfig } from "@/constants";
 import { useEffect } from "react";
 import { useProfanityChecker } from "glin-profanity";
-import BannedDelegates from "../../../banned-delegates.json";
+import BannedDelegates from "@/data/banned-delegates.json";
 
 export const DelegateProfile = ({ address }: { address: Address }) => {
   const { announce } = useDelegateAnnounce(address);

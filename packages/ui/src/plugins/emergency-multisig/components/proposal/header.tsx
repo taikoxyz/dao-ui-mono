@@ -5,7 +5,7 @@ import { getShortTimeDiffFrom } from "@/utils/dates";
 import { EmergencyProposal } from "../../utils/types";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { HeaderSection } from "@/components/layout/header-section";
-import SecurityCouncilProfiles from "../../../../security-council-profiles.json";
+import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { useEncryptionAccounts } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import { Address, isAddressEqual } from "viem";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";

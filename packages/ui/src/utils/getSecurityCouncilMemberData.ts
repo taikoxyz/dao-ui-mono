@@ -1,5 +1,5 @@
 import { Address, isAddressEqual } from "viem";
-import SecurityCouncilProfiles from "../security-council-profiles.json";
+import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 
 export interface ISecurityCouncilMemberProfile {
   owner: Address;

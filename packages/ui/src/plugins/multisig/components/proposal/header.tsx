@@ -18,7 +18,7 @@ import { getTagVariantFromStatus } from "@/utils/ui-variants";
 import { capitalizeFirstLetter } from "@/utils/text";
 import { useEncryptionAccounts } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import { Address, isAddressEqual, zeroAddress } from "viem";
-import SecurityCouncilProfiles from "../../../../security-council-profiles.json";
+import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 
 interface ProposalHeaderProps {
