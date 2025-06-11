@@ -24,7 +24,6 @@ import { AddressText } from "@/components/text/address";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 import { useProposalId } from "../hooks/useProposalId";
 import { useGetGqlRelatedProposal } from "@/utils/gql/hooks/useGetGqlRelatedProposal";
-import { getRelatedProposalTo } from "@/utils/gql/getGqProposal";
 
 const ZERO = BigInt(0);
 

@@ -94,7 +94,7 @@ export default function Proposals() {
             >
               <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
                 {proposalCount &&
-                  Array.from(Array(proposalCount ?? 0)?.keys())
+                  Array.from(Array(proposalCount || 0)?.keys())
                     .reverse()
                     ?.map((proposalIndex) => (
                       // TODO: update with router agnostic ODS DataListItem

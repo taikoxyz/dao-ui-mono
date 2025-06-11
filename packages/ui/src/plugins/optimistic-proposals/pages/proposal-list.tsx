@@ -1,36 +1,24 @@
 import { useAccount, useBlockNumber, useReadContract } from "wagmi";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import ProposalCard from "@/plugins/optimistic-proposals/components/proposal";
 import {
   AlertCard,
-  Button,
   CardEmptyState,
   DataList,
   Heading,
-  IconType,
   Link,
   ProposalDataListItemSkeleton,
-  Toggle,
-  ToggleGroup,
   type DataListState,
 } from "@aragon/ods";
 
 import { Else, ElseIf, If, Then } from "@/components/if";
-import {
-  PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
-  PUB_CHAIN,
-  PUB_TOKEN_SYMBOL,
-  PUB_APP_NAME,
-  PUB_PROJECT_URL,
-  PUB_MULTISIG_PLUGIN_ADDRESS,
-} from "@/constants";
+import { PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS, PUB_CHAIN, PUB_APP_NAME, PUB_PROJECT_URL } from "@/constants";
 import { OptimisticTokenVotingPluginAbi } from "../artifacts/OptimisticTokenVotingPlugin.sol";
 import { MainSection } from "@/components/layout/main-section";
 import { ADDRESS_ZERO } from "@/utils/evm";
 import { useTokenVotes } from "@/hooks/useTokenVotes";
 import { AddressText } from "@/components/text/address";
 import { Address } from "viem";
-import { useGovernanceSettings } from "../hooks/useGovernanceSettings";
 import { useGqlProposalMultiple } from "@/utils/gql/hooks/useGetGqlProposalMultiple";
 const DEFAULT_PAGE_SIZE = 6;
 
@@ -55,7 +43,7 @@ export function PublicProposals() {
 
   useEffect(() => {
     refetch();
-  }, [blockNumber]);
+  }, [blockNumber, refetch]);
 
   const entityLabel = proposalCount === 1 ? "Proposal" : "Proposals";
 
@@ -99,7 +87,7 @@ export function PublicProposals() {
             }}
           >
             <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
-              {Array.from(Array(proposalCount ?? 0)?.keys())
+              {Array.from(Array(proposalCount || 0)?.keys())
                 .reverse()
                 ?.map((proposalIndex) => (
                   <ProposalCard

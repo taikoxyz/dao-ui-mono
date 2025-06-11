@@ -4,14 +4,12 @@ import { Card, ProposalStatus, ProposalDataListItem } from "@aragon/ods";
 import { PleaseWaitSpinner } from "@/components/please-wait";
 import { useProposalStatus } from "../../hooks/useProposalVariantStatus";
 import { useAccount } from "wagmi";
-import { formatEther, isAddressEqual, zeroAddress } from "viem";
+import { isAddressEqual, zeroAddress } from "viem";
 import { usePastSupply } from "../../hooks/usePastSupply";
 import { useToken } from "../../hooks/useToken";
-import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
-import { useProposalId } from "../../hooks/useProposalId";
-import { IGqlProposalMixin } from "@/utils/gql/getGqProposal";
 import { PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS, PUB_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
 import formatLargeNumber from "@/utils/formatLArgeNumber";
+import { IGqlProposalMixin } from "@/utils/gql/types";
 
 const DEFAULT_PROPOSAL_METADATA_TITLE = "(No proposal title)";
 const DEFAULT_PROPOSAL_METADATA_SUMMARY = "(The metadata of the proposal is not available)";
@@ -25,14 +23,7 @@ type ProposalInputs = {
 export default function ProposalCard(props: ProposalInputs) {
   const { address } = useAccount();
   const { proposal, proposalFetchStatus, vetoes } = useProposalVeto(props.proposalIndex);
-  const { proposalId } = useProposalId(props.proposalIndex);
 
-  const { data: gqlProposal } = useGqlProposalSingle({
-    proposalId: proposalId?.toString() ?? "",
-    isStandard: false,
-    isOptimistic: true,
-    isEmergency: false,
-  });
   const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp ?? BigInt(0));
 
   const { symbol: tokenSymbol } = useToken();
@@ -125,7 +116,7 @@ function getShowProposalLoading(
   proposal: ReturnType<typeof useProposalVeto>["proposal"],
   status: ReturnType<typeof useProposalVeto>["proposalFetchStatus"]
 ) {
-  if (!proposal ?? status.proposalLoading) return true;
+  if (!proposal || status.proposalLoading) return true;
   else if (status.metadataLoading && !status.metadataError) return true;
   else if (!proposal?.title && !status.metadataError) return true;
 

@@ -1,12 +1,8 @@
 import { useEffect } from "react";
 import { useBlockNumber, usePublicClient, useReadContract } from "wagmi";
 import { fromHex, getAbiItem } from "viem";
-import { ProposalMetadata, type RawAction, type DecodedAction } from "@/utils/types";
-import {
-  type OptimisticProposal,
-  type OptimisticProposalParameters,
-  type OptimisticProposalResultType,
-} from "@/plugins/optimistic-proposals/utils/types";
+import { ProposalMetadata, type RawAction } from "@/utils/types";
+import { type OptimisticProposal, type OptimisticProposalResultType } from "@/plugins/optimistic-proposals/utils/types";
 import { PUB_CHAIN, PUB_DEPLOYMENT_BLOCK, PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS } from "@/constants";
 import { useMetadata } from "@/hooks/useMetadata";
 import { OptimisticTokenVotingPluginAbi } from "../artifacts/OptimisticTokenVotingPlugin.sol";
@@ -39,7 +35,7 @@ export function useProposal(proposalId?: bigint, autoRefresh = false) {
 
   useEffect(() => {
     if (autoRefresh) proposalRefetch();
-  }, [blockNumber]);
+  }, [blockNumber, autoRefresh, proposalRefetch]);
 
   // JSON metadata
   const metadataUri = fromHex(proposalResult?.[4] ?? "0x", "string");
@@ -78,7 +74,7 @@ function useProposalCreationEvent(proposalId: bigint | undefined) {
       !!publicClient,
     ],
     queryFn: () => {
-      if (!publicClient ?? typeof proposalId === "undefined") throw new Error("Not ready");
+      if (!publicClient || typeof proposalId === "undefined") throw new Error("Not ready");
       // aapply next fix
       return getLogsUntilNow(
         PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
@@ -100,20 +96,6 @@ function useProposalCreationEvent(proposalId: bigint | undefined) {
     retryOnMount: true,
     staleTime: 1000 * 60 * 10,
   });
-}
-
-function decodeProposalResultData(data?: OptimisticProposalResultType) {
-  if (!data?.length ?? data.length < 6) return null;
-
-  return {
-    active: data[0] as boolean,
-    executed: data[1] as boolean,
-    parameters: data[2] as OptimisticProposalParameters,
-    vetoTally: data[3] as bigint,
-    metadataUri: data[4] as string,
-    actions: data[5] as Array<RawAction>,
-    allowFailureMap: data[6] as bigint,
-  };
 }
 
 function arrangeProposalData(

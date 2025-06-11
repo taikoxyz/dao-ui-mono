@@ -30,7 +30,7 @@ export const LatestProposals = () => {
         <Then>
           <DataList.Root entityLabel={entityLabel} pageSize={3}>
             <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
-              {Array.from(Array(proposalCount ?? 0)?.keys())
+              {Array.from(Array(proposalCount || 0)?.keys())
                 .slice(-3)
                 .reverse()
                 ?.map((proposalIndex) => (

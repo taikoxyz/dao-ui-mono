@@ -22,7 +22,7 @@ export function useUserCanVeto(proposalId?: bigint) {
     if (Number(blockNumber) % 2 === 0) {
       refetch();
     }
-  }, [blockNumber]);
+  }, [blockNumber, refetch]);
 
   return { canVeto, refetch };
 }

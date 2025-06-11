@@ -36,6 +36,7 @@ export const useProposalVariantStatus = (proposal: OptimisticProposal) => {
     proposal?.parameters?.minVetoRatio,
     totalSupply,
     bridgedBalance,
+    proposal,
   ]);
 
   return status;
@@ -72,6 +73,7 @@ export const useProposalStatus = (proposal: OptimisticProposal | null) => {
     proposal?.parameters?.minVetoRatio,
     totalSupply,
     bridgedBalance,
+    proposal,
   ]);
 
   const isEmergency = !!proposal && proposal.parameters.vetoStartDate === proposal.parameters.vetoEndDate;
@@ -93,7 +95,7 @@ export const useProposalStatus = (proposal: OptimisticProposal | null) => {
       timelockPeriod = governanceSettings.timelockPeriod;
     }
 
-    if (!!proposal) {
+    if (proposal) {
       l2GracePeriodEnd = (proposal.parameters.vetoEndDate + BigInt(l2AggregationGracePeriod)) * 1000n;
       timelockPeriodEnd = l2GracePeriodEnd + BigInt(timelockPeriod) * 1000n;
 
