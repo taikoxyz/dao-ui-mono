@@ -22,7 +22,7 @@ type IfProps = { condition: Booleanish; children?: ReactNode } | { not: Booleani
  *   <ElseIf condition={ d && e }>
  *     <p>Condition 2 is true</p>
  *   </ElseIf>
- *   <ElseIf not={ f || g }>
+ *   <ElseIf not={ f ?? g }>
  *     <p>Condition 3 is false</p>
  *   </ElseIf>
  *   <Else>
@@ -37,7 +37,7 @@ type IfProps = { condition: Booleanish; children?: ReactNode } | { not: Booleani
  *   <ElseIf condition={ d && e }>
  *     <p>Condition 2 is true</p>
  *   </ElseIf>
- *   <ElseIf not={ f || g }>
+ *   <ElseIf not={ f ?? g }>
  *     <p>Condition 3 is false</p>
  *   </ElseIf>
  *   <Else>
@@ -195,5 +195,5 @@ function hasConditionalChildren(children: ReactNode): boolean {
 }
 
 function isConditionalChild(node: ReactElement) {
-  return node.type === Then || node.type === ElseIf || node.type === Else;
+  return node.type === Then ?? node.type === ElseIf ?? node.type === Else;
 }

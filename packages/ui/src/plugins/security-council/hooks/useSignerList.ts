@@ -1,47 +1,18 @@
-import { useConfig, usePublicClient } from "wagmi";
+import { useConfig } from "wagmi";
 import { SignerListAbi } from "../artifacts/SignerList";
 import { PUB_SIGNER_LIST_CONTRACT_ADDRESS } from "@/constants";
-import { Address, getAbiItem, GetLogsReturnType } from "viem";
+import { Address } from "viem";
 import { useQuery } from "@tanstack/react-query";
 import { Config, readContract } from "@wagmi/core";
-import { getLogsUntilNow } from "@/utils/evm";
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 import { PUB_SUBGRAPH_URL } from "@/constants";
 
-const SignersAddedEvent = getAbiItem({
-  abi: SignerListAbi,
-  name: "SignersAdded",
-});
-const SignersRemovedEvent = getAbiItem({
-  abi: SignerListAbi,
-  name: "SignersRemoved",
-});
-
 export function useSignerList() {
-  const getSigners = () => {
-    return getGqlSigners();
-  };
-  /*
-    const publicClient = usePublicClient();
-  
-    const getSigners = () => {
-      if (!publicClient) {
-        throw new Error("No public client");
-      }
-  
-      const addedProm = getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersAddedEvent, {}, publicClient);
-      const removedProm = getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersRemovedEvent, {}, publicClient);
-  
-      return Promise.all([addedProm, removedProm]).then(([addedLogs, removedLogs]) => {
-        return computeCurrentSignerList(addedLogs, removedLogs);
-      });
-    }
-
-*/
-
   return useQuery({
     queryKey: ["signer-list-fetch", PUB_SIGNER_LIST_CONTRACT_ADDRESS],
-    queryFn: getSigners,
+    queryFn: () => {
+      return getGqlSigners();
+    },
     retry: true,
     refetchOnMount: false,
     refetchOnReconnect: false,
@@ -97,29 +68,4 @@ async function getGqlSigners(): Promise<Address[]> {
     console.error("GQL Error:", e);
     return [];
   }
-}
-
-type SignerAddRemoveItem = {
-  blockNumber: bigint;
-  added: Address[];
-  removed: Address[];
-};
-
-function computeCurrentSignerList(
-  addedLogs: GetLogsReturnType<typeof SignersAddedEvent>,
-  removedLogs: GetLogsReturnType<typeof SignersRemovedEvent>
-) {
-  const merged: Array<SignerAddRemoveItem> = addedLogs
-    .map((item) => ({
-      blockNumber: item.blockNumber,
-      added: item.args.signers || ([] as any),
-      removed: [],
-    }))
-    .concat(
-      removedLogs.map((item) => ({
-        blockNumber: item.blockNumber,
-        added: [],
-        removed: item.args.signers || ([] as any),
-      }))
-    );
 }

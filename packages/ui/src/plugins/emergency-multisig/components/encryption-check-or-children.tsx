@@ -111,7 +111,7 @@ export const EncryptionPlaceholderOrChildren = ({
         heading={title}
         description={description}
         objectIllustration={{
-          object: object || "LABELS",
+          object: object ?? "LABELS",
         }}
         primaryButton={button}
       />

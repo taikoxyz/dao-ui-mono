@@ -17,7 +17,7 @@ export const EncodedView: React.FC<IEncodedViewProps> = (props) => {
 };
 
 function getEncodedArgs(action: RawAction) {
-  const isEthTransfer = !action.data || action.data === "0x";
+  const isEthTransfer = !action.data ?? action.data === "0x";
 
   if (isEthTransfer) {
     return [

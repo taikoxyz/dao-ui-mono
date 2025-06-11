@@ -9,14 +9,12 @@ import { BYTES32_ZERO } from "@/utils/evm";
 import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { Address, isAddressEqual } from "viem";
 
-interface IAccountListProps {}
-
-export const AccountList: React.FC<IAccountListProps> = ({}) => {
+export const AccountList: React.FC = () => {
   const [searchValue, setSearchValue] = useState<string>();
   const { data: accounts, isLoading: isLoading1 } = useSignerList();
   const { data: encryptionAccounts, isLoading: isLoading2, error } = useEncryptionAccounts();
 
-  if (!encryptionAccounts || !accounts || isLoading1 || isLoading2) {
+  if ((!encryptionAccounts || !accounts) ?? isLoading1 ?? isLoading2) {
     return <PleaseWaitSpinner fullMessage="Please wait, loading accounts" />;
   } else if (!encryptionAccounts.length) {
     if (error) return <NoSignersView title="Could not fetch" message={error?.message} />;
@@ -38,13 +36,13 @@ export const AccountList: React.FC<IAccountListProps> = ({}) => {
             return (
               !searchValue ||
               acc.toLowerCase().includes(searchValue.toLowerCase()) ||
-              profile?.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-              profile?.description.toLowerCase().includes(searchValue.toLowerCase())
+              (profile?.name.toLowerCase().includes(searchValue.toLowerCase()) ??
+                profile?.description.toLowerCase().includes(searchValue.toLowerCase()))
             );
           })
           .map((account: Address) => {
             const eAcc = encryptionAccounts.find((a) => isAddressEqual(a.owner, account));
-            if (!eAcc || !eAcc.publicKey || eAcc.publicKey === BYTES32_ZERO) {
+            if ((!eAcc || !eAcc.publicKey) ?? eAcc.publicKey === BYTES32_ZERO) {
               return (
                 <AccountListItemPending
                   key={account}

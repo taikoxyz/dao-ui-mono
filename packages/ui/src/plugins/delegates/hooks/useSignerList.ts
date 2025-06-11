@@ -74,14 +74,14 @@ function computeCurrentSignerList(
   const merged: Array<SignerAddRemoveItem> = addedLogs
     .map((item) => ({
       blockNumber: item.blockNumber,
-      added: item.args.signers || ([] as any),
+      added: item.args.signers ?? ([] as any),
       removed: [],
     }))
     .concat(
       removedLogs.map((item) => ({
         blockNumber: item.blockNumber,
         added: [],
-        removed: item.args.signers || ([] as any),
+        removed: item.args.signers ?? ([] as any),
       }))
     );
 

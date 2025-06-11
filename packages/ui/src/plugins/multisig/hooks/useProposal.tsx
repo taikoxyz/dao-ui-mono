@@ -77,7 +77,7 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       "multisig-proposal-creation-event",
       PUB_MULTISIG_PLUGIN_ADDRESS,
       proposalId.toString(),
-      snapshotBlock?.toString() || "",
+      snapshotBlock?.toString() ?? "",
       //  !!publicClient,
     ],
     queryFn: async () => {
@@ -120,11 +120,11 @@ function arrangeProposalData(
     },
     approvals: proposalData.approvals,
     allowFailureMap: BigInt(0),
-    creator: creationEvent?.creator || "",
-    title: metadata?.title || "",
-    summary: metadata?.summary || "",
-    description: metadata?.description || "",
-    resources: metadata?.resources || [],
+    creator: creationEvent?.creator ?? "",
+    title: metadata?.title ?? "",
+    summary: metadata?.summary ?? "",
+    description: metadata?.description ?? "",
+    resources: metadata?.resources ?? [],
   };
 }
 

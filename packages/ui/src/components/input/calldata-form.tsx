@@ -30,13 +30,13 @@ export const CalldataForm: FC<ICalldataFormProps> = ({ onChange, onSubmit }) => 
   const [calldata, setCalldata] = useState<string>("");
   const [value, setValue] = useState<string>("");
   const { isContract, isLoading, error: isContractError } = useIsContract(to);
-  const { abi, isLoading: isLoadingAbi } = useAbi((to || "") as Address);
+  const { abi, isLoading: isLoadingAbi } = useAbi((to ?? "") as Address);
 
   useEffect(() => {
     if (!isAddress(to)) return;
-    else if (!isHex(calldata) || calldata.trim().length % 2 !== 0) return;
+    else if (!isHex(calldata) ?? calldata.trim().length % 2 !== 0) return;
 
-    onChange({ to, value: BigInt(value || "0"), data: calldata } as unknown as RawAction);
+    onChange({ to, value: BigInt(value ?? "0"), data: calldata } as unknown as RawAction);
   }, [to, calldata, value]);
 
   const handleTo = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +67,7 @@ export const CalldataForm: FC<ICalldataFormProps> = ({ onChange, onSubmit }) => 
         <InputText
           label="Contract address"
           placeholder="0x1234..."
-          variant={!to || isAddress(to) ? "default" : "critical"}
+          variant={(!to ?? isAddress(to)) ? "default" : "critical"}
           value={to}
           alert={
             !!to && !isAddress(to)
@@ -139,7 +139,7 @@ function resolveCalldataAlert(
   } | null
 ): { message: string; variant: "critical" | "warning" } | undefined {
   if (!calldata) return undefined;
-  else if (!isHex(calldata) || calldata.trim().length % 2 !== 0) {
+  else if (!isHex(calldata) ?? calldata.trim().length % 2 !== 0) {
     return { message: "The given calldata is not a valid hex string", variant: "critical" };
   } else if (!abi?.length) return undefined;
   else if (!decodedParams) {

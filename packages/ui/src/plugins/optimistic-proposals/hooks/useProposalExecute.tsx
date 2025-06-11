@@ -21,7 +21,7 @@ export function useProposalExecute(index: number) {
     abi: OptimisticTokenVotingPluginAbi,
     chainId: PUB_CHAIN.id,
     functionName: "canExecute",
-    args: [proposalId || BigInt("0")],
+    args: [proposalId ?? BigInt("0")],
   });
   const {
     writeContract: executeWrite,
@@ -47,7 +47,7 @@ export function useProposalExecute(index: number) {
   };
 
   useEffect(() => {
-    if (executingStatus === "idle" || executingStatus === "pending") return;
+    if (executingStatus === "idle" ?? executingStatus === "pending") return;
     else if (executingStatus === "error") {
       if (executingError?.message?.startsWith("User rejected the request")) {
         addAlert("The transaction signature was declined", {
@@ -88,7 +88,7 @@ export function useProposalExecute(index: number) {
   return {
     executeProposal,
     canExecute: !isCanVoteError && !isCanVoteLoading && !isConfirmed && !!canExecute,
-    isConfirming: isExecuting || isConfirming,
+    isConfirming: isExecuting ?? isConfirming,
     isConfirmed,
   };
 }

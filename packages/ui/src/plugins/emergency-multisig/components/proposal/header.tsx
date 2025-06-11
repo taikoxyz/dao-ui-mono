@@ -31,7 +31,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
   const owner =
     encryptionAccounts?.find(
       ({ appointedAgent }) => creator && appointedAgent && isAddressEqual(appointedAgent, creator)
-    )?.owner || undefined;
+    )?.owner ?? undefined;
   const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
 
   return (
@@ -52,7 +52,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
             <Publisher
               gqlProposal={gqlProposal}
-              publisher={[{ address: proposal.creator, name: profile?.name || "" }]}
+              publisher={[{ address: proposal.creator, name: profile?.name ?? "" }]}
             />
           </div>
           <div className="flex items-center gap-x-2">

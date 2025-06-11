@@ -40,7 +40,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal, 
   const owner =
     encryptionAccounts?.find(
       ({ appointedAgent }) => appointedAgent && creator && isAddressEqual(appointedAgent, creator)
-    )?.owner || undefined;
+    )?.owner ?? undefined;
   const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
 
   return (
@@ -51,14 +51,14 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal, 
         {/* Title & description */}
         <div className="flex w-full flex-col gap-y-2">
           <div className="flex w-full items-center gap-x-4">
-            <Heading size="h1">{proposal.title || DEFAULT_PROPOSAL_TITLE}</Heading>
+            <Heading size="h1">{proposal.title ?? DEFAULT_PROPOSAL_TITLE}</Heading>
             {proposalStatus && <Tag label={capitalizeFirstLetter(proposalStatus)} variant={tagVariant} />}
           </div>
           <div className="flex w-full items-center gap-x-4">
             {isEmergency && <Tag label="Emergency Proposal" variant="critical" />}
             {!isEmergency && <Tag label="Standard Proposal" variant="neutral" />}
           </div>
-          <p className="text-lg leading-normal text-neutral-500">{proposal.summary || DEFAULT_PROPOSAL_SUMMARY}</p>
+          <p className="text-lg leading-normal text-neutral-500">{proposal.summary ?? DEFAULT_PROPOSAL_SUMMARY}</p>
         </div>
         {/* Metadata */}
         <div className="flex flex-wrap gap-x-10 gap-y-2">
@@ -66,7 +66,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal, 
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
             <Publisher
               gqlProposal={gqlProposal}
-              publisher={[{ address: proposal.creator, name: profile?.name || "" }]}
+              publisher={[{ address: proposal.creator, name: profile?.name ?? "" }]}
             />
           </div>
           <div className="flex items-center gap-x-2">

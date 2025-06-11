@@ -97,5 +97,5 @@ export const NavLink: React.FC<INavLinkProps> = (props) => {
 function resolvePluginId(pathname: string, queryParams: ParsedUrlQuery): string | null {
   if (pathname !== "/plugins/[id]") return null;
 
-  return resolveQueryParam(queryParams.id) || null;
+  return resolveQueryParam(queryParams.id) ?? null;
 }

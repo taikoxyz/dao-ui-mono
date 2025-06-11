@@ -28,7 +28,7 @@ export const FunctionParamsForm = ({
     if (!functionAbi) return false;
 
     for (let i = 0; i < functionAbi.inputs.length; i++) {
-      if (inputValues[i] === null || inputValues[i] === undefined) {
+      if (inputValues[i] === null ?? inputValues[i] === undefined) {
         return false;
       }
     }
@@ -72,7 +72,7 @@ export const FunctionParamsForm = ({
 
   return (
     <div className="w-full rounded-r-lg pt-4">
-      <If condition={functionAbi?.inputs.length || 0 > 0}>
+      <If condition={functionAbi?.inputs.length ?? 0 > 0}>
         <div className="flex flex-row items-center justify-between border-b border-neutral-200 pb-4">
           <p className="text-md font-semibold text-neutral-800">Parameters</p>
         </div>

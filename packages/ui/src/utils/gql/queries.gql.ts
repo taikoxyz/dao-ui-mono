@@ -1,5 +1,3 @@
-import { gql } from "@apollo/client";
-
 export const GQL_GET_PROPOSAL_MULTIPLE = `query getProposals(
     $isStandard: Boolean,
     $isEmergency: Boolean,

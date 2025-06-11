@@ -4,7 +4,7 @@ import { deploymentAccount as account } from "./lib/util/account";
 import { DelegateAnnouncerAbi } from "../plugins/security-council/artifacts/DelegationWall.sol";
 
 async function main() {
-  console.log("Emitting delegation event");
+  console.info("Emitting delegation event");
   const message = "ipfs://...";
 
   const { request } = await publicClient.simulateContract({
@@ -16,14 +16,14 @@ async function main() {
   });
   const hash = await walletClient.writeContract(request);
 
-  console.log("  - Waiting for transaction (" + hash + ")");
+  console.info("  - Waiting for transaction (" + hash + ")");
 
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   if (!receipt) {
     throw new Error("The Dual Governance plugin repository could not be created");
   }
 
-  console.log("Done");
+  console.info("Done");
 }
 
 main();

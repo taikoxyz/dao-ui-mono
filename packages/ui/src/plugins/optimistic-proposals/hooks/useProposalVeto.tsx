@@ -20,7 +20,7 @@ export function useProposalVeto(index: number) {
   const { canVeto, refetch: refetchCanVeto } = useUserCanVeto(proposalId);
 
   useEffect(() => {
-    if (vetoingStatus === "idle" || vetoingStatus === "pending") return;
+    if (vetoingStatus === "idle" ?? vetoingStatus === "pending") return;
     else if (vetoingStatus === "error") {
       if (vetoingError?.message?.startsWith("User rejected the request")) {
         addAlert("The transaction signature was declined", {
@@ -58,7 +58,7 @@ export function useProposalVeto(index: number) {
       abi: OptimisticTokenVotingPluginAbi,
       address: PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
       functionName: "veto",
-      args: [proposalId || BigInt(0)],
+      args: [proposalId ?? BigInt(0)],
     });
   };
 
@@ -67,7 +67,7 @@ export function useProposalVeto(index: number) {
     proposalFetchStatus,
     vetoes,
     canVeto: !!canVeto,
-    isConfirming: vetoingStatus === "pending" || isConfirming,
+    isConfirming: vetoingStatus === "pending" ?? isConfirming,
     isConfirmed,
     vetoProposal,
   };

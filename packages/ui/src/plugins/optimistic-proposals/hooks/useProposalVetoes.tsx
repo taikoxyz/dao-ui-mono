@@ -17,11 +17,11 @@ export function useProposalVetoes(proposalId?: bigint) {
     queryKey: [
       "optimistic-proposal-veto-cast-event",
       PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
-      proposalId?.toString() || "",
+      proposalId?.toString() ?? "",
       !!publicClient,
     ],
     queryFn: () => {
-      if (!publicClient || typeof proposalId === "undefined") return [];
+      if (!publicClient ?? typeof proposalId === "undefined") return [];
 
       return getLogsUntilNow(
         PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,

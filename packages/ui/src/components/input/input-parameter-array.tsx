@@ -45,8 +45,8 @@ export const InputParameterArray = ({ abi, idx, onChange }: IInputParameterArray
           <InputText
             className={i > 0 ? "mt-3" : ""}
             addon={(i + 1).toString()}
-            placeholder={baseType ? readableTypeName(baseType) : decodeCamelCase(abi.name) || ""}
-            variant={item === null || isValidStringValue(item, baseType) ? "default" : "critical"}
+            placeholder={baseType ? readableTypeName(baseType) : (decodeCamelCase(abi.name) ?? "")}
+            variant={(item === null ?? isValidStringValue(item, baseType)) ? "default" : "critical"}
             value={item ?? ""}
             onChange={(e) => onItemChange(i, e.target.value)}
           />

@@ -28,8 +28,8 @@ export function useToken() {
     tokenSupply,
     symbol: tokenSymbol,
     status: {
-      isLoading: isLoading1 || isLoading2,
-      isError: isError1 || isError2,
+      isLoading: isLoading1 ?? isLoading2,
+      isError: isError1 ?? isError2,
     },
   };
 }

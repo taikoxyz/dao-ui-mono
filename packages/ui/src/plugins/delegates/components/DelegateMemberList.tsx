@@ -19,9 +19,9 @@ export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifie
   const [searchValue, setSearchValue] = useState<string>();
   //   const [activeSort, setActiveSort] = useState<string>();
   const { delegates: _fetchedDelegates, status: loadingStatus } = useDelegates();
-  const fetchedDelegates = _fetchedDelegates || [];
+  const fetchedDelegates = _fetchedDelegates ?? [];
   const { delegatesTo } = useTokenVotes(address);
-  const delegates = (fetchedDelegates || []).filter((item) => {
+  const delegates = (fetchedDelegates ?? []).filter((item) => {
     if (BannedDelegates.findIndex((d) => equalAddresses(d.address, item)) >= 0) return false;
     if (!verifiedOnly) return true;
     return VerifiedDelegates.findIndex((d) => equalAddresses(d.address, item)) >= 0;
@@ -33,13 +33,13 @@ export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifie
     return <NoDelegatesView verified={verifiedOnly} />;
   }
 
-  const filteredDelegates = (delegates || []).filter((item) => {
+  const filteredDelegates = (delegates ?? []).filter((item) => {
     if (BannedDelegates.findIndex((d) => equalAddresses(d.address, item)) >= 0) return false;
     if (!searchValue?.trim()) return true;
     return item.toLowerCase().includes(searchValue.toLowerCase());
   });
 
-  const totalMembers = filteredDelegates.length || 0;
+  const totalMembers = filteredDelegates.length ?? 0;
   const showPagination = true;
 
   return (

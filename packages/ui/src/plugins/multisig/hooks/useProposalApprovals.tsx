@@ -18,7 +18,7 @@ export function useProposalApprovals(proposalId: string, snapshotBlock: bigint |
       "multisig-proposal-approved-event",
       PUB_MULTISIG_PLUGIN_ADDRESS,
       proposalId.toString(),
-      snapshotBlock?.toString() || "",
+      snapshotBlock?.toString() ?? "",
       !!publicClient,
     ],
     queryFn: () => {

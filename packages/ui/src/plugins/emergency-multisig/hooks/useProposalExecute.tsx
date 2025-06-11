@@ -71,7 +71,7 @@ export function useProposalExecute(proposalId: string) {
   };
 
   useEffect(() => {
-    if (executingStatus === "idle" || executingStatus === "pending") return;
+    if (executingStatus === "idle" ?? executingStatus === "pending") return;
     else if (executingStatus === "error") {
       if (executingError?.message?.startsWith("User rejected the request")) {
         addAlert("The transaction signature was declined", {
@@ -121,7 +121,7 @@ export function useProposalExecute(proposalId: string) {
       !!canExecute &&
       !!privateRawMetadata &&
       !!proposal?.actions,
-    isConfirming: isExecuting || isConfirming,
+    isConfirming: isExecuting ?? isConfirming,
     isConfirmed,
   };
 }

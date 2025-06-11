@@ -1,15 +1,5 @@
 import { MainSection } from "@/components/layout/main-section";
-import {
-  AlertCard,
-  AlertVariant,
-  Button,
-  Heading,
-  IAlertCardProps,
-  IconType,
-  Link,
-  Toggle,
-  ToggleGroup,
-} from "@aragon/ods";
+import { AlertCard, AlertVariant, Button, Heading, IconType, Link, Toggle, ToggleGroup } from "@aragon/ods";
 import { useState } from "react";
 import { AddressText } from "@/components/text/address";
 import { Else, ElseIf, If, Then } from "@/components/if";
@@ -20,29 +10,18 @@ import { PleaseWaitSpinner } from "@/components/please-wait";
 import { AccountEncryptionStatus, useAccountEncryptionStatus } from "../hooks/useAccountEncryptionStatus";
 import { AppointDialog } from "@/plugins/security-council/components/AppointDialog";
 import { useEncryptionRegistry } from "../hooks/useEncryptionRegistry";
-import { useDerivedWallet } from "@/hooks/useDerivedWallet";
-import { toHex } from "viem";
 import { PUB_APP_NAME, PUB_PROJECT_URL } from "@/constants";
-import { useSignerList } from "../hooks/useSignerList";
-import { useMultisigSettings as useEmergencyMultisigSettings } from "@/plugins/emergency-multisig/hooks/useMultisigSettings";
-import { NotFound } from "@/components/not-found";
-import EmergencyProposalCreate from "../../emergency-multisig/pages/new";
 import EmergencyProposalList from "../../emergency-multisig/pages/proposal-list";
-import EmergencyProposalDetail from "../../emergency-multisig/pages/proposal";
 
-import RegularProposalCreate from "../../multisig/pages/new";
 import RegularProposalList from "../../multisig/pages/proposal-list";
-import RegularProposalDetail from "../../multisig/pages/proposal";
-import { useUrl } from "@/hooks/useUrl";
 import { useCanCreateProposal } from "@/plugins/emergency-multisig/hooks/useCanCreateProposal";
-import { useMultisigSettings } from "@/plugins/multisig/hooks/useMultisigSettings";
 
 export default function EncryptionPage() {
   const [toggleValue, setToggleValue] = useState<"members" | "community-proposals" | "emergency-proposals">("members");
   const onToggleChange = (value: string | undefined) => {
     if (value) setToggleValue(value as "members" | "community-proposals" | "emergency-proposals");
   };
-  const { hash } = useUrl();
+
   return (
     <MainSection>
       <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
@@ -88,9 +67,6 @@ export default function EncryptionPage() {
 }
 
 function AsideSection({ toggleValue }: { toggleValue: string }) {
-  const { data: multisigMembers, isLoading: isLoadingMultisigMembers } = useSignerList();
-  const { settings: emergencyMultisigSettings } = useEmergencyMultisigSettings();
-  const { settings: multisigSettings } = useMultisigSettings();
   const { isConnected } = useAccount();
   const { canCreate } = useCanCreateProposal();
 
@@ -189,7 +165,6 @@ function AccountStatus() {
   let description = "";
   let actions: React.ReactNode[] = [];
   const { address, isConnected } = useAccount();
-  const { publicKey: derivedPublicKey } = useDerivedWallet();
   const { status, owner, appointedAgent, publicKey } = useAccountEncryptionStatus();
   const { registerPublicKey, isConfirming } = useEncryptionRegistry();
   const [showAppointModal, setShowAppointModal] = useState(false);
@@ -214,7 +189,7 @@ function AccountStatus() {
     title = "Warning";
     description = "The agent you appointed needs to define a public key.";
     actions = [
-      <Button size="md" isLoading={isConfirming} variant="secondary" onClick={() => setShowAppointModal(true)}>
+      <Button key="0" size="md" isLoading={isConfirming} variant="secondary" onClick={() => setShowAppointModal(true)}>
         Appoint a different agent
       </Button>,
     ];
@@ -222,7 +197,7 @@ function AccountStatus() {
     title = "Warning";
     description = "You are appointed by a signer but you have not defined your public key yet.";
     actions = [
-      <Button size="md" isLoading={isConfirming} onClick={() => registerPublicKey("appointed")}>
+      <Button key="0" size="md" isLoading={isConfirming} onClick={() => registerPublicKey("appointed")}>
         Define my public key
       </Button>,
     ];
@@ -231,7 +206,7 @@ function AccountStatus() {
     description =
       "You are listed as a signer but you have not appointed an Externally Owned Account for decryption yet.";
     actions = [
-      <Button size="md" isLoading={isConfirming} onClick={() => setShowAppointModal(true)}>
+      <Button key="0" size="md" isLoading={isConfirming} onClick={() => setShowAppointModal(true)}>
         Appoint an agent
       </Button>,
     ];
@@ -239,10 +214,10 @@ function AccountStatus() {
     title = "Warning";
     description = "You are listed as a signer but you have not defined your public key or appointed an agent yet.";
     actions = [
-      <Button size="md" isLoading={isConfirming} onClick={() => registerPublicKey("own")}>
+      <Button key="0" size="md" isLoading={isConfirming} onClick={() => registerPublicKey("own")}>
         Define my public key
       </Button>,
-      <Button size="md" isLoading={isConfirming} variant="secondary" onClick={() => setShowAppointModal(true)}>
+      <Button key="1" size="md" isLoading={isConfirming} variant="secondary" onClick={() => setShowAppointModal(true)}>
         Appoint an agent
       </Button>,
     ];
@@ -262,15 +237,6 @@ function AccountStatus() {
   }
 
   if (status === AccountEncryptionStatus.READY_CAN_CREATE || status === AccountEncryptionStatus.READY_ALL) {
-    /*
-    if (derivedPublicKey && toHex(derivedPublicKey) !== publicKey) {
-      actions.push(
-        <Button size="md" isLoading={isConfirming} variant="secondary" onClick={() => registerPublicKey("own")}>
-          Update my public key
-        </Button>
-      );
-    }*/
-
     if (owner === address) {
       actions.push(
         <Button size="md" isLoading={isConfirming} variant="secondary" onClick={() => setShowAppointModal(true)}>
@@ -324,8 +290,3 @@ function AccountStatus() {
     </>
   );
 }
-
-const ProposalView = ({ hash }: { hash: string }) => {
-  const id = hash.replace("#/proposals/", "");
-  return <EmergencyProposalDetail id={id} />;
-};

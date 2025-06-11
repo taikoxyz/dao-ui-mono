@@ -1,20 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { zeroAddress } from "viem";
-import { getGqlProposalSingle, getRelatedProposalTo, IGqlProposalMixin } from "../getGqProposal";
+import { getRelatedProposalTo } from "../getGqProposal";
+import { IGqlProposalMixin } from "../types";
 
-interface ProposalData {
-  creator: string;
-  // Add other properties based on your actual proposalMixin structure
-}
-
-interface UseGqlProposalSingleResult {
+interface UseGqlProposalRelatedResult {
   data: IGqlProposalMixin | undefined;
   loading: boolean;
   error: string | null;
   refetch: () => void;
 }
 
-interface UseGqlProposalSingleParams {
+interface UseGqlProposalRelatedParams {
   executionBlockNumber: number;
   isStandard?: boolean;
   isEmergency?: boolean;
@@ -26,7 +21,7 @@ export function useGetGqlRelatedProposal({
   isStandard = false,
   isEmergency = false,
   enabled = true,
-}: UseGqlProposalSingleParams): UseGqlProposalSingleResult {
+}: UseGqlProposalRelatedParams): UseGqlProposalRelatedResult {
   const [data, setData] = useState<IGqlProposalMixin | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);

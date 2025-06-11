@@ -25,7 +25,7 @@ export const useAbi = (contractAddress: Address) => {
 
       return getImplementation(publicClient, contractAddress)
         .then((address) => {
-          if (!address || address === ADDRESS_ZERO) return null;
+          if (!address ?? address === ADDRESS_ZERO) return null;
           return address;
         })
         .catch(() => null);
@@ -44,7 +44,7 @@ export const useAbi = (contractAddress: Address) => {
     isLoading,
     error,
   } = useQuery<AbiFunction[], Error>({
-    queryKey: ["abi", resolvedAddress || "", publicClient?.chain.id],
+    queryKey: ["abi", resolvedAddress ?? "", publicClient?.chain.id],
     queryFn: async () => {
       if (!resolvedAddress || !isAddress(resolvedAddress) || !publicClient) {
         return [];
@@ -66,10 +66,10 @@ export const useAbi = (contractAddress: Address) => {
             if (item.type !== "function") continue;
 
             functionItems.push({
-              name: ((item as any).name as string) || "(unknown function)",
+              name: ((item as any).name as string) ?? "(unknown function)",
               inputs: item?.inputs ?? [],
               outputs: item?.outputs ?? [],
-              stateMutability: item?.stateMutability || "payable",
+              stateMutability: item?.stateMutability ?? "payable",
               type: item?.type,
             });
           }
@@ -94,7 +94,7 @@ export const useAbi = (contractAddress: Address) => {
 
   return {
     abi: abi ?? [],
-    isLoading: isLoading || isLoadingImpl,
+    isLoading: isLoading ?? isLoadingImpl,
     error,
     isProxy: !!implementationAddress,
     implementation: implementationAddress,

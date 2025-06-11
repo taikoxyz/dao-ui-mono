@@ -51,12 +51,12 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   const { status: proposalStatus } = useProposalStatus(proposal!);
 
   const { data: gqlProposal } = useGqlProposalSingle({
-    proposalId: proposalId?.toString() || "",
+    proposalId: proposalId?.toString() ?? "",
     isStandard: false,
     isOptimistic: true,
     isEmergency: false,
   });
-  const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp || BigInt(0));
+  const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp ?? BigInt(0));
 
   let vetoPercentage = 0;
   if (proposal?.vetoTally && pastSupply && proposal.parameters.minVetoRatio) {
@@ -91,7 +91,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   const { isEmergency } = useProposalStatus(proposal);
 
   const { data: relatedProposal } = useGetGqlRelatedProposal({
-    executionBlockNumber: gqlProposal?.creationBlockNumber || 0,
+    executionBlockNumber: gqlProposal?.creationBlockNumber ?? 0,
     isStandard: !isEmergency,
     isEmergency: isEmergency,
   });
@@ -111,21 +111,21 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
         votingScores: [
           {
             option: "Veto",
-            voteAmount: formatEther(proposal?.vetoTally || BigInt(0)),
+            voteAmount: formatEther(proposal?.vetoTally ?? BigInt(0)),
             votePercentage: vetoPercentage,
-            tokenSymbol: tokenSymbol || "TAIKO",
+            tokenSymbol: tokenSymbol ?? "TAIKO",
           },
         ],
         proposalId: proposalIdx.toString(),
       },
       details: {
-        censusTimestamp: Number(proposal?.parameters.snapshotTimestamp || 0) || 0,
+        censusTimestamp: Number(proposal?.parameters.snapshotTimestamp ?? 0) ?? 0,
         startDate,
         endDate,
         strategy: "Optimistic voting",
         options: "Veto",
       },
-      votes: vetoes?.map(({ voter }) => ({ address: voter, variant: "no" }) as IVote) || [],
+      votes: vetoes?.map(({ voter }) => ({ address: voter, variant: "no" }) as IVote) ?? [],
     },
   ];
 
@@ -133,7 +133,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   const delegatingToSomeoneElse = !!delegatesTo && delegatesTo !== address && delegatesTo !== ADDRESS_ZERO;
   const delegatedToZero = !!delegatesTo && delegatesTo === ADDRESS_ZERO;
 
-  if (!proposal || showProposalLoading) {
+  if (!proposal ?? showProposalLoading) {
     return (
       <section className="justify-left items-left flex w-screen min-w-full max-w-full">
         <PleaseWaitSpinner />
@@ -148,10 +148,10 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
       <div className="mx-auto w-full max-w-screen-xl px-4 py-6 md:px-16 md:pb-20 md:pt-10">
         <div className="flex w-full flex-col gap-x-12 gap-y-6 md:flex-row">
           <div className="flex flex-col gap-y-6 md:w-[63%] md:shrink-0">
-            <BodySection body={proposal.description || "No description was provided"} />
+            <BodySection body={proposal.description ?? "No description was provided"} />
             {!isEmergency && (
               <>
-                <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
+                <If condition={hasBalance && (delegatingToSomeoneElse ?? delegatedToZero)}>
                   <NoVetoPowerWarning
                     delegatingToSomeoneElse={delegatingToSomeoneElse}
                     delegatesTo={delegatesTo}

@@ -23,7 +23,7 @@ export function resolveParamValue(value: CallParameterFieldType, abi?: AbiParame
     return items.join(", ");
   } else if (abi.type === "tuple") {
     const result = {} as Record<string, string>;
-    const components: AbiParameter[] = (abi as any).components || [];
+    const components: AbiParameter[] = (abi as any).components ?? [];
 
     for (const element of components) {
       const k = element.name!;
@@ -37,7 +37,7 @@ export function resolveParamValue(value: CallParameterFieldType, abi?: AbiParame
     return value as string;
   } else if (abi.type === "bytes32") {
     return value as string;
-  } else if (abi.type.startsWith("uint") || abi.type.startsWith("int")) {
+  } else if (abi.type.startsWith("uint") ?? abi.type.startsWith("int")) {
     return value.toString();
   } else if (abi.type.startsWith("bool")) {
     return value ? "Yes" : "No";
@@ -48,7 +48,7 @@ export function resolveParamValue(value: CallParameterFieldType, abi?: AbiParame
 export function resolveFieldTitle(name: string, abiType: string | undefined, idx: number): string {
   if (name) {
     if (!abiType) return name;
-    else if (abiType.startsWith("uint") || abiType.startsWith("int")) {
+    else if (abiType.startsWith("uint") ?? abiType.startsWith("int")) {
       return name + " (in wei)";
     }
     return name;
@@ -61,7 +61,7 @@ export function resolveFieldTitle(name: string, abiType: string | undefined, idx
       return "Data";
     } else if (abiType === "string") {
       return "Text";
-    } else if (abiType.startsWith("uint") || abiType.startsWith("int")) {
+    } else if (abiType.startsWith("uint") ?? abiType.startsWith("int")) {
       return "Number";
     } else if (abiType.startsWith("bool")) {
       return "Boolean";

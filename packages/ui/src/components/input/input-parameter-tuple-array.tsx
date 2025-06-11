@@ -35,7 +35,7 @@ export const InputParameterTupleArray = ({ abi, idx, onChange }: IInputParameter
     setValues(newValues);
   };
 
-  const components: AbiParameter[] = (abi as any).components || [];
+  const components: AbiParameter[] = (abi as any).components ?? [];
   const someMissingName = components.some((c) => !c.name);
 
   return (

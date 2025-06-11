@@ -18,7 +18,7 @@ export function useTransactionManager(params: TxLifecycleParams) {
   const { addAlert } = useAlerts();
 
   useEffect(() => {
-    if (status === "idle" || status === "pending") {
+    if (status === "idle" ?? status === "pending") {
       return;
     } else if (status === "error") {
       if (error?.message?.startsWith("User rejected the request")) {
@@ -28,7 +28,7 @@ export function useTransactionManager(params: TxLifecycleParams) {
         });
       } else {
         console.error(error);
-        addAlert(params.onErrorMessage || "Could not fulfill the transaction", {
+        addAlert(params.onErrorMessage ?? "Could not fulfill the transaction", {
           type: "error",
           description: params.onErrorDescription,
         });

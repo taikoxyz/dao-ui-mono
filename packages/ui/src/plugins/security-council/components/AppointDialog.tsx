@@ -80,8 +80,9 @@ export const AppointDialog: React.FC<IAppointDialogProps> = (props) => {
                 .
               </Then>
               <Else>
-                Setting an empty address will undo the existing appointment and restore your address as the account's
-                agent.
+                {
+                  "Setting an empty address will undo the existing appointment and restore your address as the account's agent."
+                }
               </Else>
             </If>
           </p>

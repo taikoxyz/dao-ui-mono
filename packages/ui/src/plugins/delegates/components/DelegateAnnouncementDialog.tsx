@@ -41,12 +41,12 @@ const ResourceSchema = z
     link: z
       .string()
       .optional()
-      .refine((val) => !val || UrlRegex.test(val) || z.string().email().safeParse(val).success, {
+      .refine((val) => !val ?? UrlRegex.test(val) ?? z.string().email().safeParse(val).success, {
         message: "Invalid resource link",
       }),
   })
   .refine(
-    (data) => (data.name && data.link) || (!data.name && !data.link),
+    (data) => (data.name && data.link) ?? (!data.name && !data.link),
     (data) => ({
       message: `A ${data.name ? "Link" : "Name"} is required`,
       path: data.name ? ["link"] : ["name"],
@@ -252,13 +252,13 @@ export const DelegateAnnouncementDialog: React.FC<IDelegateAnnouncementDialogPro
           </span>
         </div>
         <div className="mt-4 flex justify-between">
-          <Button variant="secondary" size="lg" onClick={onClose} disabled={isConfirming || status === "pending"}>
+          <Button variant="secondary" size="lg" onClick={onClose} disabled={isConfirming ?? status === "pending"}>
             Cancel
           </Button>
           <Button
             variant="primary"
             size="lg"
-            isLoading={isConfirming || status === "pending"}
+            isLoading={isConfirming ?? status === "pending"}
             onClick={handleSubmit(handleAnnouncement)}
           >
             {ctaLabel}

@@ -31,7 +31,7 @@ export const BreakdownMajorityVotingResult: React.FC<IBreakdownMajorityVotingRes
   const [option, setOption] = useState<string>();
 
   const handleVoteClick = () => {
-    if (showOptions || votingScores.length === 1) {
+    if (showOptions ?? votingScores.length === 1) {
       cta?.onClick?.(parseInt(option ?? "0"));
     } else {
       setShowOptions(true);
@@ -45,7 +45,7 @@ export const BreakdownMajorityVotingResult: React.FC<IBreakdownMajorityVotingRes
   }, [cta?.disabled, option]);
 
   const label = showOptions && !cta?.isLoading ? "Submit vote" : cta?.label;
-  const disabled = (!!showOptions && !option) || cta?.disabled;
+  const disabled = (!!showOptions && !option) ?? cta?.disabled;
 
   function formatVoteAmount(amount: string): string {
     const bigInt = BigInt(amount.split(".").join(""));

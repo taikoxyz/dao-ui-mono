@@ -1,7 +1,7 @@
 import { PUB_SUBGRAPH_URL } from "@/constants";
 import { ApolloClient, gql, InMemoryCache } from "@apollo/client";
 import { GQL_GET_RELATED_PROPOSAL_SINGLE, GQL_GET_PROPOSAL_MULTIPLE, GQL_GET_PROPOSAL_SINGLE } from "./queries.gql";
-import { Address, zeroAddress } from "viem";
+import { IGqlProposalMixin } from "./types";
 
 export async function getGqlProposalMultiple(
   isStandard: boolean = false,
@@ -62,28 +62,6 @@ export async function getGqlProposalSingle(
   } catch (e) {
     console.error("GQL Error:", e);
   }
-}
-
-export interface IGqlActor {
-  id: string;
-  address: Address;
-  txHash: string;
-}
-
-export interface IGqlProposalMixin {
-  id: string;
-  creator: Address;
-  approvers: IGqlActor[];
-  executor?: IGqlActor;
-  isEmergency: boolean;
-  isStandard: boolean;
-  isOptimistic: boolean;
-  proposalId: string;
-  metadata: string;
-  vetoes: IGqlActor[];
-  creationTxHash: string;
-  creationBlockNumber: number;
-  executionBlockNumber?: number;
 }
 
 export async function getRelatedProposalTo(

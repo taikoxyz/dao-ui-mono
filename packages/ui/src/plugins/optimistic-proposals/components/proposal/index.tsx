@@ -28,12 +28,12 @@ export default function ProposalCard(props: ProposalInputs) {
   const { proposalId } = useProposalId(props.proposalIndex);
 
   const { data: gqlProposal } = useGqlProposalSingle({
-    proposalId: proposalId?.toString() || "",
+    proposalId: proposalId?.toString() ?? "",
     isStandard: false,
     isOptimistic: true,
     isEmergency: false,
   });
-  const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp || BigInt(0));
+  const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp ?? BigInt(0));
 
   const { symbol: tokenSymbol } = useToken();
 
@@ -42,8 +42,8 @@ export default function ProposalCard(props: ProposalInputs) {
   const hasVetoed = vetoes?.some((veto) => veto.voter === address);
   const prefix = props.linkPrefix ? props.linkPrefix + "/" : "";
 
-  const isEmergency = isAddressEqual(props.gqlProposal?.creator || zeroAddress, PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS);
-  const isStandard = isAddressEqual(props.gqlProposal?.creator || zeroAddress, PUB_MULTISIG_PLUGIN_ADDRESS);
+  const isEmergency = isAddressEqual(props.gqlProposal?.creator ?? zeroAddress, PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS);
+  const isStandard = isAddressEqual(props.gqlProposal?.creator ?? zeroAddress, PUB_MULTISIG_PLUGIN_ADDRESS);
 
   if (!proposal && showLoading) {
     return (
@@ -106,7 +106,7 @@ export default function ProposalCard(props: ProposalInputs) {
             tokenSymbol,
           ].join(" "),
 
-          //   formatEther(proposal.vetoTally) + " / " + pastSupplyDisplay + " " + (tokenSymbol || "TAIKO"),
+          //   formatEther(proposal.vetoTally) + " / " + pastSupplyDisplay + " " + (tokenSymbol ?? "TAIKO"),
           votePercentage: vetoPercentage,
         }}
         publisher={{ address: proposal.creator }}
@@ -125,7 +125,7 @@ function getShowProposalLoading(
   proposal: ReturnType<typeof useProposalVeto>["proposal"],
   status: ReturnType<typeof useProposalVeto>["proposalFetchStatus"]
 ) {
-  if (!proposal || status.proposalLoading) return true;
+  if (!proposal ?? status.proposalLoading) return true;
   else if (status.metadataLoading && !status.metadataError) return true;
   else if (!proposal?.title && !status.metadataError) return true;
 

@@ -61,9 +61,9 @@ export function useProposal(proposalId: string, autoRefresh = false) {
 
   const proposal = arrangeProposalData(
     proposalData,
-    (privateActions || undefined) as any,
+    (privateActions ?? undefined) as any,
     proposalCreationEvent,
-    privateMetadata || undefined
+    privateMetadata ?? undefined
   );
 
   return {
@@ -90,7 +90,7 @@ function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | un
       "emergency-proposal-creation-event",
       PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS,
       proposalId.toString(),
-      snapshotBlock?.toString() || "",
+      snapshotBlock?.toString() ?? "",
       !!publicClient,
     ],
     queryFn: () => {
@@ -147,10 +147,10 @@ function arrangeProposalData(
     approvals: proposalData.approvals,
     allowFailureMap: BigInt(0),
     creator: "",
-    title: metadata?.title || "",
-    summary: metadata?.summary || "",
-    description: metadata?.description || "",
-    resources: metadata?.resources || [],
+    title: metadata?.title ?? "",
+    summary: metadata?.summary ?? "",
+    description: metadata?.description ?? "",
+    resources: metadata?.resources ?? [],
   };
 }
 

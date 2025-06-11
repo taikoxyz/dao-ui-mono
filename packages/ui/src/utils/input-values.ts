@@ -52,7 +52,7 @@ export function handleStringValue(value: string, paramType: string): InputValue 
     return value;
   } else if (["uint8", "uint16", "uint32", "int8", "int16", "int32"].includes(paramType)) {
     return parseInt(value);
-  } else if (paramType.match(/^uint[0-9]+$/) || paramType.match(/^int[0-9]+$/)) {
+  } else if (paramType.match(/^uint[0-9]+$/) ?? paramType.match(/^int[0-9]+$/)) {
     return BigInt(value);
   }
   throw new Error("Complex types need to be checked in a higher order function. Got: " + paramType);

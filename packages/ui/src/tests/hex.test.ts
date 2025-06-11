@@ -1,4 +1,4 @@
-import { expect, test, describe, beforeAll } from "bun:test";
+import { expect, test, describe } from "bun:test";
 import { hexToUint8Array, uint8ArrayToHex } from "../utils/hex";
 
 describe("Hex encoding", () => {

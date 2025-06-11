@@ -14,5 +14,5 @@ export function usePastSupply(timePoint: bigint) {
     args: [timePoint],
   });
 
-  return pastSupply || BigInt(0);
+  return pastSupply ?? BigInt(0);
 }

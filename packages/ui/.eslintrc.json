@@ -12,7 +12,7 @@
   "plugins": ["@typescript-eslint"],
   "rules": {
     "react/jsx-boolean-value": ["warn", "always"],
-    "no-console": "warn",
+    "no-console": ["error", { "allow": ["warn", "error", "info", "debug", "trace"] }],
     "prefer-template": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-vars": ["warn", { "ignoreRestSiblings": true }],

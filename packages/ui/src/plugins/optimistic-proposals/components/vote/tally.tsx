@@ -11,7 +11,7 @@ const VetoTally: FC<VoteTallyProps> = ({ voteCount, votePercentage }) => (
   <Card>
     <div className="space-between flex flex-row pb-2">
       <p className={`flex-grow text-xl font-semibold text-primary-500`}>Vetoed</p>
-      <p className="text-xl font-semibold">{compactNumber(formatUnits(voteCount || BigInt(0), 18))}</p>
+      <p className="text-xl font-semibold">{compactNumber(formatUnits(voteCount ?? BigInt(0), 18))}</p>
     </div>
     <div className={`h-4 w-full rounded bg-primary-100`}>
       <div className={`h-4 rounded bg-primary-700`} style={{ width: `${Math.min(votePercentage, 100)}%` }} />

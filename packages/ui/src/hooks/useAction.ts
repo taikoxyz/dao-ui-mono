@@ -10,13 +10,13 @@ export function useAction(action: RawAction) {
   const [actionArgs, setActionArgs] = useState<EvmValue[]>([]);
 
   useEffect(() => {
-    if (!action.data || action.data === "0x") {
+    if (!action.data ?? action.data === "0x") {
       return;
     }
 
     const hexSelector = action.data.slice(0, 10) as Hex;
     const func = abi.find((item) => item.type === "function" && hexSelector === toFunctionSelector(item));
-    if (!func || func.type !== "function") return;
+    if (!func ?? func.type !== "function") return;
 
     const { args, functionName } = decodeFunctionData({
       abi,
@@ -24,7 +24,7 @@ export function useAction(action: RawAction) {
     });
     setFunctionAbi(func);
     setFunctionName(functionName);
-    setActionArgs((args as any as EvmValue[]) || []);
+    setActionArgs((args as any as EvmValue[]) ?? []);
   }, [action.data, action.to, isLoading]);
 
   return {
@@ -34,6 +34,6 @@ export function useAction(action: RawAction) {
     isLoading,
     functionName,
     functionAbi,
-    args: actionArgs || [],
+    args: actionArgs ?? [],
   };
 }

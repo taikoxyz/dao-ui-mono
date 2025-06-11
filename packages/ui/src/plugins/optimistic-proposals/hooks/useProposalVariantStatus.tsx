@@ -11,11 +11,11 @@ export const useProposalVariantStatus = (proposal: OptimisticProposal) => {
   const { tokenSupply: totalSupply } = useToken();
   const { votes: bridgedBalance } = useTokenPastVotes(
     PUB_TAIKO_BRIDGE_ADDRESS,
-    proposal?.parameters.snapshotTimestamp || BigInt(0)
+    proposal?.parameters.snapshotTimestamp ?? BigInt(0)
   );
 
   useEffect(() => {
-    if (!proposal || !proposal?.parameters || !totalSupply || typeof bridgedBalance === "undefined") return;
+    if ((!proposal || !proposal?.parameters || !totalSupply) ?? typeof bridgedBalance === "undefined") return;
 
     const effectiveSupply = proposal.parameters.unavailableL2 ? totalSupply - bridgedBalance : totalSupply;
     const minVetoVotingPower = (effectiveSupply * BigInt(proposal.parameters.minVetoRatio)) / BigInt(1_000_000);
@@ -47,11 +47,11 @@ export const useProposalStatus = (proposal: OptimisticProposal | null) => {
   const { governanceSettings } = useGovernanceSettings();
   const { votes: bridgedBalance } = useTokenPastVotes(
     PUB_TAIKO_BRIDGE_ADDRESS,
-    proposal?.parameters.snapshotTimestamp || BigInt(0)
+    proposal?.parameters.snapshotTimestamp ?? BigInt(0)
   );
 
   useEffect(() => {
-    if (!proposal || !proposal?.parameters || !totalSupply || typeof bridgedBalance === "undefined") return;
+    if ((!proposal || !proposal?.parameters || !totalSupply) ?? typeof bridgedBalance === "undefined") return;
 
     const effectiveSupply = proposal.parameters.unavailableL2 ? totalSupply - bridgedBalance : totalSupply;
     const minVetoVotingPower = (effectiveSupply * BigInt(proposal.parameters.minVetoRatio)) / BigInt(1_000_000);

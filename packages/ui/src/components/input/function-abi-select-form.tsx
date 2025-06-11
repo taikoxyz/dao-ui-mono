@@ -32,7 +32,7 @@ export const FunctionAbiSelectForm: FC<FunctionAbiSelectFormProps> = ({ onChange
     );
   };
 
-  const functionAbiList = (abi || []).filter((item) => {
+  const functionAbiList = (abi ?? []).filter((item) => {
     if (["function"].includes(item.type)) return true;
     else if (["payable", "nonpayable"].includes(item.stateMutability)) return true;
     return false;
@@ -44,10 +44,10 @@ export const FunctionAbiSelectForm: FC<FunctionAbiSelectFormProps> = ({ onChange
         <InputText
           label="Contract address"
           placeholder="0x1234..."
-          variant={!targetContract || isAddress(targetContract) ? "default" : "critical"}
+          variant={(!targetContract ?? isAddress(targetContract)) ? "default" : "critical"}
           value={targetContract}
           onChange={(e) => {
-            setTargetContract(e.target.value || "");
+            setTargetContract(e.target.value ?? "");
           }}
         />
       </div>
@@ -60,7 +60,7 @@ export const FunctionAbiSelectForm: FC<FunctionAbiSelectFormProps> = ({ onChange
         <ElseIf not={targetContract}>
           <p>Enter the address of the contract to call in a new action</p>
         </ElseIf>
-        <ElseIf not={isAddress(targetContract || "")}>
+        <ElseIf not={isAddress(targetContract ?? "")}>
           <AlertInline message="The given address is not valid" variant="critical" />
         </ElseIf>
         <ElseIf not={abi?.length}>
@@ -143,7 +143,7 @@ const FunctionSelect = ({
     <InputContainer id="func-abi-select" label="Select the function to call" className="my-4">
       <dl className="w-full divide-y divide-neutral-100">
         {functionAbiList.map((func, idx) => (
-          <If condition={!["pure", "view"].includes(func.stateMutability) || showReadOnly} key={idx}>
+          <If condition={!["pure", "view"].includes(func.stateMutability) ?? showReadOnly} key={idx}>
             <div
               onClick={() => onSelect(func)}
               className="flex cursor-pointer flex-col items-baseline gap-y-2 py-3 first:rounded-t-xl last:rounded-b-xl hover:bg-neutral-50 lg:gap-x-6 lg:py-4"

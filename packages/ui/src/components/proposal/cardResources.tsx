@@ -41,25 +41,25 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
   }
   const { gqlProposal, relatedProposal } = props;
 
-  const creator = relatedProposal?.creator || gqlProposal?.creator || zeroAddress;
+  const creator = relatedProposal?.creator ?? gqlProposal?.creator ?? zeroAddress;
 
-  const executor = relatedProposal?.executor || gqlProposal?.executor;
+  const executor = relatedProposal?.executor ?? gqlProposal?.executor;
 
   const { data: encryptionAccounts } = useEncryptionAccountsEmergency();
   const owner =
     encryptionAccounts?.find(
       ({ appointedAgent }) => appointedAgent && creator && isAddressEqual(appointedAgent, creator)
-    )?.owner || undefined;
+    )?.owner ?? undefined;
   const executioner =
     encryptionAccounts?.find(
       ({ appointedAgent }) => appointedAgent && executor?.address && isAddressEqual(appointedAgent, executor.address)
-    )?.owner || undefined;
+    )?.owner ?? undefined;
   const creatorProfile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
   const executorProfile =
     executioner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, executioner));
 
-  const approvals = relatedProposal?.approvers || gqlProposal?.approvers || [];
-  const vetoes = gqlProposal?.vetoes || relatedProposal?.vetoes || [];
+  const approvals = relatedProposal?.approvers ?? gqlProposal?.approvers ?? [];
+  const vetoes = gqlProposal?.vetoes ?? relatedProposal?.vetoes ?? [];
   return (
     <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">
       <Heading size="h4">Transactions</Heading>
@@ -97,7 +97,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
                   variant="primary"
                   key={i}
                 >
-                  {getSecurityCouncilMemberData(approver.address).name || approver.address}
+                  {getSecurityCouncilMemberData(approver.address).name ?? approver.address}
                 </Link>
               </td>
               <td>
@@ -215,7 +215,7 @@ const ApprovalsCard: React.FC<ICardResourcesProps> = (props) => {
             iconRight={IconType.LINK_EXTERNAL}
             key={i}
           >
-            {getSecurityCouncilMemberData(approver.address).name || approver.address}
+            {getSecurityCouncilMemberData(approver.address).name ?? approver.address}
           </Link>
         ))}
       </div>
@@ -241,7 +241,7 @@ const VetoCard: React.FC<ICardResourcesProps> = (props) => {
             iconRight={IconType.LINK_EXTERNAL}
             key={i}
           >
-            {getSecurityCouncilMemberData(approver.address).name || approver.address}
+            {getSecurityCouncilMemberData(approver.address).name ?? approver.address}
           </Link>
         ))}
       </div>
@@ -253,7 +253,7 @@ const DefaultDAOInfoCard: React.FC<ICardResourcesProps> = (props) => {
   const { displayLink = true, title } = props;
   let { resources, gqlProposal } = props;
 
-  if (resources == null || resources.length === 0) {
+  if (resources == null ?? resources.length === 0) {
     return <CardEmptyState objectIllustration={{ object: "ARCHIVE" }} heading="No resources were added" />;
   }
 

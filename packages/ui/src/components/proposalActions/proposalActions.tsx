@@ -71,10 +71,10 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
   const action = useAction(rawAction);
   const title = `Action ${index + 1}`;
   const coinName = PUB_CHAIN.nativeCurrency.symbol;
-  const isEthTransfer = !action.data || action.data === "0x";
+  const isEthTransfer = !action.data ?? action.data === "0x";
   const functionName = isEthTransfer
     ? `Transfer ${coinName}`
-    : decodeCamelCase(action.functionName || "(function call)");
+    : decodeCamelCase(action.functionName ?? "(function call)");
   const functionAbi = action.functionAbi ?? null;
   const explorerUrl = `${PUB_CHAIN.blockExplorers?.default.url}/address/${action.to}`;
 

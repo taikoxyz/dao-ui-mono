@@ -45,7 +45,7 @@ export const ProfileAside: React.FC<IProfileAsideProps> = (props) => {
             <Heading size="h3">Resources</Heading>
             <hr className="border-neutral-100" />
             <div className="flex flex-col gap-y-4">
-              {(resources || []).map(({ name, link }) => (
+              {(resources ?? []).map(({ name, link }) => (
                 <Link
                   key={link}
                   href={link}

@@ -32,7 +32,7 @@ export function useProposal(proposalId?: bigint, autoRefresh = false) {
     address: PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
     abi: OptimisticTokenVotingPluginAbi,
     functionName: "getProposal",
-    args: [proposalId || BigInt(0)],
+    args: [proposalId ?? BigInt(0)],
     chainId: PUB_CHAIN.id,
   });
   const { data: proposalCreationEvent } = useProposalCreationEvent(proposalId);
@@ -42,7 +42,7 @@ export function useProposal(proposalId?: bigint, autoRefresh = false) {
   }, [blockNumber]);
 
   // JSON metadata
-  const metadataUri = fromHex(proposalResult?.[4] || "0x", "string");
+  const metadataUri = fromHex(proposalResult?.[4] ?? "0x", "string");
   const {
     data: metadataContent,
     isLoading: metadataLoading,
@@ -74,11 +74,11 @@ function useProposalCreationEvent(proposalId: bigint | undefined) {
     queryKey: [
       "optimistic-proposal-creation-event",
       PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
-      proposalId?.toString() || "",
+      proposalId?.toString() ?? "",
       !!publicClient,
     ],
     queryFn: () => {
-      if (!publicClient || typeof proposalId === "undefined") throw new Error("Not ready");
+      if (!publicClient ?? typeof proposalId === "undefined") throw new Error("Not ready");
       // aapply next fix
       return getLogsUntilNow(
         PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS,
@@ -103,7 +103,7 @@ function useProposalCreationEvent(proposalId: bigint | undefined) {
 }
 
 function decodeProposalResultData(data?: OptimisticProposalResultType) {
-  if (!data?.length || data.length < 6) return null;
+  if (!data?.length ?? data.length < 6) return null;
 
   return {
     active: data[0] as boolean,

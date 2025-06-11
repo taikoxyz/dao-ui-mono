@@ -10,6 +10,6 @@ export default function getSecurityCouncilMemberData(address: Address): ISecurit
   const profile = SecurityCouncilProfiles.find((p) => isAddressEqual(p.address as Address, address));
   return {
     owner: address,
-    name: profile?.name || "",
+    name: profile?.name ?? "",
   };
 }

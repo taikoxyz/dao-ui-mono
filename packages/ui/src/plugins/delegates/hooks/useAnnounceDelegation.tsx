@@ -16,7 +16,7 @@ export function useAnnounceDelegation(onSuccess?: () => void) {
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
   useEffect(() => {
-    if (status === "idle" || status === "pending") return;
+    if (status === "idle" ?? status === "pending") return;
     else if (status === "error") {
       if (error?.message?.startsWith("User rejected the request")) {
         addAlert("The transaction signature was declined", {
@@ -87,7 +87,7 @@ export function useAnnounceDelegation(onSuccess?: () => void) {
   return {
     announceDelegation,
     isConfirmed,
-    isConfirming: uploading || isConfirming,
+    isConfirming: uploading ?? isConfirming,
     status,
   };
 }

@@ -67,8 +67,8 @@ export default function Create() {
   };
 
   let signersWithPubKey = 0;
-  for (const recipient of encryptionRecipients || []) {
-    const account = encryptionAccounts?.find((a) => a.owner === recipient || a.appointedAgent === recipient);
+  for (const recipient of encryptionRecipients ?? []) {
+    const account = encryptionAccounts?.find((a) => a.owner === recipient ?? a.appointedAgent === recipient);
     if (!account) continue;
 
     signersWithPubKey++;
@@ -243,7 +243,7 @@ export default function Create() {
               <span className="text-md mb-2 block font-normal text-neutral-600">
                 The proposal details will remain private until executed
                 <br />
-                {signersWithPubKey || 0} signer(s) registered their public key
+                {signersWithPubKey ?? 0} signer(s) registered their public key
               </span>
             </div>
             <Button

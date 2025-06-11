@@ -33,7 +33,7 @@ export const WithdrawalForm: FC<IWithdrawalFormProps> = ({ onChange, onSubmit })
         <InputText
           label="Recipient address"
           placeholder="0x1234..."
-          variant={!to || isAddress(to) ? "default" : "critical"}
+          variant={(!to ?? isAddress(to)) ? "default" : "critical"}
           value={to}
           onChange={handleTo}
         />

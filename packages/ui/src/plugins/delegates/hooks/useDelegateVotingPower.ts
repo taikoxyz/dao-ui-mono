@@ -13,7 +13,7 @@ export const useDelegateVotingPower = (targetAddress: Address, onSuccess?: () =>
   const { isLoading, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
   useEffect(() => {
-    if (status === "idle" || status === "pending") return;
+    if (status === "idle" ?? status === "pending") return;
     else if (status === "error") {
       if (error?.message?.startsWith("User rejected the request")) {
         addAlert("The transaction signature was declined", {
@@ -62,7 +62,7 @@ export const useDelegateVotingPower = (targetAddress: Address, onSuccess?: () =>
   return {
     delegateVotingPower,
     isConfirmed,
-    isLoading: isConfirming || isLoading,
+    isLoading: isConfirming ?? isLoading,
     status,
   };
 };

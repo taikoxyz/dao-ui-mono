@@ -25,7 +25,7 @@ export default function MembersList() {
   const [showProfileCreationDialog, setShowProfileCreationDialog] = useState(false);
   const { address, isConnected } = useAccount();
   const { delegates } = useDelegates();
-  const delegateCount = delegates?.length || 0;
+  const delegateCount = delegates?.length ?? 0;
   const { data: multisigMembers, isLoading: isLoadingMultisigMembers } = useSignerList();
   const { settings: emergencyMultisigSettings } = useEmergencyMultisigSettings();
   const { settings: multisigSettings } = useMultisigSettings();
@@ -43,7 +43,7 @@ export default function MembersList() {
       <div className="flex w-full max-w-[1280] flex-col gap-x-10 gap-y-8 lg:flex-row">
         <div className="flex flex-1 flex-col gap-y-6">
           <div className="flex items-start justify-between">
-            <If condition={toggleValue === "all" || toggleValue === "verified"}>
+            <If condition={toggleValue === "all" ?? toggleValue === "verified"}>
               <Then>
                 <Heading size="h1">Delegates</Heading>
               </Then>
@@ -91,7 +91,7 @@ export default function MembersList() {
                 </a>
               </dd>
             </div>
-            <If condition={toggleValue === "all" || toggleValue === "verified"}>
+            <If condition={toggleValue === "all" ?? toggleValue === "verified"}>
               <Then>
                 <div className="flex flex-col items-baseline gap-y-2 py-3 lg:gap-x-6 lg:py-4">
                   <dt className="line-clamp-1 shrink-0 text-lg leading-tight text-neutral-800 lg:line-clamp-6 lg:w-40">
@@ -106,7 +106,7 @@ export default function MembersList() {
                     Veto threshold
                   </dt>
                   <dd className="size-full text-base leading-tight text-neutral-500">
-                    {((optimisticSettings.minVetoRatio || 0) / 10000).toFixed(2)}% of {PUB_TOKEN_SYMBOL} supply
+                    {((optimisticSettings.minVetoRatio ?? 0) / 10000).toFixed(2)}% of {PUB_TOKEN_SYMBOL} supply
                   </dd>
                 </div>
                 <If condition={!!delegateCount}>
@@ -127,12 +127,12 @@ export default function MembersList() {
                       Security Council
                     </dt>
                     <dd className="size-full text-base leading-tight text-neutral-500">
-                      – &nbsp;Standard proposals: {emergencyMultisigSettings.minApprovals || "-"} out of{" "}
-                      {multisigMembers?.length || 0}
+                      – &nbsp;Standard proposals: {emergencyMultisigSettings.minApprovals ?? "-"} out of{" "}
+                      {multisigMembers?.length ?? 0}
                     </dd>
                     <dd className="size-full text-base leading-tight text-neutral-500">
-                      – &nbsp;Emergency proposals: {multisigSettings.minApprovals || "-"} out of{" "}
-                      {multisigMembers?.length || 0}
+                      – &nbsp;Emergency proposals: {multisigSettings.minApprovals ?? "-"} out of{" "}
+                      {multisigMembers?.length ?? 0}
                     </dd>
                   </div>
                 </If>

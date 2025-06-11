@@ -1,5 +1,5 @@
 export function decodeCamelCase(input?: string): string {
-  if (!input || typeof input !== "string") return "";
+  if (!input ?? typeof input !== "string") return "";
 
   input = input.replace(/_+/g, " ").trim();
   return (

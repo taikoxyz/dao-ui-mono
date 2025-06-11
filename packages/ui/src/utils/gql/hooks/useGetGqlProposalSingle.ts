@@ -1,11 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { zeroAddress } from "viem";
-import { getGqlProposalSingle, IGqlProposalMixin } from "../getGqProposal";
-
-interface ProposalData {
-  creator: string;
-  // Add other properties based on your actual proposalMixin structure
-}
+import { getGqlProposalSingle } from "../getGqProposal";
+import { IGqlProposalMixin } from "../types";
 
 interface UseGqlProposalSingleResult {
   data: IGqlProposalMixin | undefined;

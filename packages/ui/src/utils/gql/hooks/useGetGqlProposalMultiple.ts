@@ -1,20 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { zeroAddress } from "viem";
-import { getGqlProposalMultiple, IGqlProposalMixin } from "../getGqProposal";
-
-interface UseGqlProposalMultipleResult {
-  data: IGqlProposalMixin[] | null;
-  loading: boolean;
-  error: string | null;
-  refetch: () => void;
-}
-
-interface UseGqlProposalMultipleParams {
-  isStandard?: boolean;
-  isEmergency?: boolean;
-  isOptimistic?: boolean;
-  enabled?: boolean; // Optional flag to control when the query runs
-}
+import { getGqlProposalMultiple } from "../getGqProposal";
+import { IGqlProposalMixin, UseGqlProposalMultipleParams, UseGqlProposalMultipleResult } from "../types";
 
 export function useGqlProposalMultiple({
   isStandard = false,

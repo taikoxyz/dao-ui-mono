@@ -79,7 +79,7 @@ export function PublicProposals() {
 
   return (
     <>
-      <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
+      <If condition={hasBalance && (delegatingToSomeoneElse ?? delegatedToZero)}>
         <NoVetoPowerWarning
           delegatingToSomeoneElse={delegatingToSomeoneElse}
           delegatesTo={delegatesTo}
@@ -99,7 +99,7 @@ export function PublicProposals() {
             }}
           >
             <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
-              {Array.from(Array(proposalCount || 0)?.keys())
+              {Array.from(Array(proposalCount ?? 0)?.keys())
                 .reverse()
                 ?.map((proposalIndex) => (
                   <ProposalCard

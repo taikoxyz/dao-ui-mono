@@ -52,6 +52,7 @@ export function decryptSymmetricKey(encryptedItems: Uint8Array[], keyPair: KeyPa
       return decryptedSymKey;
     } catch (err) {
       /* empty */
+      console.warn(err);
     }
   }
   throw new Error("The given keypair cannot decrypt any of the ciphertext's");

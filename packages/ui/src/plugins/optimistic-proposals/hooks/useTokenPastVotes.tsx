@@ -30,7 +30,7 @@ export function useTokenPastVotes(holderAddress?: Address, timestamp?: bigint) {
   });
 
   return {
-    votes: votes || BigInt("0"),
+    votes: votes ?? BigInt("0"),
     status: {
       isLoading: isLoading,
       isError: isError,

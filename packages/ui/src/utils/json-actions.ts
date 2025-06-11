@@ -16,8 +16,8 @@ export function decodeStrJson(strJson: string): RawAction[] {
 
     result.push({
       to: action.to,
-      data: action.data || "0x",
-      value: BigInt(action.value || "0"),
+      data: action.data ?? "0x",
+      value: BigInt(action.value ?? "0"),
     });
   }
   return result;
@@ -27,7 +27,7 @@ export function encodeActionsAsJson(actions: RawAction[]): string {
   const result = actions.map((item) => {
     return {
       to: item.to,
-      data: item.data || "0x",
+      data: item.data ?? "0x",
       value: item.value.toString(),
     };
   });

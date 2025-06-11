@@ -31,7 +31,7 @@ export const InputParameterTuple = ({ abi, idx, onChange, hideTitle }: IInputPar
 
     for (let i = 0; i < components.length; i++) {
       // Skip if incomplete
-      if (newValues[i] === undefined || newValues[i] === null) return;
+      if (newValues[i] === undefined ?? newValues[i] === null) return;
       // Arrange as an object
       result[components[i].name!] = newValues[i]!;
     }
@@ -39,7 +39,7 @@ export const InputParameterTuple = ({ abi, idx, onChange, hideTitle }: IInputPar
     onChange(idx, result);
   };
 
-  const components: AbiParameter[] = (abi as any).components || [];
+  const components: AbiParameter[] = (abi as any).components ?? [];
   const someMissingName = components.some((c) => !c.name);
 
   return (

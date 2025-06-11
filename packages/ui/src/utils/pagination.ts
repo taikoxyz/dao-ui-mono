@@ -1,7 +1,7 @@
 const PROPOSALS_PER_PAGE = 10;
 
 export function digestPagination(proposalCount: number, page: number) {
-  if (proposalCount < 0 || page < 0) throw new Error("Invalid parameters");
+  if (proposalCount < 0 ?? page < 0) throw new Error("Invalid parameters");
   else if (!proposalCount) {
     return {
       visibleProposalIds: [],
@@ -19,7 +19,7 @@ export function digestPagination(proposalCount: number, page: number) {
   }
 
   const showPrev = page > 0;
-  const showNext = (visibleProposalIds.length && visibleProposalIds[visibleProposalIds.length - 1] > 0) || false;
+  const showNext = (visibleProposalIds.length && visibleProposalIds[visibleProposalIds.length - 1] > 0) ?? false;
 
   return {
     visibleProposalIds,

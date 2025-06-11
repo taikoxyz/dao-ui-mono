@@ -1,6 +1,6 @@
-import { Else, ElseIf, If, Then } from "@/components/if";
+import { Else, If, Then } from "@/components/if";
 import { formatHexString, equalAddresses, ADDRESS_ZERO } from "@/utils/evm";
-import { type IDataListItemProps, DataList, Link, MemberAvatar, Tag } from "@aragon/ods";
+import { type IDataListItemProps, DataList, MemberAvatar, Tag } from "@aragon/ods";
 import { useAccount } from "wagmi";
 import { Address, Hex, isAddressEqual } from "viem";
 import { AccountEncryptionStatus, useAccountEncryptionStatus } from "../hooks/useAccountEncryptionStatus";
@@ -21,8 +21,7 @@ export interface IAccountListItemProps extends IDataListItemProps {
 
 export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => {
   const { avatarSrc, owner, appointedAgent, publicKey, ...otherProps } = props;
-  const { address: currentUserAddress, isConnected } = useAccount();
-  const isCurrentUser = isConnected && owner && equalAddresses(currentUserAddress, owner);
+  const { address: currentUserAddress } = useAccount();
   const selfAppointed = appointedAgent && equalAddresses(appointedAgent, ADDRESS_ZERO);
   const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
 

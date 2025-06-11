@@ -30,7 +30,7 @@ export function usePermit() {
       },
     ],
   });
-  const [nonceResult, nameResult, versionResult] = erc20data || [];
+  const [nonceResult, nameResult, versionResult] = erc20data ?? [];
 
   const { signTypedDataAsync: permitSign, status: permitSignStatus, error: permitSignError } = useSignTypedData();
 

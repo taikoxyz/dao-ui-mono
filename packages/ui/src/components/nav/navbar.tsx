@@ -16,7 +16,7 @@ export const Navbar: React.FC = () => {
   const { data: listedSigners } = useSignerList();
   const { data: listedOrAppointedSigners } = useApproverWalletList();
   // If the address is a listed signer (by being an owner or by being appointed by an owner)
-  const showAllLinks = address && (listedSigners?.includes(address) || listedOrAppointedSigners?.includes(address));
+  const showAllLinks = address && (listedSigners?.includes(address) ?? listedOrAppointedSigners?.includes(address));
 
   const navLinks: INavLink[] = [
     { path: "/", id: "dashboard", name: "Dashboard" /*, icon: IconType.APP_DASHBOARD*/ },

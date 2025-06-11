@@ -41,7 +41,7 @@ export const ImportActionsForm: FC<IImportActionsFormProps> = ({ onChange }) => 
       {/* Try to decode */}
       <If condition={!!actions?.length}>
         <div className="flex flex-row items-center justify-between pt-4">
-          <p className="text-md text-neutral-800">{actions?.length || 0} action(s) can be imported</p>
+          <p className="text-md text-neutral-800">{actions?.length ?? 0} action(s) can be imported</p>
         </div>
       </If>
     </div>

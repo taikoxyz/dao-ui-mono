@@ -35,12 +35,12 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
   const { proposalId: proposalChainId } = useProposalId(Number(proposalId));
 
   const { data: gqlProposal } = useGqlProposalSingle({
-    proposalId: (proposalChainId || 0).toString(),
+    proposalId: (proposalChainId ?? 0).toString(),
     isStandard: false,
     isOptimistic: true,
     isEmergency: false,
   });
-  const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp || BigInt(0));
+  const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp ?? BigInt(0));
   const [node, setNode] = useState<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
 
@@ -128,7 +128,7 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
           </Tabs.Content>
           <Tabs.Content value="votes">
             <div className="py-4 pb-8">
-              <VotesDataList votes={vetoes || []} />
+              <VotesDataList votes={vetoes ?? []} />
             </div>
           </Tabs.Content>
           <Tabs.Content value="details">

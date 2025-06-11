@@ -101,7 +101,7 @@ export function useCreateProposal() {
   };
 
   return {
-    isCreating: isCreating || isConfirming || status === "pending",
+    isCreating: isCreating ?? isConfirming ?? status === "pending",
     title,
     summary,
     description,

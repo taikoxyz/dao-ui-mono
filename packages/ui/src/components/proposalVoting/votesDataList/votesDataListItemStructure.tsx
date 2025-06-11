@@ -40,7 +40,7 @@ export const VotesDataListItemStructure: React.FC<IVotesDataListItemStructurePro
         <MemberAvatar src={ensAvatar ?? ""} address={address} alt="Avatar" className="shrink-0" size="sm" />
         <div className="flex flex-1 flex-col justify-center gap-y-1 md:gap-y-1.5">
           <div className="flex">
-            <span className="leading-tight text-neutral-800 md:text-lg">{ensName || formatHexString(address)}</span>
+            <span className="leading-tight text-neutral-800 md:text-lg">{ensName ?? formatHexString(address)}</span>
             {label && <span className="text-sm text-neutral-400">&nbsp;&nbsp;({label})</span>}
           </div>
           {votingPower && (

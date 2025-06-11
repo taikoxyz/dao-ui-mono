@@ -10,7 +10,7 @@ export default function PluginPage() {
   const { hash } = useUrl();
 
   return (
-    <If condition={!hash || hash === "#/"}>
+    <If condition={!hash ?? hash === "#/"}>
       <Then>
         <ProposalList />
       </Then>

@@ -37,10 +37,10 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
     isOptimistic: false,
     isEmergency: false,
   });
-  const creator = gqlProposal?.creator || zeroAddress;
+  const creator = gqlProposal?.creator ?? zeroAddress;
 
   const owner =
-    encryptionAccounts?.find(({ appointedAgent }) => isAddressEqual(appointedAgent, creator))?.owner || undefined;
+    encryptionAccounts?.find(({ appointedAgent }) => isAddressEqual(appointedAgent, creator))?.owner ?? undefined;
   const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
 
   return (
@@ -72,7 +72,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
             <AvatarIcon icon={IconType.APP_MEMBERS} size="sm" variant="primary" />
             <Publisher
               gqlProposal={gqlProposal}
-              publisher={[{ address: proposal.creator, name: profile?.name || "" }]}
+              publisher={[{ address: proposal.creator, name: profile?.name ?? "" }]}
             />
           </div>
           <If condition={proposalStatus !== ProposalStatus.EXECUTED && !expired}>
