@@ -9,13 +9,12 @@ export const AddressText = ({ children, bold }: { children: ReactNode; bold?: bo
   const client = usePublicClient();
   const [link, setLink] = useState<string>();
 
-  const useBold = bold === undefined ? true : bold;
-
+  const useBold = bold ?? true;
   useEffect(() => {
     if (!client) return;
 
     setLink(`${client.chain.blockExplorers?.default.url}/address/${address}`);
-  }, [address, client]);
+  }, [address, client, setLink]);
 
   const formattedAddress = formatHexString(address.trim());
   if (!link) {

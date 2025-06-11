@@ -9,6 +9,7 @@ import { AvatarIcon, IconType } from "@aragon/ods";
 import { PUB_APP_NAME, PUB_PROJECT_LOGO } from "@/constants";
 import { useAccount } from "wagmi";
 import { useSignerList, useApproverWalletList } from "@/plugins/security-council/hooks/useSignerList";
+import Image from "next/image";
 
 export const Navbar: React.FC = () => {
   const [showMenu, setShowMenu] = useState(false);
@@ -21,7 +22,7 @@ export const Navbar: React.FC = () => {
   const navLinks: INavLink[] = [
     { path: "/", id: "dashboard", name: "Dashboard" /*, icon: IconType.APP_DASHBOARD*/ },
     ...plugins
-      .filter((link) => (showAllLinks || !link.hiddenIfNotSigner) && !link.hideFromMenu)
+      .filter((link) => (showAllLinks ?? !link.hiddenIfNotSigner) && !link.hideFromMenu)
       .map((p) => ({
         id: p.id,
         name: p.title,
@@ -45,7 +46,7 @@ export const Navbar: React.FC = () => {
                   "outline-none focus:outline-none focus-visible:ring focus-visible:ring-primary focus-visible:ring-offset" // focus styles
                 )}
               >
-                <img src={PUB_PROJECT_LOGO} width="200" className="shrink-0" alt={PUB_APP_NAME + " logo"} />
+                <Image src={PUB_PROJECT_LOGO} width="200" className="shrink-0" alt={PUB_APP_NAME + " logo"} />
               </Link>
             </div>
 

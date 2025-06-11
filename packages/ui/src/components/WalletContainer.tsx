@@ -1,4 +1,4 @@
-import { PUB_ALCHEMY_API_KEY, PUB_CHAIN, PUB_CHAIN_NAME, PUB_WEB3_ENDPOINT } from "@/constants";
+import { PUB_CHAIN, PUB_CHAIN_NAME, PUB_WEB3_ENDPOINT } from "@/constants";
 import { formatHexString } from "@/utils/evm";
 import { MemberAvatar } from "@aragon/ods";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
@@ -47,7 +47,7 @@ const WalletContainer = () => {
     else if (chainId === PUB_CHAIN.id) return;
 
     switchChain({ chainId: PUB_CHAIN.id });
-  }, [chainId]);
+  }, [chainId, switchChain]);
 
   return (
     <button

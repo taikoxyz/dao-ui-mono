@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { type Hex, encodeFunctionData, parseEther } from "viem";
-import { AlertInline, InputNumber, InputText } from "@aragon/ods";
+import { AlertInline, InputNumber } from "@aragon/ods";
 import { type AbiFunction } from "abitype";
 import { If } from "@/components/if";
 import { InputParameter } from "./input-parameter";
@@ -28,7 +28,7 @@ export const FunctionParamsForm = ({
     if (!functionAbi) return false;
 
     for (let i = 0; i < functionAbi.inputs.length; i++) {
-      if (inputValues[i] === null ?? inputValues[i] === undefined) {
+      if (inputValues[i] === null || inputValues[i] === undefined) {
         return false;
       }
     }
@@ -40,18 +40,14 @@ export const FunctionParamsForm = ({
     setInputValues([]);
   }, [functionAbi]);
 
-  useEffect(() => {
-    // Attempt to sync when possible
-    trySubmit();
-  }, [functionAbi, inputValues.join(","), value, canSend]);
-
   const onParameterChange = (paramIdx: number, value: InputValue) => {
     const newInputValues = [...inputValues];
     newInputValues[paramIdx] = value;
     setInputValues(newInputValues);
   };
 
-  const trySubmit = () => {
+  const reactiveInputValues = inputValues.join(",");
+  useEffect(() => {
     if (!functionAbi || !canSend) {
       onActionCleared();
       return;
@@ -68,7 +64,7 @@ export const FunctionParamsForm = ({
       logger.error("Invalid parameters", err);
       onActionCleared();
     }
-  };
+  }, [functionAbi, reactiveInputValues, value, canSend, inputValues, onActionChanged, onActionCleared]);
 
   return (
     <div className="w-full rounded-r-lg pt-4">

@@ -10,7 +10,7 @@ interface IPublisherProps {
 }
 
 export const Publisher: React.FC<IPublisherProps> = (props) => {
-  const { publisher, gqlProposal } = props;
+  const { publisher } = props;
 
   const showParsedPublisher = publisher.length <= MAX_PUBLISHERS_SHOWN;
 

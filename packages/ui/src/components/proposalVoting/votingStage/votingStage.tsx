@@ -8,7 +8,7 @@ import { VotingBreakdown, type IBreakdownMajorityVotingResult, ProposalType } fr
 import { type IBreakdownApprovalThresholdResult } from "../votingBreakdown/approvalThresholdResult";
 import { VotingDetails } from "../votingDetails";
 import { VotingStageStatus } from "./votingStageStatus";
-import type { IVote, IVotingStageDetails, ProposalStages } from "@/utils/types";
+import type { IVote, IVotingStageDetails } from "@/utils/types";
 import { VotesDataList } from "../votesDataList/votesDataList";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 import { useProposalId } from "@/plugins/optimistic-proposals/hooks/useProposalId";
@@ -29,7 +29,7 @@ export interface IVotingStageProps<TType extends ProposalType = ProposalType> {
 }
 
 export const VotingStage: React.FC<IVotingStageProps> = (props) => {
-  const { details, disabled, title, number, result, proposalId = "", status, variant, votes } = props;
+  const { details, disabled, title, number, result, proposalId = "", status, variant } = props;
   const { proposal } = useProposalVeto(Number(proposalId));
 
   const { proposalId: proposalChainId } = useProposalId(Number(proposalId));

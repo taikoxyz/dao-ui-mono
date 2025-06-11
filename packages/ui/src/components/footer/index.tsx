@@ -1,4 +1,5 @@
 import { PUB_APP_NAME, PUB_BLOG_URL, PUB_FORUM_URL, PUB_PROJECT_URL } from "@/constants";
+import Image from "next/image";
 
 export const Footer = () => {
   return (
@@ -7,7 +8,7 @@ export const Footer = () => {
         <div className="flex items-center justify-between pb-4 pt-3 md:order-2 md:justify-center md:gap-x-4 md:pb-0 md:pt-0 xl:order-1 xl:flex-1 xl:justify-start">
           <div className="flex items-center gap-x-1.5 md:gap-x-2 lg:gap-x-2.5">
             <span className="text-xs leading-tight text-neutral-500 md:text-sm lg:text-base">Powered by</span>
-            <img
+            <Image
               alt="Aragon logo"
               loading="lazy"
               width="64"
@@ -18,7 +19,7 @@ export const Footer = () => {
               style={{ color: "transparent" }}
               src="/logo-aragon-text.svg"
             />
-            <img
+            <Image
               alt="Aragon logo"
               loading="lazy"
               width="80"
@@ -29,7 +30,7 @@ export const Footer = () => {
               style={{ color: "transparent" }}
               src="/logo-aragon-text.svg"
             />
-            <img
+            <Image
               alt="Aragon logo"
               loading="lazy"
               width="96"

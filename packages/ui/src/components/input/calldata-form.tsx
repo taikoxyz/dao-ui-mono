@@ -1,18 +1,9 @@
 import { type RawAction } from "@/utils/types";
 import { type FC, useEffect, useState } from "react";
-import { InputText, InputNumber, TextArea, AlertInline } from "@aragon/ods";
-import {
-  type Address,
-  parseEther,
-  isHex,
-  decodeFunctionData,
-  Hex,
-  toFunctionSelector,
-  AbiFunction,
-  toFunctionSignature,
-} from "viem";
+import { InputText, InputNumber, TextArea } from "@aragon/ods";
+import { type Address, parseEther, isHex, decodeFunctionData, Hex, toFunctionSelector, AbiFunction } from "viem";
 import { isAddress } from "@/utils/evm";
-import { If, Then } from "../if";
+import { If } from "../if";
 import { PUB_CHAIN } from "@/constants";
 import { useIsContract } from "@/hooks/useIsContract";
 import { PleaseWaitSpinner } from "../please-wait";
@@ -30,14 +21,14 @@ export const CalldataForm: FC<ICalldataFormProps> = ({ onChange, onSubmit }) => 
   const [calldata, setCalldata] = useState<string>("");
   const [value, setValue] = useState<string>("");
   const { isContract, isLoading, error: isContractError } = useIsContract(to);
-  const { abi, isLoading: isLoadingAbi } = useAbi((to ?? "") as Address);
+  const { abi } = useAbi((to ?? "") as Address);
 
   useEffect(() => {
     if (!isAddress(to)) return;
-    else if (!isHex(calldata) ?? calldata.trim().length % 2 !== 0) return;
+    else if (!isHex(calldata) || calldata.trim().length % 2 !== 0) return;
 
     onChange({ to, value: BigInt(value ?? "0"), data: calldata } as unknown as RawAction);
-  }, [to, calldata, value]);
+  }, [to, calldata, value, onChange]);
 
   const handleTo = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTo(event?.target?.value as Address);
@@ -57,7 +48,8 @@ export const CalldataForm: FC<ICalldataFormProps> = ({ onChange, onSubmit }) => 
         matchingAbiFunction = item;
       }
     }
-  } catch (_) {
+  } catch (e) {
+    console.warn("Error decoding calldata:", e);
     //
   }
 
@@ -67,7 +59,7 @@ export const CalldataForm: FC<ICalldataFormProps> = ({ onChange, onSubmit }) => 
         <InputText
           label="Contract address"
           placeholder="0x1234..."
-          variant={(!to ?? isAddress(to)) ? "default" : "critical"}
+          variant={!to || isAddress(to) ? "default" : "critical"}
           value={to}
           alert={
             !!to && !isAddress(to)
@@ -139,7 +131,7 @@ function resolveCalldataAlert(
   } | null
 ): { message: string; variant: "critical" | "warning" } | undefined {
   if (!calldata) return undefined;
-  else if (!isHex(calldata) ?? calldata.trim().length % 2 !== 0) {
+  else if (!isHex(calldata) || calldata.trim().length % 2 !== 0) {
     return { message: "The given calldata is not a valid hex string", variant: "critical" };
   } else if (!abi?.length) return undefined;
   else if (!decodedParams) {

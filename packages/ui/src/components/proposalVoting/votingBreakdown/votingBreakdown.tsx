@@ -14,7 +14,7 @@ export interface IVotingBreakdownProps<TType extends ProposalType = ProposalType
 
 export const VotingBreakdown: React.FC<IVotingBreakdownProps> = (props) => {
   const { result, cta, variant, pastSupply } = props;
-  const [supplyText, supplyFormatted] = formatLargeNumber(pastSupply ?? BigInt(0));
+  const [, supplyFormatted] = formatLargeNumber(pastSupply ?? BigInt(0));
   if (!result) return <></>;
   else if (variant === "approvalThreshold") {
     return (

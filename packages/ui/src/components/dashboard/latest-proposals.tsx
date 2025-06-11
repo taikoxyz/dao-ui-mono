@@ -1,4 +1,4 @@
-import { CardEmptyState, DataList, DataListState, Heading, ProposalDataListItemSkeleton } from "@aragon/ods";
+import { CardEmptyState, DataList, Heading, ProposalDataListItemSkeleton } from "@aragon/ods";
 import { Else, If, Then } from "../if";
 import { useBlockNumber, useReadContract } from "wagmi";
 import { PUB_CHAIN, PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS } from "@/constants";
@@ -19,7 +19,7 @@ export const LatestProposals = () => {
 
   useEffect(() => {
     refetch();
-  }, [blockNumber]);
+  }, [blockNumber, refetch]);
 
   return (
     <section className="flex flex-1 flex-col gap-y-4">

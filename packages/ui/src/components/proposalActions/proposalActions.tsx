@@ -35,9 +35,9 @@ export const ProposalActions: React.FC<IProposalActionsProps> = (props) => {
 
   let message: string;
   if (actions?.length) {
-    message = description ? description : DEFAULT_DESCRIPTION;
+    message = description ?? DEFAULT_DESCRIPTION;
   } else {
-    message = emptyListDescription ? emptyListDescription : DEFAULT_EMPTY_LIST_DESCRIPTION;
+    message = emptyListDescription ?? DEFAULT_EMPTY_LIST_DESCRIPTION;
   }
 
   return (

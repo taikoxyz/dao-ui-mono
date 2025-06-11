@@ -1,22 +1,12 @@
 import getSecurityCouncilMemberData from "@/utils/getSecurityCouncilMemberData";
-import { IGqlProposalMixin } from "@/utils/gql/getGqProposal";
 import type { IProposalResource } from "@/utils/types";
-import { gql } from "@apollo/client";
 import { Card, CardEmptyState, Heading, IconType, Link } from "@aragon/ods";
 import React from "react";
-import { Address, zeroAddress } from "viem";
+import { zeroAddress } from "viem";
 import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
-
-import { OptimisticProposal } from "@/plugins/optimistic-proposals/utils/types";
-import { useProposalStatus } from "@/plugins/optimistic-proposals/hooks/useProposalVariantStatus";
-import { Else, ElseIf, If, Then } from "@/components/if";
-import { getShortTimeDiffFrom } from "@/utils/dates";
-import { HeaderSection } from "@/components/layout/header-section";
-import { getTagVariantFromStatus } from "@/utils/ui-variants";
-import { capitalizeFirstLetter } from "@/utils/text";
-import { Publisher } from "@/components/publisher";
 import { isAddressEqual } from "viem";
 import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
+import { IGqlProposalMixin } from "@/utils/gql/types";
 
 interface ICardResourcesProps {
   displayLink?: boolean;
@@ -36,9 +26,6 @@ export const CardResources: React.FC<ICardResourcesProps> = (props) => {
 };
 
 const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
-  if (!props.gqlProposal || !props.gqlProposal.creationTxHash || !props.relatedProposal) {
-    return null;
-  }
   const { gqlProposal, relatedProposal } = props;
 
   const creator = relatedProposal?.creator ?? gqlProposal?.creator ?? zeroAddress;
@@ -60,6 +47,11 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
 
   const approvals = relatedProposal?.approvers ?? gqlProposal?.approvers ?? [];
   const vetoes = gqlProposal?.vetoes ?? relatedProposal?.vetoes ?? [];
+
+  if (!props.gqlProposal || !props.gqlProposal.creationTxHash || !props.relatedProposal) {
+    return null;
+  }
+
   return (
     <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">
       <Heading size="h4">Transactions</Heading>
@@ -89,7 +81,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
             <td colSpan={2}>Approvals</td>
           </tr>
           {approvals.map((approver, i) => (
-            <tr>
+            <tr key={`approver-${i}`}>
               <td>
                 <Link
                   target="_blank"
@@ -122,7 +114,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
           )}
 
           {vetoes.map((vetoer, i) => (
-            <tr>
+            <tr key={`vetoer-${i}`}>
               {" "}
               <td>
                 <Link target="_blank" href={`https://etherscan.io/address/${vetoer.address}`} variant="primary" key={i}>
@@ -174,86 +166,11 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
     </Card>
   );
 };
-const CreationCard: React.FC<ICardResourcesProps> = (props) => {
-  if (!props.gqlProposal || !props.gqlProposal.creationTxHash) {
-    return null;
-  }
-  const { gqlProposal } = props;
-  const creationTx = gqlProposal?.creationTxHash;
-
-  return (
-    <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">
-      <Heading size="h4">Creation Tx</Heading>
-      <div className="flex flex-col gap-y-4">
-        <Link
-          target="_blank"
-          href={`https://etherscan.io/tx/${creationTx}`}
-          variant="primary"
-          iconRight={IconType.LINK_EXTERNAL}
-        >
-          View on Etherscan
-        </Link>
-      </div>
-    </Card>
-  );
-};
-
-const ApprovalsCard: React.FC<ICardResourcesProps> = (props) => {
-  const { gqlProposal } = props;
-  if (!gqlProposal || !gqlProposal.approvers.length) {
-    return null;
-  }
-  return (
-    <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">
-      <Heading size="h4">Security Council Member Approvals</Heading>
-      <div className="flex flex-col gap-y-4">
-        {gqlProposal?.approvers.map((approver, i) => (
-          <Link
-            target="_blank"
-            href={`https://etherscan.io/tx/${approver.txHash}`}
-            variant="primary"
-            iconRight={IconType.LINK_EXTERNAL}
-            key={i}
-          >
-            {getSecurityCouncilMemberData(approver.address).name ?? approver.address}
-          </Link>
-        ))}
-      </div>
-    </Card>
-  );
-};
-
-const VetoCard: React.FC<ICardResourcesProps> = (props) => {
-  const { gqlProposal } = props;
-  if (!gqlProposal || !gqlProposal.vetoes.length) {
-    return null;
-  }
-
-  return (
-    <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">
-      <Heading size="h4">Veto Votes</Heading>
-      <div className="flex flex-col gap-y-4">
-        {gqlProposal?.vetoes.map((approver, i) => (
-          <Link
-            target="_blank"
-            href={`https://etherscan.io/tx/${approver.txHash}`}
-            variant="primary"
-            iconRight={IconType.LINK_EXTERNAL}
-            key={i}
-          >
-            {getSecurityCouncilMemberData(approver.address).name ?? approver.address}
-          </Link>
-        ))}
-      </div>
-    </Card>
-  );
-};
-
 const DefaultDAOInfoCard: React.FC<ICardResourcesProps> = (props) => {
   const { displayLink = true, title } = props;
-  let { resources, gqlProposal } = props;
+  let { resources } = props;
 
-  if (resources == null ?? resources.length === 0) {
+  if (resources == null || resources.length === 0) {
     return <CardEmptyState objectIllustration={{ object: "ARCHIVE" }} heading="No resources were added" />;
   }
 
@@ -276,32 +193,6 @@ const DefaultDAOInfoCard: React.FC<ICardResourcesProps> = (props) => {
             {resource.name}
           </Link>
         ))}
-      </div>
-    </Card>
-  );
-};
-
-const ExecutionCard: React.FC<ICardResourcesProps> = (props) => {
-  const { gqlProposal } = props;
-
-  if (!gqlProposal || !gqlProposal.executor) {
-    return null;
-  }
-  const executor = gqlProposal?.creator as Address;
-  const executionTx = gqlProposal?.executor?.txHash;
-
-  return (
-    <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">
-      <Heading size="h4">Execution Tx</Heading>
-      <div className="flex flex-col gap-y-4">
-        <Link
-          target="_blank"
-          href={`https://etherscan.io/tx/${executionTx}`}
-          variant="primary"
-          iconRight={IconType.LINK_EXTERNAL}
-        >
-          Etherscan
-        </Link>
       </div>
     </Card>
   );
