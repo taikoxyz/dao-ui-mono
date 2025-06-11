@@ -60,6 +60,13 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
 
   const approvals = relatedProposal?.approvers || gqlProposal?.approvers || [];
   const vetoes = gqlProposal?.vetoes || relatedProposal?.vetoes || [];
+
+  const hideExecutionTx =
+    // if vetoed, no execution
+    (vetoes.length && gqlProposal?.executor === null) ||
+    // if std and still active, no execution
+    (relatedProposal.isStandard && gqlProposal?.isOptimistic && gqlProposal?.executor === null);
+
   return (
     <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">
       <Heading size="h4">Transactions</Heading>
@@ -144,13 +151,13 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
           ))}
 
           {/* execution */}
-          {!vetoes.length && (
+          {!hideExecutionTx && (
             <tr>
               <td colSpan={2}>Execution</td>
             </tr>
           )}
 
-          {!vetoes.length && (
+          {!hideExecutionTx && (
             <tr>
               <td>
                 <Link target="_blank" href={`https://etherscan.io/address/${executor?.address}`} variant="primary">
