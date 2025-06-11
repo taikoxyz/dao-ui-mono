@@ -46,7 +46,13 @@ export const Navbar: React.FC = () => {
                   "outline-none focus:outline-none focus-visible:ring focus-visible:ring-primary focus-visible:ring-offset" // focus styles
                 )}
               >
-                <Image src={PUB_PROJECT_LOGO} width="200" className="shrink-0" alt={PUB_APP_NAME + " logo"} />
+                <Image
+                  src={PUB_PROJECT_LOGO}
+                  width="200"
+                  height="200"
+                  className="shrink-0"
+                  alt={PUB_APP_NAME + " logo"}
+                />
               </Link>
             </div>
 

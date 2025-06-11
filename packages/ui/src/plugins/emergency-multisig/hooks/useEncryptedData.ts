@@ -19,8 +19,8 @@ export function useEncryptedData() {
   const encryptProposalData = async (privateMetadata: ProposalMetadata, actions: RawAction[]) => {
     const actionsBytes = encodeAbiParameters(RawActionListAbi, [actions]);
     if (isLoadingPubKeys || isLoadingSigners || !encryptionRecipients) {
-    throw new Error("The list of signers is not available yet");
-} else if (signerListError){
+      throw new Error("The list of signers is not available yet");
+    } else if (signerListError) {
       throw signerListError;
     }
 

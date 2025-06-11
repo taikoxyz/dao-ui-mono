@@ -110,10 +110,10 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
     } else {
       // Address is an EOA
       // Is there an appointed agent?
-      if (!appointedAgent ||  appointedAgent === ADDRESS_ZERO) {
+      if (!appointedAgent || appointedAgent === ADDRESS_ZERO) {
         // No appointed agent
 
-        if (!registeredPublicKey ||  registeredPublicKey === BYTES32_ZERO) {
+        if (!registeredPublicKey || registeredPublicKey === BYTES32_ZERO) {
           // CTA: Owner must appoint
           // CTA: Owner must define a public key
           status = AccountEncryptionStatus.CTA_OWNER_MUST_APPOINT_OR_REGISTER_PUB_KEY;
@@ -125,7 +125,7 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
         // A wallet is appointed
 
         // Defined public key?
-        if (!registeredPublicKey ||  registeredPublicKey === BYTES32_ZERO) {
+        if (!registeredPublicKey || registeredPublicKey === BYTES32_ZERO) {
           // Warning: Appointed must register a public key
           status = AccountEncryptionStatus.WARN_APPOINTED_MUST_REGISTER_PUB_KEY;
         } else {
