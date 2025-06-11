@@ -8,12 +8,13 @@ import { logger } from "@/services/logger";
 import { MainSection } from "@/components/layout/main-section";
 
 const PluginLoader: FC = () => {
-  const { query } = useRouter();
-  const pluginId = resolveQueryParam(query.id);
+  const { query, isReady } = useRouter();
+  const pluginId = isReady && resolveQueryParam(query.id);
   const [PageComponent, setPageComponent] = useState<FC | null>(null);
   const [componentLoading, setComponentLoading] = useState(true);
 
   useEffect(() => {
+    if (!isReady) return;
     if (!pluginId) return;
 
     const plugin = plugins.find((p) => p.id === pluginId);
@@ -29,7 +30,7 @@ const PluginLoader: FC = () => {
 
         setComponentLoading(false);
       });
-  }, [pluginId]);
+  }, [pluginId, isReady]);
 
   if (!PageComponent) {
     if (componentLoading) {
