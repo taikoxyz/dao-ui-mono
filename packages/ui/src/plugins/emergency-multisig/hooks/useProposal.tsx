@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { useBlockNumber, usePublicClient, useReadContract } from "wagmi";
-import { Address, getAbiItem, zeroAddress } from "viem";
+import { useBlockNumber, useReadContract } from "wagmi";
 import { EmergencyMultisigPluginAbi } from "@/plugins/emergency-multisig/artifacts/EmergencyMultisigPlugin";
 import { RawAction, ProposalMetadata } from "@/utils/types";
 import {
@@ -8,19 +7,9 @@ import {
   EmergencyProposal,
   EmergencyProposalResultType,
 } from "@/plugins/emergency-multisig/utils/types";
-import { PUB_CHAIN, PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS, PUB_SUBGRAPH_URL } from "@/constants";
+import { PUB_CHAIN, PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
 import { useDecryptedData } from "./useDecryptedData";
 import { useIpfsJsonData } from "@/hooks/useMetadata";
-import { getLogsUntilNow } from "@/utils/evm";
-import { useQuery } from "@tanstack/react-query";
-import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
-import { GQL_GET_PROPOSAL_MULTIPLE } from "@/utils/gql/queries.gql";
-import { getGqlProposalSingle } from "@/utils/gql/getGqProposal";
-
-const ProposalCreatedEvent = getAbiItem({
-  abi: EmergencyMultisigPluginAbi,
-  name: "EmergencyProposalCreated",
-});
 
 export function useProposal(proposalId: string, autoRefresh = false) {
   const { data: blockNumber } = useBlockNumber({ watch: true });
@@ -38,16 +27,12 @@ export function useProposal(proposalId: string, autoRefresh = false) {
     args: [BigInt(proposalId)],
     chainId: PUB_CHAIN.id,
   });
-  const { data: proposalCreationEvent, isLoading: isLoadingEvent } = useProposalCreationEvent(
-    BigInt(proposalId),
-    proposalResult?.[2].snapshotBlock
-  );
 
   const proposalData = decodeProposalResultData(proposalResult);
 
   useEffect(() => {
     if (autoRefresh) proposalRefetch();
-  }, [blockNumber]);
+  }, [blockNumber, proposalRefetch, autoRefresh]);
 
   // JSON data
   const {
@@ -62,7 +47,6 @@ export function useProposal(proposalId: string, autoRefresh = false) {
   const proposal = arrangeProposalData(
     proposalData,
     (privateActions ?? undefined) as any,
-    proposalCreationEvent,
     privateMetadata ?? undefined
   );
 
@@ -79,39 +63,6 @@ export function useProposal(proposalId: string, autoRefresh = false) {
       metadataError: metadataError !== undefined,
     },
   };
-}
-
-// Helpers
-
-function useProposalCreationEvent(proposalId: bigint, snapshotBlock: bigint | undefined) {
-  const publicClient = usePublicClient();
-  return useQuery({
-    queryKey: [
-      "emergency-proposal-creation-event",
-      PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS,
-      proposalId.toString(),
-      snapshotBlock?.toString() ?? "",
-      !!publicClient,
-    ],
-    queryFn: () => {
-      getGqlProposalSingle(
-        proposalId.toString(),
-        false, // isStandard
-        true, // isEmergency
-        false // isOptimistic
-      ).then((proposal) => {
-        if (!proposal || !proposal.creator) {
-          return { creator: zeroAddress };
-        }
-        return { creator: proposal.creator as Address };
-      });
-    },
-    retry: true,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    retryOnMount: true,
-    staleTime: 1000 * 60 * 10,
-  });
 }
 
 function decodeProposalResultData(data?: EmergencyProposalResultType) {
@@ -131,7 +82,6 @@ function decodeProposalResultData(data?: EmergencyProposalResultType) {
 function arrangeProposalData(
   proposalData?: ReturnType<typeof decodeProposalResultData>,
   actions?: RawAction[],
-  creationEvent?: ReturnType<typeof useProposalCreationEvent>["data"],
   metadata?: ProposalMetadata
 ): EmergencyProposal | null {
   if (!proposalData) return null;
@@ -152,31 +102,4 @@ function arrangeProposalData(
     description: metadata?.description ?? "",
     resources: metadata?.resources ?? [],
   };
-}
-
-async function getGqlCreator(proposalId: string): Promise<{ creator: Address }> {
-  try {
-    const client = new ApolloClient({
-      uri: PUB_SUBGRAPH_URL,
-      cache: new InMemoryCache(),
-    });
-
-    const res: any = await client.query({
-      query: gql(GQL_GET_PROPOSAL_MULTIPLE),
-      variables: {
-        proposalId: `0x${proposalId}`,
-        isStandard: false,
-        isEmergency: true,
-        isOptimistic: false,
-      },
-    });
-
-    if (!res.data || !res.data.emergencyProposal || !res.data.emergencyProposal.creator) {
-      throw new Error("No emergencyProposal found");
-    }
-    return res.data.emergencyProposal;
-  } catch (e) {
-    console.error("GQL Error:", e);
-    return { creator: zeroAddress };
-  }
 }

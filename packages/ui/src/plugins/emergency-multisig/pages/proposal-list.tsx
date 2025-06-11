@@ -1,20 +1,11 @@
-import { type ReactNode, useEffect } from "react";
-import { useAccount, useBlockNumber, useReadContract } from "wagmi";
+import { useEffect } from "react";
+import { useBlockNumber, useReadContract } from "wagmi";
 import ProposalCard from "@/plugins/emergency-multisig/components/proposal";
 import { EmergencyMultisigPluginAbi } from "@/plugins/emergency-multisig/artifacts/EmergencyMultisigPlugin";
-import {
-  Button,
-  CardEmptyState,
-  DataList,
-  IconType,
-  ProposalDataListItemSkeleton,
-  type DataListState,
-} from "@aragon/ods";
+import { CardEmptyState, DataList, ProposalDataListItemSkeleton, type DataListState } from "@aragon/ods";
 import { useCanCreateProposal } from "@/plugins/emergency-multisig/hooks/useCanCreateProposal";
-import Link from "next/link";
 import { Else, If, Then } from "@/components/if";
 import { PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS, PUB_CHAIN } from "@/constants";
-import { MainSection } from "@/components/layout/main-section";
 import { EncryptionPlaceholderOrChildren } from "../components/encryption-check-or-children";
 import { useRouter } from "next/router";
 
@@ -22,7 +13,6 @@ const DEFAULT_PAGE_SIZE = 6;
 
 export default function Proposals() {
   const { push } = useRouter();
-  const { isConnected } = useAccount();
   const { data: blockNumber } = useBlockNumber({ watch: true });
   const { canCreate } = useCanCreateProposal();
   const {
@@ -41,7 +31,7 @@ export default function Proposals() {
 
   useEffect(() => {
     refetch();
-  }, [blockNumber]);
+  }, [blockNumber, refetch]);
 
   const entityLabel = proposalCount === 1 ? "Proposal" : "Proposals";
 
@@ -56,7 +46,7 @@ export default function Proposals() {
 
   return (
     <div>
-      <EncryptionPlaceholderOrChildren needsPublicKey>
+      <EncryptionPlaceholderOrChildren needsPublicKey={true}>
         <If condition={!proposalCount}>
           <Then>
             <If condition={canCreate}>
@@ -108,8 +98,4 @@ export default function Proposals() {
       </EncryptionPlaceholderOrChildren>
     </div>
   );
-}
-
-function SectionView({ children }: { children: ReactNode }) {
-  return <div className="flex w-full flex-row content-center justify-between">{children}</div>;
 }

@@ -1,8 +1,7 @@
 import { useRouter } from "next/router";
 import { useEncryptedData } from "./useEncryptedData";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ProposalMetadata, RawAction } from "@/utils/types";
-import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { useAlerts } from "@/context/Alerts";
 import {
   PUB_APP_NAME,

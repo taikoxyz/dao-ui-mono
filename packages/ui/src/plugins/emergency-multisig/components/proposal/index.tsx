@@ -5,7 +5,6 @@ import { ProposalDataListItem } from "@aragon/ods";
 import { PleaseWaitSpinner } from "@/components/please-wait";
 import { useProposalStatus } from "../../hooks/useProposalVariantStatus";
 import { useAccount } from "wagmi";
-import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 
 const DEFAULT_PROPOSAL_METADATA_TITLE = "(No proposal title)";
 const DEFAULT_PROPOSAL_METADATA_SUMMARY = "(The metadata of the proposal is not available)";
@@ -20,13 +19,6 @@ export default function ProposalCard(props: ProposalInputs) {
   const proposalStatus = useProposalStatus(proposal!);
   const showLoading = getShowProposalLoading(proposal, proposalFetchStatus);
   const hasApproved = approvals?.some((veto) => veto.approver === address);
-
-  const gqlProposal = useGqlProposalSingle({
-    proposalId: props.proposalId.toString(),
-    isStandard: false,
-    isOptimistic: false,
-    isEmergency: true,
-  });
 
   if (!proposal && showLoading) {
     return (
@@ -93,7 +85,7 @@ function getShowProposalLoading(
   proposal: ReturnType<typeof useProposalApprove>["proposal"],
   status: ReturnType<typeof useProposalApprove>["proposalFetchStatus"]
 ) {
-  if (!proposal ?? status.proposalLoading) return true;
+  if (!proposal || status.proposalLoading) return true;
   else if (status.metadataLoading && !status.metadataError) return true;
   else if (!proposal?.title && !status.metadataError) return true;
 

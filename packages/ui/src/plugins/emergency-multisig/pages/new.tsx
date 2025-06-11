@@ -68,7 +68,7 @@ export default function Create() {
 
   let signersWithPubKey = 0;
   for (const recipient of encryptionRecipients ?? []) {
-    const account = encryptionAccounts?.find((a) => a.owner === recipient ?? a.appointedAgent === recipient);
+    const account = encryptionAccounts?.find((a) => a.owner === recipient || a.appointedAgent === recipient);
     if (!account) continue;
 
     signersWithPubKey++;
@@ -82,12 +82,12 @@ export default function Create() {
   };
 
   return (
-    <MainSection narrow>
+    <MainSection narrow={true}>
       <div className="w-full justify-between">
         <h1 className="mb-8 line-clamp-1 flex flex-1 shrink-0 text-2xl font-normal leading-tight text-neutral-800 md:text-3xl">
           Create Emergency Proposal
         </h1>
-        <EncryptionPlaceholderOrChildren needsPublicKey>
+        <EncryptionPlaceholderOrChildren needsPublicKey={true}>
           <div className="mb-6">
             <InputText
               className=""

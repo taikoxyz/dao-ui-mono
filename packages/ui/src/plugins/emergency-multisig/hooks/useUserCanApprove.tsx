@@ -22,7 +22,7 @@ export function useUserCanApprove(proposalId: string | bigint | number) {
     if (Number(blockNumber) % 2 === 0) {
       refetch();
     }
-  }, [blockNumber]);
+  }, [blockNumber, refetch]);
 
   return { canApprove, refetch };
 }

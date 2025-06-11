@@ -1,4 +1,4 @@
-import { AvatarIcon, Heading, IconType, ProposalStatus, TagVariant } from "@aragon/ods";
+import { AvatarIcon, Heading, IconType, ProposalStatus } from "@aragon/ods";
 import { useProposalStatus } from "@/plugins/emergency-multisig/hooks/useProposalVariantStatus";
 import { Publisher } from "@/components/publisher";
 import { getShortTimeDiffFrom } from "@/utils/dates";
