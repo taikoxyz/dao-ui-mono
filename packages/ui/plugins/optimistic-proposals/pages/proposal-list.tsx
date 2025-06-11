@@ -194,7 +194,7 @@ function AsideSection() {
 
         <ul className="list-inside list-disc">
           <li>Initiated only by Security Council Members</li>
-          <li>Executed upon approval from more than 75% of the Security Council members</li>
+          <li>Executed upon approval from more than 6 or 75% of the Security Council members</li>
           <li>
             Relates to any issues/actions relating to:
             <ul className="list-inside list-decimal pl-4">
@@ -207,9 +207,9 @@ function AsideSection() {
         <Heading size="h3">Standard Proposals</Heading>
         <b>(Visible following cretion)</b>
         <ul className="list-inside list-disc">
-          <li>Available for public community voting following approval from 3 or 25% of Security Council Members </li>
-          <li>Executed if the proposal is not vetoed within 9 days</li>
-          <li>30% vote from token holders is required to veto a Standard Proposal</li>
+          <li>Available for public community voting following approval from 5 or 62.5% of Security Council Members </li>
+          <li>Executed if the proposal is not vetoed within 21 days</li>
+          <li>10% vote from token holders is required to veto a Standard Proposal</li>
           <li>Relates to any topics/issues that do not fall within the scope of Emergency Proposals</li>
         </ul>
       </div>

@@ -56,7 +56,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
     isOptimistic: true,
     isEmergency: false,
   });
-  const pastSupply = usePastSupply(BigInt(gqlProposal?.creationBlockNumber || 0));
+  const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp || BigInt(0));
 
   let vetoPercentage = 0;
   if (proposal?.vetoTally && pastSupply && proposal.parameters.minVetoRatio) {
