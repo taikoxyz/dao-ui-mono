@@ -18,7 +18,7 @@ export function useTransactionManager(params: TxLifecycleParams) {
   const { addAlert } = useAlerts();
 
   useEffect(() => {
-    if (status === "idle" ?? status === "pending") {
+    if (status === "idle" || status === "pending") {
       return;
     } else if (status === "error") {
       if (error?.message?.startsWith("User rejected the request")) {
@@ -62,7 +62,7 @@ export function useTransactionManager(params: TxLifecycleParams) {
     if (typeof onSuccess === "function") {
       onSuccess();
     }
-  }, [status, hash, isConfirming, isConfirmed]);
+  }, [status, hash, isConfirming, isConfirmed, error, addAlert, params, onSuccess, onError]);
 
   return { writeContract, hash, status, isConfirming, isConfirmed };
 }

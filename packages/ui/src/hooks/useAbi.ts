@@ -1,4 +1,4 @@
-import { Address } from "viem";
+import { Address, isAddressEqual } from "viem";
 import { whatsabi } from "@shazow/whatsabi";
 import { usePublicClient } from "wagmi";
 import { AbiFunction } from "abitype";
@@ -7,9 +7,6 @@ import { ADDRESS_ZERO, isAddress, isContract } from "@/utils/evm";
 import { PUB_CHAIN, PUB_ETHERSCAN_API_KEY } from "@/constants";
 import { useAlerts } from "@/context/Alerts";
 import { getImplementation } from "@/utils/proxies";
-import { ChainName } from "@/utils/chains";
-
-const CHAIN_NAME = PUB_CHAIN.name.toLowerCase() as ChainName;
 
 export const useAbi = (contractAddress: Address) => {
   const { addAlert } = useAlerts();
@@ -25,7 +22,7 @@ export const useAbi = (contractAddress: Address) => {
 
       return getImplementation(publicClient, contractAddress)
         .then((address) => {
-          if (!address ?? address === ADDRESS_ZERO) return null;
+          if (!address || isAddressEqual(address, ADDRESS_ZERO)) return null;
           return address;
         })
         .catch(() => null);

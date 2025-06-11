@@ -17,7 +17,7 @@ export function useUrl() {
       router.events.off("hashChangeStart", urlChanged);
       router.events.off("routeChangeStart", urlChanged);
     };
-  }, []);
+  }, [router.events]);
 
   return new URL(url);
 }

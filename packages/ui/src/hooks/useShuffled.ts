@@ -11,7 +11,7 @@ export function useShuffled<T>(array?: T[] | readonly T[]) {
     newArray.sort(() => (Math.random() >= 0.5 ? 1 : -1));
 
     setShuffledArray(newArray);
-  }, [array?.length]);
+  }, [array?.length, array]);
 
   return shuffledArray;
 }

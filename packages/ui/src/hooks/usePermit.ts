@@ -53,7 +53,7 @@ export function usePermit() {
         addAlert("Permit signed", { type: "success", timeout: 1500 });
         return;
     }
-  }, [permitSignStatus]);
+  }, [permitSignStatus, permitSignError, addAlert]);
 
   const signPermit = async (
     dest: Address,
@@ -103,6 +103,7 @@ export function usePermit() {
 
       return hexToSignature(sig);
     } catch (e) {
+      console.warn("Error signing permit:", e);
       return;
     }
   };
