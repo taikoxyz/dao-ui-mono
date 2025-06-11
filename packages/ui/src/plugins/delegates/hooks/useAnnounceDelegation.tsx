@@ -16,7 +16,7 @@ export function useAnnounceDelegation(onSuccess?: () => void) {
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
   useEffect(() => {
-    if (status === "idle" ?? status === "pending") return;
+    if (status === "idle" || status === "pending") return;
     else if (status === "error") {
       if (error?.message?.startsWith("User rejected the request")) {
         addAlert("The transaction signature was declined", {
@@ -50,7 +50,7 @@ export function useAnnounceDelegation(onSuccess?: () => void) {
     refetch();
 
     onSuccess?.();
-  }, [status, hash, isConfirming, isConfirmed]);
+  }, [status, hash, isConfirming, isConfirmed, error, addAlert, refetch, onSuccess]);
 
   const announceDelegation = useCallback(
     async (metadata: IAnnouncementMetadata) => {
@@ -81,7 +81,7 @@ export function useAnnounceDelegation(onSuccess?: () => void) {
         console.error("Could not upload delegate profile metadata to IPFS", error);
       }
     },
-    [writeContract]
+    [writeContract, addAlert]
   );
 
   return {

@@ -34,7 +34,7 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
   useEffect(() => {
     if (!announce) return;
     checkText(`${announce.identifier}\n${announce.bio}\n${announce.message}`);
-  }, [announce]);
+  }, [announce, checkText]);
 
   if (isBanned) {
     return null;

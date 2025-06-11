@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CardEmptyState, DataList } from "@aragon/ods";
 import { DelegateListItem } from "./DelegateListItem";
 import { equalAddresses } from "@/utils/evm";
@@ -43,28 +43,10 @@ export const DelegateMemberList: React.FC<IDelegateMemberListProps> = ({ verifie
   const showPagination = true;
 
   return (
-    <DataList.Root
-      entityLabel={totalMembers === 1 ? "delegate" : "delegates"}
-      itemsCount={totalMembers}
-      // pageSize={DEFAULT_PAGE_SIZE}
-      // state={dataListState}
-      // onLoadMore={fetchNextPage}
-    >
-      <DataList.Filter
-        onSearchValueChange={setSearchValue}
-        searchValue={searchValue}
-        placeholder="Filter by address"
-        // onSortChange={setActiveSort}
-        // activeSort={activeSort}
-        // sortItems={sortItems}
-      />
+    <DataList.Root entityLabel={totalMembers === 1 ? "delegate" : "delegates"} itemsCount={totalMembers}>
+      <DataList.Filter onSearchValueChange={setSearchValue} searchValue={searchValue} placeholder="Filter by address" />
       {totalMembers ? (
-        <DataList.Container
-          // SkeletonElement={MemberDataListItem.Skeleton}
-          // errorState={errorState}
-          // emptyState={emptyState}
-          className="grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-3"
-        >
+        <DataList.Container className="grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-3">
           {filteredDelegates.map((delegate) => (
             <DelegateListItem
               moderatedOnly={moderatedOnly}

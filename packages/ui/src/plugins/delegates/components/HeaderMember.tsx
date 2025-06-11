@@ -84,7 +84,7 @@ export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
                   <Button onClick={() => open()}>Connect to delegate</Button>
                 </Then>
                 <ElseIf condition={equalAddresses(delegateAddress, delegatesTo)}>
-                  <Button disabled>Already delegated</Button>
+                  <Button disabled={true}>Already delegated</Button>
                 </ElseIf>
                 <ElseIf condition={equalAddresses(delegateAddress, myAddress)}>
                   <If condition={(delegateTokenBalance ?? BigInt(0)) > BigInt(0)}>

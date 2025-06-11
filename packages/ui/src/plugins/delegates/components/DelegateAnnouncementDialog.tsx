@@ -1,4 +1,3 @@
-// import { MemberProfile } from "@/components/nav/routes";
 import { EMAIL_PATTERN, URL_PATTERN, URL_WITH_PROTOCOL_PATTERN } from "@/utils/input-values";
 import {
   Button,
@@ -21,8 +20,6 @@ import { useAccount } from "wagmi";
 import { z } from "zod";
 import { useAnnounceDelegation } from "../hooks/useAnnounceDelegation";
 import { IAnnouncementMetadata } from "../utils/types";
-import { useDelegates } from "../hooks/useDelegates";
-import { isAddressEqual } from "viem";
 import { useDelegateAnnounce } from "../hooks/useDelegateAnnounce";
 import { useEffect } from "react";
 import { useProfanityChecker } from "glin-profanity";
@@ -41,7 +38,7 @@ const ResourceSchema = z
     link: z
       .string()
       .optional()
-      .refine((val) => !val ?? UrlRegex.test(val) ?? z.string().email().safeParse(val).success, {
+      .refine((val) => !val || UrlRegex.test(val) || z.string().email().safeParse(val).success, {
         message: "Invalid resource link",
       }),
   })

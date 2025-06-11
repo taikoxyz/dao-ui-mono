@@ -16,7 +16,7 @@ export const DelegateProfile = ({ address }: { address: Address }) => {
   useEffect(() => {
     if (!announce) return;
     checkText(`${announce.identifier}\n${announce.bio}\n${announce.message}`);
-  }, [announce]);
+  }, [announce, checkText]);
 
   if (BannedDelegates.findIndex((d) => isAddressEqual(d.address as Address, address)) >= 0) {
     return null;
