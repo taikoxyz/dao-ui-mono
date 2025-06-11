@@ -11,6 +11,8 @@ jobs:
 
       - uses: oven-sh/setup-bun@v1
       - run: bun install
+      - name: ESLint
+        run: bun run lint
       - name: Build
         run: bun run build
         env:
