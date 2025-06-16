@@ -25,14 +25,7 @@ type ProposalInputs = {
 export default function ProposalCard(props: ProposalInputs) {
   const { address } = useAccount();
   const { proposal, proposalFetchStatus, vetoes } = useProposalVeto(props.proposalIndex);
-  const { proposalId } = useProposalId(props.proposalIndex);
 
-  const { data: gqlProposal } = useGqlProposalSingle({
-    proposalId: proposalId?.toString() || "",
-    isStandard: false,
-    isOptimistic: true,
-    isEmergency: false,
-  });
   const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp || BigInt(0));
 
   const { symbol: tokenSymbol } = useToken();
@@ -105,8 +98,6 @@ export default function ProposalCard(props: ProposalInputs) {
             formatLargeNumber(pastSupply)[1],
             tokenSymbol,
           ].join(" "),
-
-          //   formatEther(proposal.vetoTally) + " / " + pastSupplyDisplay + " " + (tokenSymbol || "TAIKO"),
           votePercentage: vetoPercentage,
         }}
         publisher={{ address: proposal.creator }}
