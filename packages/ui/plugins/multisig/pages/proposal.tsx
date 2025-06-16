@@ -11,6 +11,14 @@ import dayjs from "dayjs";
 import { ProposalActions } from "@/components/proposalActions/proposalActions";
 import { CardResources } from "@/components/proposal/cardResources";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
+import { useAccount } from "wagmi";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
+import { useDerivedWallet } from "@/hooks/useDerivedWallet";
+import { CardEmptyState } from "@aragon/ods";
+import {
+  AccountEncryptionStatus,
+  useAccountEncryptionStatus,
+} from "@/plugins/security-council/hooks/useAccountEncryptionStatus";
 
 export default function ProposalDetail({ id: proposalId }: { id: string }) {
   const {
@@ -77,6 +85,57 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     },
   ];
 
+  const { isConnected, address } = useAccount();
+  const { open } = useWeb3Modal();
+  const { publicKey, requestSignature } = useDerivedWallet();
+  const { status } = useAccountEncryptionStatus(address);
+
+  if (!isConnected) {
+    return (
+      <div className="mt-12">
+        <CardEmptyState
+          heading="Connect wallet"
+          description="Please connect your wallet to access the emergency proposals section."
+          objectIllustration={{
+            object: "ACTION",
+          }}
+          primaryButton={{
+            label: "Connect wallet",
+            onClick: () => open(),
+          }}
+        />
+      </div>
+    );
+  } else if (!publicKey) {
+    return (
+      <div className="mt-12">
+        <CardEmptyState
+          heading="Sign in to continue"
+          description="Please sign in with your wallet to decrypt the private proposal data."
+          objectIllustration={{
+            object: "ACTION",
+          }}
+          primaryButton={{
+            label: "Sign in",
+            onClick: () => requestSignature(),
+          }}
+        />
+      </div>
+    );
+  } else if (status === AccountEncryptionStatus.ERR_NOT_LISTED_OR_APPOINTED) {
+    return (
+      <div className="mt-12">
+        <CardEmptyState
+          heading="Not listed or appointed"
+          description="You are not currently listed as a Security Council signer or appointed by one."
+          objectIllustration={{
+            object: "ERROR",
+          }}
+        />
+      </div>
+    );
+  }
+
   if (!proposal || showProposalLoading) {
     return (
       <section className="justify-left items-left flex w-screen min-w-full max-w-full">
@@ -88,7 +147,6 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
   return (
     <section className="flex w-screen min-w-full max-w-full flex-col items-center">
       <ProposalHeader proposalId={proposalId} proposal={proposal} />
-
       <div className="mx-auto w-full max-w-screen-xl px-4 py-6 md:px-16 md:pb-20 md:pt-10">
         <div className="flex w-full flex-col gap-x-12 gap-y-6 md:flex-row">
           <div className="flex flex-col gap-y-6 md:w-[63%] md:shrink-0">
