@@ -96,6 +96,13 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
         variant: "no",
       }) as IVote
   );
+
+  let vetoPercentage = 0;
+  if (proposal?.vetoTally && pastSupply && proposal.parameters.minVetoRatio) {
+    // Example: 15% of the token supply (adjusted for decimal precision, 10^6)
+    const defeatThreshold = (pastSupply * BigInt(proposal.parameters.minVetoRatio)) / BigInt(1000000);
+    vetoPercentage = Number((1000n * proposal.vetoTally) / defeatThreshold) / 100;
+  }
   return (
     <AccordionItem
       key={stageKey}
@@ -123,7 +130,15 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
           </Tabs.List>
           <Tabs.Content value="breakdown">
             <div className="py-4 pb-8">
-              {result && <VotingBreakdown pastSupply={pastSupply} cta={result.cta} variant={variant} result={result} />}
+              {result && (
+                <VotingBreakdown
+                  vetoPercentage={vetoPercentage}
+                  pastSupply={pastSupply}
+                  cta={result.cta}
+                  variant={variant}
+                  result={result}
+                />
+              )}
             </div>
           </Tabs.Content>
           <Tabs.Content value="votes">
