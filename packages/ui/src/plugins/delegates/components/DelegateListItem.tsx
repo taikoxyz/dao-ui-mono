@@ -34,7 +34,8 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
   useEffect(() => {
     if (!announce) return;
     checkText(`${announce.identifier}\n${announce.bio}\n${announce.message}`);
-  }, [announce, checkText]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [announce]);
 
   if (isBanned) {
     return null;

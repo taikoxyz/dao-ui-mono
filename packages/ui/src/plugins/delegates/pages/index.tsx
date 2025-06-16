@@ -33,7 +33,7 @@ export default function MembersList() {
 
   const [toggleValue, setToggleValue] = useState<"all" | "verified" | "banned">("all");
   const onToggleChange = (value: string | undefined) => {
-    if (value) setToggleValue(value as "all" | "verified");
+    if (value) setToggleValue(value as "all" | "verified" | "banned");
   };
 
   const { announce } = useDelegateAnnounce(address);

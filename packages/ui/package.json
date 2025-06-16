@@ -7,13 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint .",
-    "format": "prettier --check .; echo 'To write the changes: bun run format:fix'",
-    "format:fix": "prettier -w . --list-different",
-    "deploy-dao": "bun ./scripts/deploy.ts",
+    "format": "prettier -w . --list-different",
     "prepare": "husky",
-    "test": "bun test",
-    "clean": "rm -rf node_modules && rm -rf .next && rm ../../bun.lock",
-    "knip": "knip"
+    "clean": "rm -rf node_modules && rm -rf .next"
   },
   "lint-staged": {
     "*.{js, jsx,ts,tsx}": [
