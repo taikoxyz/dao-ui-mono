@@ -18,5 +18,5 @@ export function useDelegates() {
     },
   });
 
-  return { delegates:data, status, refetch };
+  return { delegates: data, status, refetch };
 }
