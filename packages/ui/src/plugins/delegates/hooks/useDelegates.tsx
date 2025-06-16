@@ -1,6 +1,5 @@
 import { useReadContract } from "wagmi";
 import { PUB_DELEGATION_WALL_CONTRACT_ADDRESS } from "@/constants";
-import { useShuffled } from "@/hooks/useShuffled";
 import { DelegateAnnouncerAbi } from "../artifacts/DelegationWall.sol";
 
 /** Returns the list of delegates who posted a candidacy */
@@ -19,7 +18,5 @@ export function useDelegates() {
     },
   });
 
-  const shuffledDelegates = useShuffled(data);
-
-  return { delegates: shuffledDelegates, status, refetch };
+  return { delegates:data, status, refetch };
 }

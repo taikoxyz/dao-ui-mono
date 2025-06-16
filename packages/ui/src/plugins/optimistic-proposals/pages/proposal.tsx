@@ -111,8 +111,8 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
           {
             option: "Veto",
             voteAmount: formatEther(proposal?.vetoTally ?? BigInt(0)),
-            votePercentage: vetoPercentage,
-            tokenSymbol: tokenSymbol ?? "TAIKO",
+            votePercentage: vetoPercentage / 10,
+            tokenSymbol: tokenSymbol || "TAIKO",
           },
         ],
         proposalId: proposalIdx.toString(),

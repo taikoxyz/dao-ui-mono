@@ -96,8 +96,6 @@ export default function ProposalCard(props: ProposalInputs) {
             formatLargeNumber(pastSupply)[1],
             tokenSymbol,
           ].join(" "),
-
-          //   formatEther(proposal.vetoTally) + " / " + pastSupplyDisplay + " " + (tokenSymbol ?? "TAIKO"),
           votePercentage: vetoPercentage,
         }}
         publisher={{ address: proposal.creator }}

@@ -10,11 +10,13 @@ export interface IVotingBreakdownProps<TType extends ProposalType = ProposalType
   result?: TType extends "approvalThreshold" ? IBreakdownApprovalThresholdResult : IBreakdownMajorityVotingResult;
   cta?: VotingCta;
   pastSupply?: bigint;
+  vetoPercentage?: number;
 }
 
 export const VotingBreakdown: React.FC<IVotingBreakdownProps> = (props) => {
-  const { result, cta, variant, pastSupply } = props;
+  const { result, cta, variant, pastSupply, vetoPercentage } = props;
   const [, supplyFormatted] = formatLargeNumber(pastSupply ?? BigInt(0));
+
   if (!result) return <></>;
   else if (variant === "approvalThreshold") {
     return (
@@ -32,8 +34,12 @@ export const VotingBreakdown: React.FC<IVotingBreakdownProps> = (props) => {
           votingScores={(result as IBreakdownMajorityVotingResult).votingScores}
           cta={cta}
         />
-        <div className="absolute right-6 top-4 text-sm md:bottom-6 md:top-[auto]">
-          Voting Supply: {pastSupply ? `${supplyFormatted} TAIKO` : "N/A"}
+        <div className="absolute right-0 right-[24px] top-[16px] text-primary-400 md:top-[30px]">
+          {vetoPercentage} %
+        </div>
+
+        <div className="absolute right-6 top-[64px] hidden text-sm md:top-[80px] md:block">
+          {pastSupply ? `${supplyFormatted} TAIKO` : "N/A"}
         </div>
       </div>
     );
