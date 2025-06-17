@@ -6,13 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint . --config eslint.config.mjs",
-    "format": "prettier --check .; echo 'To write the changes: bun run format:fix'",
-    "format:fix": "prettier -w . --list-different",
-    "deploy-dao": "bun ./scripts/deploy.ts",
+    "lint": "next lint .",
+    "format": "prettier -w . --list-different",
     "prepare": "husky",
-    "test": "bun test",
-    "clean": "rm -rf node_modules && rm -rf .next && rm ../../bun.lockb"
+    "clean": "rm -rf node_modules && rm -rf .next"
   },
   "lint-staged": {
     "*.{js, jsx,ts,tsx}": [
@@ -56,16 +53,17 @@
   },
   "devDependencies": {
     "@aragon/osx-commons-configs": "^0.2.0",
+    "@eslint/eslintrc": "^3.3.1",
     "@types/bun": "latest",
     "@types/dompurify": "^3.0.5",
     "@types/libsodium-wrappers": "^0.7.13",
-    "@types/node": "^20.11.30",
+    "@types/node": "^24.0.0",
     "@types/react": "^19.0.8",
     "@types/react-blockies": "^1.4.4",
     "@types/react-dom": "^18.2.22",
     "autoprefixer": "^10.4.19",
     "dotenv": "^16.4.5",
-    "eslint": "^9.15.0",
+    "eslint": "^8.57.0",
     "eslint-config-next": "^15.0.3",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.0.11",
@@ -74,7 +72,7 @@
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.13",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.4.3"
+    "typescript": "^5.8.3"
   },
   "prettier": {
     "printWidth": 120,

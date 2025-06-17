@@ -3,9 +3,9 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   presets: [require("@aragon/ods/tailwind.config")],
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./plugins/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/plugins/**/*.{js,ts,jsx,tsx,mdx}",
     "../aragon-ods-fork/dist/**/*.js",
   ],
   theme: {
