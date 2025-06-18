@@ -14,8 +14,8 @@ export function useSignerList() {
       return getGqlSigners();
     },
     retry: true,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
     retryOnMount: true,
     staleTime: 1000 * 60 * 5,
   });
@@ -33,8 +33,8 @@ export function useApproverWalletList() {
         functionName: "getEncryptionAgents",
       }),
     retry: true,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
     retryOnMount: true,
     staleTime: 1000 * 60 * 5,
   });

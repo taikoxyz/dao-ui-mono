@@ -34,23 +34,23 @@ type HookResult = {
 
 export function useAccountEncryptionStatus(targetAddress?: Address | undefined): HookResult {
   const { address: selfAddress } = useAccount();
-  targetAddress ??= selfAddress;
+  if (!targetAddress) targetAddress = selfAddress;
 
   const { data: encryptionAccounts, isLoading: isLoadingEncryptionAccounts, error: error1 } = useEncryptionAccounts();
   const { data: signers, isLoading: isLoadingSigners, error: error2 } = useSignerList();
   const { isContract } = useIsContract(targetAddress);
 
-  const encryptionAccount = (encryptionAccounts ?? []).find((item) => {
+  const encryptionAccount = (encryptionAccounts || []).find((item) => {
     return (
       targetAddress &&
-      (isAddressEqual(item.owner, targetAddress as Address) ??
+      (isAddressEqual(item.owner, targetAddress as Address) ||
         (item.appointedAgent && isAddressEqual(item.appointedAgent, targetAddress as Address)))
     );
   });
   const owner = encryptionAccount?.owner;
   const registeredPublicKey = encryptionAccount?.publicKey;
   const isListed = signers?.some((s) => targetAddress && isAddressEqual(s, targetAddress as Address));
-  const isAppointed = (encryptionAccounts ?? []).findIndex((acc) => acc.appointedAgent === targetAddress) >= 0;
+  const isAppointed = (encryptionAccounts || []).findIndex((acc) => acc.appointedAgent === targetAddress) >= 0;
 
   let appointedAgent: Address | undefined;
   if (encryptionAccount?.appointedAgent && encryptionAccount.appointedAgent !== ADDRESS_ZERO) {
@@ -58,10 +58,10 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
   }
   let status: AccountEncryptionStatus;
 
-  if (isLoadingEncryptionAccounts ?? isLoadingSigners) {
+  if (isLoadingEncryptionAccounts || isLoadingSigners) {
     // Loading
     status = AccountEncryptionStatus.LOADING_ENCRYPTION_STATUS;
-  } else if (error1 ?? error2) {
+  } else if (error1 || error2) {
     // Err
     status = AccountEncryptionStatus.ERR_COULD_NOT_LOAD;
   } else if (!isListed) {

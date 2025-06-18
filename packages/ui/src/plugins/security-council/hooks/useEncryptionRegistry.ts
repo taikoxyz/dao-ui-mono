@@ -134,12 +134,11 @@ export function useEncryptionRegistry({ onAppointSuccess }: { onAppointSuccess?:
       setIsWaiting(false);
     }
   };
-
   const appointAgent = (agentToAppoint: Address) => {
     if (!address || isLoading) {
       addAlert("Please connect your wallet");
       return;
-    } else if (!signers?.includes(address)) {
+    } else if (!signers?.map((s) => s.toLowerCase()).includes(address.toLowerCase())) {
       addAlert("You are not currently listed as a Security Council member", { type: "error" });
       return;
     } else if (agentToAppoint != ADDRESS_ZERO && agentToAppoint.toLowerCase() === appointedAgent?.toLowerCase()) {
