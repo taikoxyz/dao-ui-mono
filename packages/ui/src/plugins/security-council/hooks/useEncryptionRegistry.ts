@@ -115,12 +115,6 @@ export function useEncryptionRegistry({ onAppointSuccess }: { onAppointSuccess?:
         });
       } else {
         // Define public key as the appointed agent
-        console.log("define pub key as the appointed agent", {
-          accountOwner,
-          address,
-          pubK,
-          definedPublicKey,
-        });
         if (!accountOwner) throw new Error("Could not load the owner account status");
 
         setPubKeyWrite({
