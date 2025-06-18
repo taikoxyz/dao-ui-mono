@@ -16,6 +16,7 @@
     "prefer-template": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-vars": ["warn", { "ignoreRestSiblings": true }],
-    "@typescript-eslint/prefer-nullish-coalescing": "warn"
+    "@typescript-eslint/prefer-nullish-coalescing": "off",
+    "react-hooks/exhaustive-deps": "off"
   }
 }

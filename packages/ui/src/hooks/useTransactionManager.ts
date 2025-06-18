@@ -62,7 +62,6 @@ export function useTransactionManager(params: TxLifecycleParams) {
     if (typeof onSuccess === "function") {
       onSuccess();
     }
-  }, [status, hash, isConfirming, isConfirmed, error, addAlert, params, onSuccess, onError]);
-
+  }, [status, hash, isConfirming, isConfirmed]);
   return { writeContract, hash, status, isConfirming, isConfirmed };
 }

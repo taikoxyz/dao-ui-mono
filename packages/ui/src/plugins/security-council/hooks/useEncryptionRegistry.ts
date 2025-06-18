@@ -115,6 +115,12 @@ export function useEncryptionRegistry({ onAppointSuccess }: { onAppointSuccess?:
         });
       } else {
         // Define public key as the appointed agent
+        console.log("define pub key as the appointed agent", {
+          accountOwner,
+          address,
+          pubK,
+          definedPublicKey,
+        });
         if (!accountOwner) throw new Error("Could not load the owner account status");
 
         setPubKeyWrite({
@@ -134,12 +140,11 @@ export function useEncryptionRegistry({ onAppointSuccess }: { onAppointSuccess?:
       setIsWaiting(false);
     }
   };
-
   const appointAgent = (agentToAppoint: Address) => {
     if (!address || isLoading) {
       addAlert("Please connect your wallet");
       return;
-    } else if (!signers?.includes(address)) {
+    } else if (!signers?.map((s) => s.toLowerCase()).includes(address.toLowerCase())) {
       addAlert("You are not currently listed as a Security Council member", { type: "error" });
       return;
     } else if (agentToAppoint != ADDRESS_ZERO && agentToAppoint.toLowerCase() === appointedAgent?.toLowerCase()) {
