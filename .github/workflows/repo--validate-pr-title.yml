@@ -22,26 +22,11 @@ jobs:
           # Non-package scopes explained:
           # - repo: The repository itself (not a specific package)
           # - main: For release-please PRs
-          # - deps: For dependabot dependency update PRs
-          # - deps-dev: For dependabot devDependency update PRs
           scopes: |
+            ui
+            aragon-ods-fork
             repo
             main
-            deps
-            deps-dev
-            docs-site
-            branding
-            bridge-ui
-            eventindexer
-            fork-diff
-            geth-rpc-gateway
-            protocol
-            relayer
-            nfts
-            ui-lib
-            taiko-client
-            supplementary-contracts
-            balance-monitor
           requireScope: true
           subjectPattern: ^(?![A-Z])(?!.*\btypo\b).+$ # Require lowercase PR title and prohibit word "typo"
           subjectPatternError: |
