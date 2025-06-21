@@ -16,7 +16,11 @@
   ],
   "separate-pull-requests": true,
   "packages": {
-    "packages/aragon-ods-fork": {},
-    "packages/ui":{}
+    "packages/aragon-ods-fork": {
+      "package-name": "ods-fork"
+    },
+    "packages/ui":{
+      "package-name": "aragonette"
+    }
   }
 }
