@@ -23,10 +23,10 @@ jobs:
           # - repo: The repository itself (not a specific package)
           # - main: For release-please PRs
           scopes: |
-            ui
             aragon-ods-fork
-            repo
+            dao-ui
             main
+            repo
           requireScope: true
           subjectPattern: ^(?![A-Z])(?!.*\btypo\b).+$ # Require lowercase PR title and prohibit word "typo"
           subjectPatternError: |
