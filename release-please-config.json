@@ -20,7 +20,7 @@
       "package-name": "ods-fork"
     },
     "packages/ui":{
-      "package-name": "aragonette"
+      "package-name": "dao-ui"
     }
   }
 }
