@@ -1,0 +1,64 @@
+name: DAO UI CI/CD
+
+on:
+    push:
+        paths:
+          - "packages/ui/**"
+        tags:
+          - "dao-ui-v*"
+    
+    pull_request:
+        types: [opened, synchronize, reopened, ready_for_review]
+        paths:
+        - "packages/ui/**"
+        branches-ignore:
+            - release-please--branches--**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+    deploy_ui_hekla_preview:
+        if: ${{ github.event.pull_request.draft == false  && !startsWith(github.head_ref, 'release-please') }}
+        uses: ./.github/workflows/repo--vercel-deploy.yml
+        with:
+            environment: "preview"
+            flags: ""
+        secrets:
+            vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID_DAO_HEKLA }}
+            vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
+            vercel_token: ${{ secrets.VERCEL_TOKEN }}
+
+    # deploy_ui_hekla_production:
+    #     if: ${{ startsWith(github.ref, 'refs/tags/dao-ui-v') }}
+    #     uses: ./.github/workflows/repo--vercel-deploy.yml
+    #     with:
+    #         environment: "production"
+    #         flags: "--prod"
+    #     secrets:
+    #         vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID_DAO_HEKLA }}
+    #         vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
+    #         vercel_token: ${{ secrets.VERCEL_TOKEN }}
+
+    deploy_ui_mainnet_preview:
+        if: ${{ github.event.pull_request.draft == false  && !startsWith(github.head_ref, 'release-please') }}
+        uses: ./.github/workflows/repo--vercel-deploy.yml
+        with:
+            environment: "preview"
+            flags: ""
+        secrets:
+            vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID_DAO_MAINNET }}
+            vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
+            vercel_token: ${{ secrets.VERCEL_TOKEN }}       
+    
+    # deploy_ui_mainnet_production:
+    #     if: ${{ startsWith(github.ref, 'refs/tags/dao-ui-v') }}
+    #     uses: ./.github/workflows/repo--vercel-deploy.yml
+    #     with:
+    #         environment: "production"
+    #         flags: "--prod"
+    #     secrets:
+    #         vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID_DAO_MAINNET }}
+    #         vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
+    #         vercel_token: ${{ secrets.VERCEL_TOKEN }}
