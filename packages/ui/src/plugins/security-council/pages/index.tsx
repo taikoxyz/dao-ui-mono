@@ -117,7 +117,7 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <Heading size="h3">Standard Proposals</Heading>
             <p className="text-neutral-500">
               Standard Proposals are created by the Security Council. Following approval by the Security Council
-              Members, the proposal is open to a 9 day public voting period and passed if not vetoed.
+              Members, the proposal is open to a 21 day public voting period and passed if not vetoed.
             </p>
 
             <If condition={isConnected && canCreate}>

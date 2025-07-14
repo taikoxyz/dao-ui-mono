@@ -193,7 +193,7 @@ function AsideSection() {
         </ul>
 
         <Heading size="h3">Standard Proposals</Heading>
-        <b>(Visible following cretion)</b>
+        <b>(Visible following creation)</b>
         <ul className="list-inside list-disc">
           <li>Available for public community voting following approval from 5 or 62.5% of Security Council Members </li>
           <li>Executed if the proposal is not vetoed within 21 days</li>
