@@ -65,7 +65,7 @@ export default function EnhancedProposalCard(props: ProposalInputs) {
   }
 
 
-  const thresholdPercentage = proposal?.parameters.minVetoRatio ? Number(proposal.parameters.minVetoRatio) / 10000 : 10;
+  const thresholdPercentage = proposal?.parameters.minVetoRatio ? Number(proposal.parameters.minVetoRatio) / 10000 : 10; // Convert to percentage (e.g., 100000 -> 10%)
   const actualVetoPercentage = pastSupply > 0n ? Number((10000n * (proposal?.vetoTally ?? 0n)) / pastSupply) / 100 : 0;
   const progressPercentage = Math.min((actualVetoPercentage / thresholdPercentage) * 100, 100);
 
