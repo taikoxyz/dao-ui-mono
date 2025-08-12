@@ -4,10 +4,9 @@ import { PleaseWaitSpinner } from "@/components/please-wait";
 import { useProposalApprove } from "@/plugins/emergency-multisig/hooks/useProposalApprove";
 import { useProposalExecute } from "@/plugins/emergency-multisig/hooks/useProposalExecute";
 import { BodySection } from "@/components/proposal/proposalBodySection";
-import { ProposalVoting } from "@/components/proposalVoting";
-import { ITransformedStage, IVote, ProposalStages } from "@/utils/types";
-import { useProposalStatus } from "../hooks/useProposalVariantStatus";
-import dayjs from "dayjs";
+import { IVote } from "@/utils/types";
+import { SecurityCouncilApprovalStage } from "@/plugins/multisig/components/vote/security-council-approval-stage";
+import { Heading } from "@aragon/ods";
 import { ProposalActions } from "@/components/proposalActions/proposalActions";
 import { CardResources } from "@/components/proposal/cardResources";
 import { useDerivedWallet } from "../../../hooks/useDerivedWallet";
@@ -32,7 +31,6 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
   const { publicKey, requestSignature } = useDerivedWallet();
 
   const showProposalLoading = getShowProposalLoading(proposal, proposalFetchStatus);
-  const proposalStatus = useProposalStatus(proposal!);
 
   const { data: gqlProposal } = useGqlProposalSingle({
     proposalId: proposalId,
@@ -41,47 +39,19 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     isEmergency: true,
   });
 
-  const proposalStage: ITransformedStage[] = [
-    {
-      id: "1",
-      type: ProposalStages.MULTISIG_APPROVAL,
-      variant: "approvalThreshold",
-      title: "Onchain multisig",
-      status: proposalStatus!,
-      disabled: false,
-      proposalId: proposalId,
-      providerId: "1",
-      result: {
-        cta: proposal?.executed
-          ? {
-              disabled: true,
-              label: "Executed",
-            }
-          : canExecute
-            ? {
-                isLoading: isConfirmingExecution,
-                label: "Execute proposal",
-                onClick: executeProposal,
-              }
-            : {
-                disabled: !canApprove,
-                isLoading: isConfirmingApproval,
-                label: "Approve proposal",
-                onClick: approveProposal,
-              },
-        approvalAmount: proposal?.approvals ?? 0,
-        approvalThreshold: proposal?.parameters.minApprovals ?? 0,
-      },
-      details: {
-        censusBlock: Number(proposal?.parameters.snapshotBlock),
-        startDate: "",
-        endDate: dayjs(Number(proposal?.parameters.expirationDate) * 1000).toString(),
-        strategy: "Approval threshold",
-        options: "Approve",
-      },
-      votes: approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [],
-    },
-  ];
+  // Convert approvals to votes format
+  const approvalVotes = approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [];
+  
+  // Check if current user has already approved  
+  const { address } = useAccount();
+  const hasApproved = approvals?.some(approval => approval.approver === address) ?? false;
+  
+  // Determine status
+  const getApprovalStatus = () => {
+    if (proposal?.executed) return 'executed';
+    if ((proposal?.approvals ?? 0) >= (proposal?.parameters.minApprovals ?? 0)) return 'approved';
+    return 'pending';
+  };
 
   if (!proposal || showProposalLoading) {
     return (
@@ -131,10 +101,35 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
             <div className="flex w-full flex-col gap-x-12 gap-y-6 md:flex-row">
               <div className="flex flex-col gap-y-6 md:w-[63%] md:shrink-0">
                 <BodySection body={proposal.description ?? "No description was provided"} />
-                <ProposalVoting
-                  stages={proposalStage}
-                  description="The onchain emergency multisig flow allows its members to create proposals that, if approved by a super majority, will be executed directly by the DAO."
-                />
+                
+                {/* Emergency Security Council Approval Stage */}
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <Heading size="h2" className="mb-3">Emergency Security Council Approval</Heading>
+                    <p className="text-base text-neutral-600 mb-6">
+                      The onchain emergency multisig flow allows its members to create proposals that, if approved by a super majority, will be executed directly by the DAO.
+                    </p>
+                  </div>
+                  
+                  <SecurityCouncilApprovalStage
+                    status={getApprovalStatus()}
+                    approvals={proposal?.approvals ?? 0}
+                    requiredApprovals={proposal?.parameters.minApprovals ?? 0}
+                    votes={approvalVotes}
+                    canApprove={canApprove}
+                    onApprove={approveProposal}
+                    isApproveLoading={isConfirmingApproval}
+                    canExecute={canExecute}
+                    onExecute={executeProposal}
+                    isExecuteLoading={isConfirmingExecution}
+                    hasApproved={hasApproved}
+                    createdAt={Number(proposal?.parameters.snapshotBlock) * 1000} // Estimate based on snapshot
+                    expirationDate={Number(proposal?.parameters.expirationDate) * 1000}
+                    isEmergency={true}
+                    executed={proposal?.executed ?? false}
+                    snapshotBlock={Number(proposal?.parameters.snapshotBlock)}
+                  />
+                </div>
                 <ProposalActions
                   actions={proposal.actions}
                   emptyListDescription="Either the proposal has no actions or they cannot be decrypted by your account"

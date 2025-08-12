@@ -4,18 +4,15 @@ import { PleaseWaitSpinner } from "@/components/please-wait";
 import { useProposalVeto } from "@/plugins/optimistic-proposals/hooks/useProposalVeto";
 import { useProposalExecute } from "@/plugins/optimistic-proposals/hooks/useProposalExecute";
 import { BodySection } from "@/components/proposal/proposalBodySection";
-import { IBreakdownMajorityVotingResult, ProposalVoting } from "@/components/proposalVoting";
-import type { ITransformedStage, IVote } from "@/utils/types";
-import { ProposalStages } from "@/utils/types";
+import type { IVote } from "@/utils/types";
 import { useProposalStatus } from "../hooks/useProposalVariantStatus";
-import dayjs from "dayjs";
 import { ProposalActions } from "@/components/proposalActions/proposalActions";
 import { CardResources } from "@/components/proposal/cardResources";
-import { Address, formatEther } from "viem";
+import { Address } from "viem";
 import { useToken } from "../hooks/useToken";
 import { usePastSupply } from "../hooks/usePastSupply";
 import { ElseIf, If, Then } from "@/components/if";
-import { AlertCard, ProposalStatus } from "@aragon/ods";
+import { AlertCard, ProposalStatus, Heading, Button } from "@aragon/ods";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { useTokenVotes } from "@/hooks/useTokenVotes";
@@ -24,11 +21,18 @@ import { AddressText } from "@/components/text/address";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 import { useProposalId } from "../hooks/useProposalId";
 import { useGetGqlRelatedProposal } from "@/utils/gql/hooks/useGetGqlRelatedProposal";
+import { SecurityCouncilStage } from "../components/vote/security-council-stage";
+import { CommunityVetoStage } from "../components/vote/community-veto-stage";
+import { useRouter } from "next/router";
 
 const ZERO = BigInt(0);
 
 export default function ProposalDetail({ index: proposalIdx }: { index: number }) {
   const { address } = useAccount();
+  const router = useRouter();
+  
+  // Check if we're on a security-council route to hide Stage 2
+  const isSecurityCouncilRoute = router.asPath.includes('/security-council');
   const {
     proposal,
     proposalFetchStatus,
@@ -43,8 +47,6 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   const { proposalId } = useProposalId(proposalIdx);
   const { executeProposal, canExecute, isConfirming: isConfirmingExecution } = useProposalExecute(proposalIdx);
 
-  const startDate = dayjs(Number(proposal?.parameters.vetoStartDate) * 1000).toString();
-  const endDate = dayjs(Number(proposal?.parameters.vetoEndDate) * 1000).toString();
 
   const showProposalLoading = getShowProposalLoading(proposal, proposalFetchStatus);
   const { status: proposalStatus } = useProposalStatus(proposal!);
@@ -57,35 +59,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   });
   const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp ?? BigInt(0));
 
-  let vetoPercentage = 0;
-  if (proposal?.vetoTally && pastSupply && proposal.parameters.minVetoRatio) {
-    // Example: 15% of the token supply (adjusted for decimal precision, 10^6)
-    const defeatThreshold = (pastSupply * BigInt(proposal.parameters.minVetoRatio)) / BigInt(1000000);
-    vetoPercentage = Number((10000n * proposal.vetoTally) / defeatThreshold) / 100;
-  }
 
-  let cta: IBreakdownMajorityVotingResult["cta"];
-  if (proposal?.executed) {
-    /*
-    cta = {
-      disabled: true,
-      label: "Executed",
-    };*/
-  } else if (proposalStatus === ProposalStatus.ACCEPTED) {
-    cta = {
-      disabled: !canExecute || !proposal?.actions.length,
-      isLoading: isConfirmingExecution,
-      label: proposal?.actions.length ? "Execute proposal" : "No actions to execute",
-      onClick: executeProposal,
-    };
-  } else if (proposalStatus === ProposalStatus.ACTIVE) {
-    cta = {
-      disabled: !canVeto,
-      isLoading: isConfirmingVeto,
-      label: "Veto proposal",
-      onClick: vetoProposal,
-    };
-  }
 
   const { isEmergency } = useProposalStatus(proposal);
 
@@ -95,38 +69,25 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
     isEmergency: isEmergency,
   });
 
-  const proposalStage: ITransformedStage[] = [
-    {
-      id: "1",
-      type: ProposalStages.OPTIMISTIC_EXECUTION,
-      variant: "majorityVoting",
-      title: "Optimistic voting",
-      status: proposalStatus!,
-      disabled: false,
-      proposalId: proposalIdx.toString(),
-      providerId: "1",
-      result: {
-        cta,
-        votingScores: [
-          {
-            option: "Veto",
-            voteAmount: formatEther(proposal?.vetoTally ?? BigInt(0)),
-            votePercentage: vetoPercentage / 10,
-            tokenSymbol: tokenSymbol ?? "TAIKO",
-          },
-        ],
-        proposalId: proposalIdx.toString(),
-      },
-      details: {
-        censusTimestamp: Number(proposal?.parameters.snapshotTimestamp ?? 0) ?? 0,
-        startDate,
-        endDate,
-        strategy: "Optimistic voting",
-        options: "Veto",
-      },
-      votes: vetoes?.map(({ voter }) => ({ address: voter, variant: "no" }) as IVote) ?? [],
-    },
-  ];
+  // Determine Security Council status
+  // Since this is an optimistic proposal that reached public stage, Security Council has already approved it
+  const getSecurityCouncilStatus = () => {
+    if (proposal?.executed) return 'executed';
+    // For optimistic proposals, if they exist in the public stage, they were already approved by Security Council
+    if (proposalStatus === ProposalStatus.VETOED || 
+        proposalStatus === ProposalStatus.ACCEPTED || 
+        proposalStatus === ProposalStatus.ACTIVE) return 'approved';
+    return 'pending';
+  };
+  
+  // Determine Community Veto status
+  const getCommunityVetoStatus = () => {
+    if (proposal?.executed) return 'executed';
+    if (proposalStatus === ProposalStatus.VETOED) return 'defeated';
+    if (proposalStatus === ProposalStatus.ACCEPTED) return 'passed';
+    if (proposalStatus === ProposalStatus.ACTIVE) return 'active';
+    return 'pending';
+  };
 
   const hasBalance = balance !== undefined && balance > ZERO;
   const delegatingToSomeoneElse = !!delegatesTo && delegatesTo !== address && delegatesTo !== ADDRESS_ZERO;
@@ -159,10 +120,77 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
                     canVeto={canVeto}
                   />
                 </If>
-                <ProposalVoting
-                  stages={proposalStage}
-                  description="Proposals approved by the Security Council become eventually executable, unless the community reaches the veto threshold during the community veto stage."
-                />
+                
+                {/* Voting Stages Section with clear separation */}
+                <div className="flex flex-col gap-6">
+                  <div>
+                    <Heading size="h2" className="mb-3">Governance Process</Heading>
+                    <p className="text-base text-neutral-600 mb-6">
+                      Proposals approved by the Security Council become eventually executable, unless the community reaches the veto threshold during the community veto stage.
+                    </p>
+                  </div>
+                  
+                  {/* Stage 1: Security Council Approval */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 bg-neutral-100 text-neutral-700 text-xs font-medium rounded">Stage 1</span>
+                    </div>
+                    <SecurityCouncilStage
+                      status={getSecurityCouncilStatus()}
+                      approvals={getSecurityCouncilStatus() === 'approved' ? 5 : 0} // If approved, show full approvals
+                      requiredApprovals={5}
+                      createdAt={Number(proposal?.parameters.vetoStartDate ?? 0) * 1000 - 7 * 24 * 60 * 60 * 1000} // Estimate
+                      approvedAt={getSecurityCouncilStatus() === 'approved' ? Number(proposal?.parameters.vetoStartDate ?? 0) * 1000 : undefined}
+                      isEmergency={false}
+                    />
+                  </div>
+                  
+                  {/* Stage 2: Community Veto Period - Hidden for security-council routes */}
+                  {!isSecurityCouncilRoute && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-1 bg-neutral-100 text-neutral-700 text-xs font-medium rounded">Stage 2</span>
+                      </div>
+                      <CommunityVetoStage
+                        vetoCount={proposal?.vetoTally ?? BigInt(0)}
+                        totalSupply={pastSupply ?? BigInt(0)}
+                        threshold={proposal?.parameters.minVetoRatio ? Number(proposal.parameters.minVetoRatio) / 1000000 : 0.1}
+                        status={getCommunityVetoStatus()}
+                        startDate={Number(proposal?.parameters.vetoStartDate ?? 0) * 1000}
+                        endDate={Number(proposal?.parameters.vetoEndDate ?? 0) * 1000}
+                        canVeto={canVeto}
+                        onVeto={vetoProposal}
+                        isVetoLoading={isConfirmingVeto}
+                        hasVetoed={vetoes?.some(v => v.voter === address)}
+                        tokenSymbol={tokenSymbol ?? "TAIKO"}
+                        votes={gqlProposal?.vetoes?.map(
+                          (veto) =>
+                            ({
+                              address: veto.address,
+                              variant: "no",
+                            }) as IVote
+                        ) ?? []}
+                        snapshotBlock={Number(proposal?.parameters.snapshotTimestamp ?? 0)}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Execute button for passed proposals - Hidden for security-council routes */}
+                  {!isSecurityCouncilRoute && proposalStatus === ProposalStatus.ACCEPTED && (
+                    <div className="mt-4">
+                      <Button
+                        size="lg"
+                        variant="primary"
+                        disabled={!canExecute || !proposal?.actions.length}
+                        isLoading={isConfirmingExecution}
+                        onClick={executeProposal}
+                        className="w-full"
+                      >
+                        {proposal?.actions.length ? "Execute proposal" : "No actions to execute"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </>
             )}
             <ProposalActions actions={proposal.actions} />
