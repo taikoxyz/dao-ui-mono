@@ -3,9 +3,7 @@ import { PUB_CHAIN, PUB_TOKEN_ADDRESS } from "@/constants";
 import { type Address, parseAbi } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
 
-const ERC20_ABI = parseAbi([
-  "function totalSupply() view returns (uint256)",
-]);
+const ERC20_ABI = parseAbi(["function totalSupply() view returns (uint256)"]);
 
 /** Returns the delegate (if any) for the given address */
 export const useTokenVotes = (address?: Address) => {
