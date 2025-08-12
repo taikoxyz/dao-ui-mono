@@ -1,31 +1,35 @@
 import { useState, useEffect } from "react";
 import { OptimisticProposal } from "@/plugins/optimistic-proposals/utils/types";
 import { ProposalStatus } from "@aragon/ods";
-import { useToken } from "./useToken";
 import { PUB_TAIKO_BRIDGE_ADDRESS } from "@/constants";
 import { useTokenPastVotes } from "./useTokenPastVotes";
 import { useGovernanceSettings } from "./useGovernanceSettings";
+import { usePastSupply } from "./usePastSupply";
 
 export const useProposalVariantStatus = (proposal: OptimisticProposal) => {
   const [status, setStatus] = useState({ variant: "", label: "" });
-  const { tokenSupply: totalSupply } = useToken();
+  const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp ?? BigInt(0));
   const { votes: bridgedBalance } = useTokenPastVotes(
     PUB_TAIKO_BRIDGE_ADDRESS,
     proposal?.parameters.snapshotTimestamp ?? BigInt(0)
   );
 
   useEffect(() => {
-    if ((!proposal || !proposal?.parameters || !totalSupply) ?? typeof bridgedBalance === "undefined") return;
+    if (!proposal || !proposal?.parameters || !pastSupply || typeof bridgedBalance === "undefined") return;
 
-    const effectiveSupply = proposal.parameters.unavailableL2 ? totalSupply - bridgedBalance : totalSupply;
+    const effectiveSupply = proposal.parameters.unavailableL2 ? pastSupply - bridgedBalance : pastSupply;
     const minVetoVotingPower = (effectiveSupply * BigInt(proposal.parameters.minVetoRatio)) / BigInt(1_000_000);
 
+    // Ensure vetoTally is treated as BigInt (it might be undefined or null)
+    const vetoTally = proposal.vetoTally ? BigInt(proposal.vetoTally) : BigInt(0);
+    const isVetoed = vetoTally >= minVetoVotingPower;
+
     setStatus(
-      proposal?.vetoTally >= minVetoVotingPower
-        ? { variant: "critical", label: "Defeated" }
-        : proposal?.active
+      isVetoed
+        ? { variant: "critical", label: "Vetoed" }
+        : proposal.active
           ? { variant: "info", label: "Active" }
-          : proposal?.executed
+          : proposal.executed
             ? { variant: "primary", label: "Executed" }
             : { variant: "success", label: "Executable" }
     );
@@ -34,7 +38,8 @@ export const useProposalVariantStatus = (proposal: OptimisticProposal) => {
     proposal?.active,
     proposal?.executed,
     proposal?.parameters?.minVetoRatio,
-    totalSupply,
+    proposal?.parameters?.unavailableL2,
+    pastSupply,
     bridgedBalance,
     proposal,
   ]);
@@ -44,25 +49,31 @@ export const useProposalVariantStatus = (proposal: OptimisticProposal) => {
 
 export const useProposalStatus = (proposal: OptimisticProposal | null) => {
   const [status, setStatus] = useState<ProposalStatus>();
-  const { tokenSupply: totalSupply } = useToken();
+  const pastSupply = usePastSupply(proposal?.parameters?.snapshotTimestamp ?? BigInt(0));
   const { governanceSettings } = useGovernanceSettings();
   const { votes: bridgedBalance } = useTokenPastVotes(
     PUB_TAIKO_BRIDGE_ADDRESS,
-    proposal?.parameters.snapshotTimestamp ?? BigInt(0)
+    proposal?.parameters?.snapshotTimestamp ?? BigInt(0)
   );
 
   useEffect(() => {
-    if ((!proposal || !proposal?.parameters || !totalSupply) ?? typeof bridgedBalance === "undefined") return;
+    if (!proposal || !proposal?.parameters || !pastSupply || typeof bridgedBalance === "undefined") {
+      return;
+    }
 
-    const effectiveSupply = proposal.parameters.unavailableL2 ? totalSupply - bridgedBalance : totalSupply;
+    const effectiveSupply = proposal.parameters.unavailableL2 ? pastSupply - bridgedBalance : pastSupply;
     const minVetoVotingPower = (effectiveSupply * BigInt(proposal.parameters.minVetoRatio)) / BigInt(1_000_000);
 
+    // Ensure vetoTally is treated as BigInt (it might be undefined or null)
+    const vetoTally = proposal.vetoTally ? BigInt(proposal.vetoTally) : BigInt(0);
+    const isVetoed = vetoTally >= minVetoVotingPower;
+    
     setStatus(
-      proposal?.vetoTally >= minVetoVotingPower
+      isVetoed
         ? ProposalStatus.VETOED
-        : proposal?.active
+        : proposal.active
           ? ProposalStatus.ACTIVE
-          : proposal?.executed
+          : proposal.executed
             ? ProposalStatus.EXECUTED
             : ProposalStatus.ACCEPTED
     );
@@ -71,7 +82,8 @@ export const useProposalStatus = (proposal: OptimisticProposal | null) => {
     proposal?.active,
     proposal?.executed,
     proposal?.parameters?.minVetoRatio,
-    totalSupply,
+    proposal?.parameters?.unavailableL2,
+    pastSupply,
     bridgedBalance,
     proposal,
   ]);
