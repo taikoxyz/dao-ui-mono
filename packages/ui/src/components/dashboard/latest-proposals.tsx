@@ -4,7 +4,7 @@ import { useBlockNumber, useReadContract } from "wagmi";
 import { PUB_CHAIN, PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS } from "@/constants";
 import { OptimisticTokenVotingPluginAbi } from "@/plugins/optimistic-proposals/artifacts/OptimisticTokenVotingPlugin.sol";
 import { useEffect } from "react";
-import ProposalCard from "@/plugins/optimistic-proposals/components/proposal";
+import EnhancedProposalCard from "@/plugins/optimistic-proposals/components/proposal/proposal-card-enhanced";
 
 export const LatestProposals = () => {
   const { data: blockNumber } = useBlockNumber({ watch: true });
@@ -34,7 +34,7 @@ export const LatestProposals = () => {
                 .slice(-3)
                 .reverse()
                 ?.map((proposalIndex) => (
-                  <ProposalCard
+                  <EnhancedProposalCard
                     linkPrefix="/plugins/community-proposals/"
                     key={proposalIndex}
                     proposalIndex={proposalIndex}

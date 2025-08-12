@@ -1,6 +1,6 @@
 import { useAccount, useBlockNumber, useReadContract } from "wagmi";
 import { useEffect } from "react";
-import ProposalCard from "@/plugins/optimistic-proposals/components/proposal";
+import EnhancedProposalCard from "@/plugins/optimistic-proposals/components/proposal/proposal-card-enhanced";
 import {
   AlertCard,
   CardEmptyState,
@@ -90,7 +90,7 @@ export function PublicProposals() {
               {Array.from(Array(proposalCount || 0)?.keys())
                 .reverse()
                 ?.map((proposalIndex) => (
-                  <ProposalCard
+                  <EnhancedProposalCard
                     gqlProposal={gqlProposals?.[proposalIndex]}
                     key={proposalIndex}
                     proposalIndex={proposalIndex}
