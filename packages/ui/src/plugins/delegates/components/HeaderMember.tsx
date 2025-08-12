@@ -10,14 +10,15 @@ import {
   clipboardUtils,
   type IBreadcrumbsLink,
 } from "@aragon/ods";
-import { formatEther, type Address } from "viem";
+import { type Address } from "viem";
 import { mainnet } from "viem/chains";
 import { useAccount, useEnsName } from "wagmi";
-import { useTokenVotes } from "../../../hooks/useTokenVotes";
+import { useTokenVotes, useTokenTotalSupply } from "../../../hooks/useTokenVotes";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useDelegateVotingPower } from "../hooks/useDelegateVotingPower";
 import VerifiedDelegates from "@/data/verified-delegates.json";
+import { formatTokenAmount, formatPercentage } from "../utils/formatting";
 
 interface IHeaderMemberProps {
   name?: string;
@@ -32,10 +33,17 @@ export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
   const { address: myAddress, isConnected } = useAccount();
   const { data: ensName } = useEnsName({ chainId: mainnet.id, address: delegateAddress });
   const { votingPower, balance: delegateTokenBalance, refetch } = useTokenVotes(delegateAddress);
+  const { totalSupply } = useTokenTotalSupply();
   const { delegatesTo } = useTokenVotes(myAddress);
   const { delegateVotingPower, isLoading: isConfirming } = useDelegateVotingPower(delegateAddress, refetch);
   const formattedAddress = formatHexString(delegateAddress);
   const isVerified = VerifiedDelegates.findIndex((d) => equalAddresses(d.address, delegateAddress)) >= 0;
+
+  const votingPowerFormatted = votingPower ? formatTokenAmount(votingPower) : null;
+  const balanceFormatted = delegateTokenBalance ? formatTokenAmount(delegateTokenBalance) : null;
+  const delegatedPower = votingPower && delegateTokenBalance ? votingPower - delegateTokenBalance : null;
+  const delegatedFormatted = delegatedPower && delegatedPower > 0n ? formatTokenAmount(delegatedPower) : null;
+  const votingPowerPercentage = votingPower && totalSupply ? formatPercentage(votingPower, totalSupply) : null;
 
   return (
     <div className="flex w-full justify-center bg-neutral-0 from-neutral-0 to-transparent">
@@ -52,31 +60,63 @@ export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
               <Heading size="h1">{name ?? formattedAddress}</Heading>
               {/* Bio */}
               {bio && <p className="text-lg text-neutral-500">{bio}</p>}
-              {/* Stats */}
-              <div className="flex flex-row justify-between gap-y-3 py-4 md:justify-normal md:gap-x-16">
-                {/* Voting power */}
-                <div className="flex flex-col gap-y-1 leading-tight">
-                  <div className="flex items-baseline gap-x-1">
-                    <span className="text-2xl text-neutral-800">{formatEther(votingPower ?? 0n).split(".")[0]}</span>
-                    <span className="text-base text-neutral-500">{PUB_TOKEN_SYMBOL}</span>
+              
+              {/* Voting Power Stats */}
+              <If condition={!!votingPower && votingPower > 0n}>
+                <div className="flex flex-col gap-y-3 pt-4 md:flex-row md:gap-x-8">
+                  <div className="flex flex-col gap-y-1">
+                    <div className="flex items-baseline gap-x-2">
+                      <span 
+                        className="text-2xl font-semibold text-neutral-800 cursor-help" 
+                        title={votingPowerFormatted ? `${votingPowerFormatted.full} ${PUB_TOKEN_SYMBOL}` : undefined}
+                      >
+                        {votingPowerFormatted?.formatted ?? "0"}
+                      </span>
+                      <span className="text-base text-neutral-500">{PUB_TOKEN_SYMBOL}</span>
+                      {votingPowerPercentage && (
+                        <span className="text-sm px-1.5 py-0.5 bg-neutral-100 text-neutral-600 rounded">
+                          {votingPowerPercentage}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-sm text-neutral-500">Total voting power</span>
                   </div>
-                  <span className="text-sm text-neutral-500">Voting power</span>
+                  <If condition={!!delegateTokenBalance && delegateTokenBalance > 0n}>
+                    <div className="flex flex-col gap-y-1">
+                      <div className="flex items-baseline gap-x-1">
+                        <span 
+                          className="text-lg text-neutral-800 cursor-help"
+                          title={balanceFormatted ? `${balanceFormatted.full} ${PUB_TOKEN_SYMBOL}` : undefined}
+                        >
+                          {balanceFormatted?.formatted ?? "0"}
+                        </span>
+                        <span className="text-sm text-neutral-500">{PUB_TOKEN_SYMBOL}</span>
+                      </div>
+                      <span className="text-sm text-neutral-500">Own tokens</span>
+                    </div>
+                  </If>
+                  <If condition={!!delegatedFormatted}>
+                    <div className="flex flex-col gap-y-1">
+                      <div className="flex items-baseline gap-x-1">
+                        <span 
+                          className="text-lg text-neutral-800 cursor-help"
+                          title={delegatedFormatted ? `${delegatedFormatted.full} ${PUB_TOKEN_SYMBOL}` : undefined}
+                        >
+                          {delegatedFormatted?.formatted ?? "0"}
+                        </span>
+                        <span className="text-sm text-neutral-500">{PUB_TOKEN_SYMBOL}</span>
+                      </div>
+                      <span className="text-sm text-neutral-500">Delegated from others</span>
+                    </div>
+                  </If>
                 </div>
-
-                {/* Token Balance */}
-                <div className="flex flex-col gap-y-1 leading-tight">
-                  <div className="flex items-baseline gap-x-1">
-                    <span className="text-2xl text-neutral-800">{formatEther(delegateTokenBalance ?? BigInt(0))}</span>
-                    <span className="text-base text-neutral-500">{PUB_TOKEN_SYMBOL}</span>
-                  </div>
-                  <span className="text-sm text-neutral-500">Token balance</span>
-                </div>
-              </div>
+              </If>
             </div>
             <span>
               <MemberAvatar address={delegateAddress} size="lg" responsiveSize={{}} />
             </span>
           </div>
+          
           <div>
             <span className="flex w-full flex-col gap-x-4 gap-y-3 md:flex-row">
               <If condition={!isConnected}>
