@@ -1,7 +1,11 @@
 import { iVotesAbi } from "../plugins/security-council/artifacts/iVotes.sol";
 import { PUB_CHAIN, PUB_TOKEN_ADDRESS } from "@/constants";
-import { type Address } from "viem";
-import { useReadContracts } from "wagmi";
+import { type Address, parseAbi } from "viem";
+import { useReadContract, useReadContracts } from "wagmi";
+
+const ERC20_ABI = parseAbi([
+  "function totalSupply() view returns (uint256)",
+]);
 
 /** Returns the delegate (if any) for the given address */
 export const useTokenVotes = (address?: Address) => {
@@ -39,5 +43,23 @@ export const useTokenVotes = (address?: Address) => {
     isLoading,
     isError,
     refetch,
+  };
+};
+
+/** Returns the total supply of the token */
+export const useTokenTotalSupply = () => {
+  const { data, isLoading, isError } = useReadContract({
+    abi: ERC20_ABI,
+    address: PUB_TOKEN_ADDRESS,
+    functionName: "totalSupply",
+    query: {
+      staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+    },
+  });
+
+  return {
+    totalSupply: data,
+    isLoading,
+    isError,
   };
 };

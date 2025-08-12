@@ -2,14 +2,15 @@ import { Else, ElseIf, If, Then } from "@/components/if";
 import { formatHexString, equalAddresses } from "@/utils/evm";
 import { type IDataListItemProps, DataList, MemberAvatar, Tag } from "@aragon/ods";
 import { useAccount } from "wagmi";
-import { Address, formatEther } from "viem";
-import { useTokenVotes } from "../../../hooks/useTokenVotes";
+import { Address } from "viem";
+import { useTokenVotes, useTokenTotalSupply } from "../../../hooks/useTokenVotes";
 import VerifiedDelegates from "@/data/verified-delegates.json";
 import BannedDelegates from "@/data/banned-delegates.json";
 import { useDelegateAnnounce } from "../hooks/useDelegateAnnounce";
 import { useProfanityChecker } from "glin-profanity";
-import { GlinConfig } from "@/constants";
+import { GlinConfig, PUB_TOKEN_SYMBOL } from "@/constants";
 import { useEffect } from "react";
+import { formatTokenAmount, formatPercentage } from "../utils/formatting";
 
 export interface IDelegateListItemProps extends IDataListItemProps {
   /** Whether the member is a delegate of current user or not */
@@ -26,10 +27,14 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && address && equalAddresses(currentUserAddress, address);
   const { votingPower } = useTokenVotes(address);
+  const { totalSupply } = useTokenTotalSupply();
   const isVerified = VerifiedDelegates.findIndex((d) => equalAddresses(d.address, address)) >= 0;
   const { announce } = useDelegateAnnounce(address);
   const isBanned = BannedDelegates.findIndex((d) => equalAddresses(d.address, address)) >= 0;
   const { result, checkText } = useProfanityChecker(GlinConfig);
+
+  const votingPowerFormatted = votingPower ? formatTokenAmount(votingPower) : null;
+  const votingPowerPercentage = votingPower && totalSupply ? formatPercentage(votingPower, totalSupply) : null;
 
   useEffect(() => {
     if (!announce) return;
@@ -87,12 +92,23 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
           )}
         </div>
 
-        <If condition={votingPower}>
+        <If condition={votingPowerFormatted}>
           <div className="flex h-12 flex-col gap-y-2">
-            <p className="text-sm md:text-base">
-              <span className="text-neutral-500">Voting Power: </span>
-              {formatEther(votingPower ?? 0n).split(".")[0]}
-            </p>
+            <div className="flex items-baseline gap-x-2">
+              <span className="text-neutral-500 text-sm md:text-base">Voting Power: </span>
+              <span 
+                className="text-sm md:text-base font-medium cursor-help" 
+                title={votingPowerFormatted ? `${votingPowerFormatted.full} ${PUB_TOKEN_SYMBOL}` : undefined}
+              >
+                {votingPowerFormatted?.formatted}
+              </span>
+              <span className="text-neutral-500 text-sm">{PUB_TOKEN_SYMBOL}</span>
+              {votingPowerPercentage && (
+                <span className="text-xs px-1.5 py-0.5 bg-neutral-100 text-neutral-600 rounded">
+                  {votingPowerPercentage}
+                </span>
+              )}
+            </div>
           </div>
         </If>
       </div>
