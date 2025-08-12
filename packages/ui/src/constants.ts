@@ -51,6 +51,7 @@ export const PUB_PROJECT_URL = "https://taiko.xyz/";
 export const PUB_BLOG_URL = "https://taiko.xyz/blog";
 export const PUB_FORUM_URL = "https://community.taiko.xyz/";
 export const PUB_WALLET_ICON = "https://avatars.githubusercontent.com/u/37784886";
+export const PUB_DOCS_URL = "https://dao-docs.taiko.xyz/"
 
 export const PUB_TWITTER_ACCOUNT = "taikoxyz";
 
