@@ -60,21 +60,21 @@ export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
               <Heading size="h1">{name ?? formattedAddress}</Heading>
               {/* Bio */}
               {bio && <p className="text-lg text-neutral-500">{bio}</p>}
-              
+
               {/* Voting Power Stats */}
               <If condition={!!votingPower && votingPower > 0n}>
                 <div className="flex flex-col gap-y-3 pt-4 md:flex-row md:gap-x-8">
                   <div className="flex flex-col gap-y-1">
                     <div className="flex items-baseline gap-x-2">
-                      <span 
-                        className="text-2xl font-semibold text-neutral-800 cursor-help" 
+                      <span
+                        className="cursor-help text-2xl font-semibold text-neutral-800"
                         title={votingPowerFormatted ? `${votingPowerFormatted.full} ${PUB_TOKEN_SYMBOL}` : undefined}
                       >
                         {votingPowerFormatted?.formatted ?? "0"}
                       </span>
                       <span className="text-base text-neutral-500">{PUB_TOKEN_SYMBOL}</span>
                       {votingPowerPercentage && (
-                        <span className="text-sm px-1.5 py-0.5 bg-neutral-100 text-neutral-600 rounded">
+                        <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-sm text-neutral-600">
                           {votingPowerPercentage}
                         </span>
                       )}
@@ -84,8 +84,8 @@ export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
                   <If condition={!!delegateTokenBalance && delegateTokenBalance > 0n}>
                     <div className="flex flex-col gap-y-1">
                       <div className="flex items-baseline gap-x-1">
-                        <span 
-                          className="text-lg text-neutral-800 cursor-help"
+                        <span
+                          className="cursor-help text-lg text-neutral-800"
                           title={balanceFormatted ? `${balanceFormatted.full} ${PUB_TOKEN_SYMBOL}` : undefined}
                         >
                           {balanceFormatted?.formatted ?? "0"}
@@ -98,8 +98,8 @@ export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
                   <If condition={!!delegatedFormatted}>
                     <div className="flex flex-col gap-y-1">
                       <div className="flex items-baseline gap-x-1">
-                        <span 
-                          className="text-lg text-neutral-800 cursor-help"
+                        <span
+                          className="cursor-help text-lg text-neutral-800"
                           title={delegatedFormatted ? `${delegatedFormatted.full} ${PUB_TOKEN_SYMBOL}` : undefined}
                         >
                           {delegatedFormatted?.formatted ?? "0"}
@@ -116,7 +116,7 @@ export const HeaderMember: React.FC<IHeaderMemberProps> = (props) => {
               <MemberAvatar address={delegateAddress} size="lg" responsiveSize={{}} />
             </span>
           </div>
-          
+
           <div>
             <span className="flex w-full flex-col gap-x-4 gap-y-3 md:flex-row">
               <If condition={!isConnected}>
