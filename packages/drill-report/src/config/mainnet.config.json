@@ -1,0 +1,22 @@
+{
+"network": "mainnet",
+"chainId": 1,
+"ipfsGateway": "https://dweb.link/ipfs",
+"urls": {
+    "rpc": "https://ethereum-rpc.publicnode.com",
+    "explorer": "https://etherscan.io/"
+},
+"subgraph": "https://api.goldsky.com/api/public/project_clz85cxrvng3n01ughcv5e7hg/subgraphs/dao/mainnet/gn",
+"contracts": {
+    "DAO": "0x9CDf589C941ee81D75F34d3755671d614f7cf261",
+  "VotingToken": "0x10dea67478c5F8C5E2D90e5E9B26dBe60c54d800",
+  "TaikoBridge": "0xd60247c6848B7Ca29eDdF63AA924E53dB6Ddd8EC",
+    "MultisigPlugin": "0xD7dA1C25E915438720692bC55eb3a7170cA90321",
+  "EmergencyMultisigPlugin": "0x2AffADEb2ef5e1F2a7F58964ee191F1e88317ECd",
+  "OptimisticTokenVotingPlugin": "0x989E348275b659d36f8751ea1c10D146211650BE",
+  "SignerList":"0x0F95E6968EC1B28c794CF1aD99609431de5179c2",
+  "EncryptionRegistry":"0x2eFDb93a3B87b930E553d504db67Ee41c69C42d1",
+  "DelegationWall":"0x402816c92f7F978C855190F367B3C21239efE692",
+  "SecurityCouncilDrill":"0xf4A44a3A7b01FC21f5586C1008866EB418A7b76B"
+ }
+}
