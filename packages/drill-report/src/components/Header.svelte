@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   
-  let theme: 'light' | 'dark' = 'light';
+  let theme: 'light' | 'dark' = $state('light');
   
   onMount(() => {
     // Check for saved theme preference or default to browser preference
@@ -17,10 +17,12 @@
   });
   
   function applyTheme(newTheme: 'light' | 'dark') {
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    if (typeof document !== 'undefined') {
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
   }
   
@@ -29,6 +31,11 @@
     applyTheme(theme);
     localStorage.setItem('theme', theme);
   }
+  
+  // Reactive statement to apply theme when it changes
+  $effect(() => {
+    applyTheme(theme);
+  });
 </script>
 
 <header class="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700">
