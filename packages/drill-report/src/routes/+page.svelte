@@ -423,10 +423,8 @@
               <tr>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">#</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Account</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Delegated Address</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Block</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Response Time</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -453,28 +451,47 @@
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{index + 1}</td>
                   <td class="px-4 py-3">
-                    {#if targetAccounts[target]}
-                      <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {profileMap[targetAccounts[target].toLowerCase()] || 'Unknown'}
-                      </div>
-                      <code class="text-xs text-gray-500 dark:text-gray-400">{targetAccounts[target]}</code>
+                    {#if targetAccounts[target] && profileMap[targetAccounts[target].toLowerCase()]}
+                      {#if pingDetails[target] && pingDetails[target].transactionHash}
+                        <a 
+                          href="{config.urls.explorer}tx/{pingDetails[target].transactionHash}" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline font-medium"
+                          title="View ping transaction"
+                        >
+                          {profileMap[targetAccounts[target].toLowerCase()]}
+                        </a>
+                      {:else}
+                        <span class="font-medium text-gray-900 dark:text-gray-100">
+                          {profileMap[targetAccounts[target].toLowerCase()]}
+                        </span>
+                      {/if}
                     {:else}
-                      <span class="text-sm text-gray-400 dark:text-gray-500">No account</span>
+                      {#if pingDetails[target] && pingDetails[target].transactionHash}
+                        <a 
+                          href="{config.urls.explorer}tx/{pingDetails[target].transactionHash}" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                          title="View ping transaction"
+                        >
+                          <code class="text-sm">{target}</code>
+                        </a>
+                      {:else}
+                        <code class="text-sm text-gray-700 dark:text-gray-300">{target}</code>
+                      {/if}
                     {/if}
                   </td>
-                  <td class="px-4 py-3">
-                    {#if pingDetails[target] && pingDetails[target].transactionHash}
-                      <a 
-                        href="{config.urls.explorer}tx/{pingDetails[target].transactionHash}" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
-                        title="View ping transaction"
-                      >
-                        <code class="text-xs">{target}</code>
-                      </a>
+                  <td class="px-4 py-3 text-sm">
+                    {#if pingDetails[target] && drillStartTimestamp}
+                      <span class="font-medium text-gray-900 dark:text-gray-100">
+                        {formatResponseTime(drillStartTimestamp, pingDetails[target].timestamp)}
+                      </span>
+                    {:else if pingStatuses[target] === 'loading'}
+                      <span class="text-gray-400 dark:text-gray-500">-</span>
                     {:else}
-                      <code class="text-xs text-gray-700 dark:text-gray-300">{target}</code>
+                      <span class="text-gray-400 dark:text-gray-500">N/A</span>
                     {/if}
                   </td>
                   <td class="px-4 py-3">
@@ -500,33 +517,6 @@
                         </svg>
                         Not Pinged
                       </span>
-                    {/if}
-                  </td>
-                  <td class="px-4 py-3 text-sm">
-                    {#if pingDetails[target]}
-                      <a 
-                        href="{config.urls.explorer}block/{pingDetails[target].blockNumber}" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
-                      >
-                        {pingDetails[target].blockNumber.toString()}
-                      </a>
-                    {:else if pingStatuses[target] === 'loading'}
-                      <span class="text-gray-400 dark:text-gray-500">-</span>
-                    {:else}
-                      <span class="text-gray-400 dark:text-gray-500">N/A</span>
-                    {/if}
-                  </td>
-                  <td class="px-4 py-3 text-sm">
-                    {#if pingDetails[target] && drillStartTimestamp}
-                      <span class="font-medium text-gray-900 dark:text-gray-100">
-                        {formatResponseTime(drillStartTimestamp, pingDetails[target].timestamp)}
-                      </span>
-                    {:else if pingStatuses[target] === 'loading'}
-                      <span class="text-gray-400 dark:text-gray-500">-</span>
-                    {:else}
-                      <span class="text-gray-400 dark:text-gray-500">N/A</span>
                     {/if}
                   </td>
                 </tr>
