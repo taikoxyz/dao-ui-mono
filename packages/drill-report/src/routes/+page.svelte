@@ -4,6 +4,7 @@
   import { mainnet } from 'viem/chains';
   import { ABIs } from '../abi';
   import config from '../config/mainnet.config.json';
+  import securityCouncilProfiles from '../../../ui/src/data/security-council-profiles.json';
 
   let maxDrillNonce: bigint | null = null;
   let currentDrillNonce: bigint = 1n;
@@ -16,6 +17,13 @@
   let pingDetails: Record<string, { blockNumber: bigint; timestamp: bigint; transactionHash: string } | null> = {};
   let drillStartBlock: bigint | null = null;
   let drillStartTimestamp: bigint | null = null;
+  let targetAccounts: Record<string, string | null> = {}; // Maps delegated address to main account
+  
+  // Create a map of addresses to names from the profiles
+  const profileMap: Record<string, string> = {};
+  securityCouncilProfiles.forEach((profile: any) => {
+    profileMap[profile.address.toLowerCase()] = profile.name;
+  });
 
   async function fetchMaxDrillNonce() {
     loading = true;
@@ -56,6 +64,7 @@
     targets = [];
     pingStatuses = {};
     pingDetails = {};
+    targetAccounts = {};
     drillStartBlock = null;
     drillStartTimestamp = null;
     
@@ -74,7 +83,37 @@
       targets.forEach(target => {
         pingStatuses[target] = 'loading';
         pingDetails[target] = null;
+        targetAccounts[target] = null;
       });
+      
+      // Fetch account associations from SignerList for each target
+      const accountPromises = targets.map(async (target) => {
+        try {
+          // Get the latest block number and use a slightly older one to avoid "block not yet mined" errors
+          const latestBlock = await client.getBlockNumber();
+          const queryBlock = latestBlock - 10n; // Use a block that's definitely been mined
+          
+          // Get the owner account for this delegated address
+          const owner = await client.readContract({
+            address: config.contracts.SignerList as `0x${string}`,
+            abi: ABIs.SignerList,
+            functionName: 'getListedEncryptionOwnerAtBlock',
+            args: [target, queryBlock]
+          });
+          
+          if (owner && owner !== '0x0000000000000000000000000000000000000000') {
+            targetAccounts[target] = owner as string;
+          }
+          
+          // Trigger reactivity
+          targetAccounts = {...targetAccounts};
+        } catch (err) {
+          console.error(`Error fetching account for ${target}:`, err);
+        }
+      });
+      
+      // Fetch accounts in parallel with other data
+      Promise.all(accountPromises).catch(console.error);
       
       // Mark that we're done loading the target list
       loadingTargets = false;
@@ -383,7 +422,8 @@
             <thead class="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">#</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Target Address</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Account</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Delegated Address</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Block</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Response Time</th>
@@ -412,6 +452,16 @@
               }) as target, index}
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{index + 1}</td>
+                  <td class="px-4 py-3">
+                    {#if targetAccounts[target]}
+                      <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {profileMap[targetAccounts[target].toLowerCase()] || 'Unknown'}
+                      </div>
+                      <code class="text-xs text-gray-500 dark:text-gray-400">{targetAccounts[target]}</code>
+                    {:else}
+                      <span class="text-sm text-gray-400 dark:text-gray-500">No account</span>
+                    {/if}
+                  </td>
                   <td class="px-4 py-3">
                     {#if pingDetails[target] && pingDetails[target].transactionHash}
                       <a 
