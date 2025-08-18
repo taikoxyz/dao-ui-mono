@@ -1,7 +1,7 @@
 <script lang="ts">
 	import classNames from 'classnames';
 	import capitalize from '$utils/string/capitalize';
-	import { ColorsToText, ThemeColors, ThemeSizes } from '$types/system.type';
+	import { ColorsToText, ThemeColors, ThemeSizes } from '$types/core.type';
 
 	export let name: string;
 	export let size: ThemeSizes | 'full' = ThemeSizes.Medium;

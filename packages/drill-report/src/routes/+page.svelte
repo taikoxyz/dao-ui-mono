@@ -1,553 +1,673 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { createPublicClient, http, type PublicClient, parseAbiItem } from 'viem';
-  import { mainnet } from 'viem/chains';
-  import { ABIs } from '../abi';
-  import config from '../config/mainnet.config.json';
-  import securityCouncilProfiles from '../../../ui/src/data/security-council-profiles.json';
+	import { onMount } from 'svelte';
+	import { createPublicClient, http, type PublicClient, parseAbiItem, type Log } from 'viem';
+	import { mainnet } from 'viem/chains';
+	import { ABIs } from '../abi';
+	import config from '../config/mainnet.config.json';
+	import securityCouncilProfiles from '../../../ui/src/data/security-council-profiles.json';
 
-  let maxDrillNonce: bigint | null = null;
-  let currentDrillNonce: bigint = 1n;
-  let loading = false;
-  let loadingTargets = false;
-  let error: string | null = null;
-  let client: PublicClient;
-  let targets: string[] = [];
-  let pingStatuses: Record<string, boolean | 'loading'> = {};
-  let pingDetails: Record<string, { blockNumber: bigint; timestamp: bigint; transactionHash: string } | null> = {};
-  let drillStartBlock: bigint | null = null;
-  let drillStartTimestamp: bigint | null = null;
-  let targetAccounts: Record<string, string | null> = {}; // Maps delegated address to main account
-  
-  // Create a map of addresses to names from the profiles
-  const profileMap: Record<string, string> = {};
-  securityCouncilProfiles.forEach((profile: any) => {
-    profileMap[profile.address.toLowerCase()] = profile.name;
-  });
+	let maxDrillNonce: bigint | null = null;
+	let currentDrillNonce: bigint = 1n;
+	let loading = false;
+	let loadingTargets = false;
+	let error: string | null = null;
+	let client: PublicClient;
+	let targets: string[] = [];
+	let pingStatuses: Record<string, boolean | 'loading'> = {};
+	let pingDetails: Record<
+		string,
+		{ blockNumber: bigint; timestamp: bigint; transactionHash: string } | null
+	> = {};
+	let drillStartBlock: bigint | null = null;
+	let drillStartTimestamp: bigint | null = null;
+	let targetAccounts: Record<string, string | null> = {}; // Maps delegated address to main account
 
-  async function fetchMaxDrillNonce() {
-    loading = true;
-    error = null;
-    maxDrillNonce = null;
+	// Create a map of addresses to names from the profiles
+	const profileMap: Record<string, string> = {};
+	securityCouncilProfiles.forEach((profile: { address: string; name: string }) => {
+		profileMap[profile.address.toLowerCase()] = profile.name;
+	});
 
-    try {
-      client = createPublicClient({
-        chain: mainnet,
-        transport: http(config.urls.rpc)
-      });
+	async function fetchMaxDrillNonce() {
+		loading = true;
+		error = null;
+		maxDrillNonce = null;
 
-      const result = await client.readContract({
-        address: config.contracts.SecurityCouncilDrill as `0x${string}`,
-        abi: ABIs.SecurityCouncilDrill,
-        functionName: 'drillNonce'
-      });
+		try {
+			client = createPublicClient({
+				chain: mainnet,
+				transport: http(config.urls.rpc)
+			});
 
-      maxDrillNonce = result as bigint;
-      
-      // Start with the highest (most recent) nonce
-      if (maxDrillNonce && maxDrillNonce > 0n) {
-        currentDrillNonce = maxDrillNonce;
-        await fetchDrillData();
-      }
-    } catch (err) {
-      console.error('Error fetching max drill nonce:', err);
-      error = err instanceof Error ? err.message : 'Unknown error occurred';
-    } finally {
-      loading = false;
-    }
-  }
+			const result = await client.readContract({
+				address: config.contracts.SecurityCouncilDrill as `0x${string}`,
+				abi: ABIs.SecurityCouncilDrill,
+				functionName: 'drillNonce',
+				args: []
+			});
 
-  async function fetchDrillData() {
-    if (!client || !maxDrillNonce) return;
-    
-    loadingTargets = true;
-    targets = [];
-    pingStatuses = {};
-    pingDetails = {};
-    targetAccounts = {};
-    drillStartBlock = null;
-    drillStartTimestamp = null;
-    
-    try {
-      // Fetch targets for current drill nonce
-      const targetsResult = await client.readContract({
-        address: config.contracts.SecurityCouncilDrill as `0x${string}`,
-        abi: ABIs.SecurityCouncilDrill,
-        functionName: 'getTargets',
-        args: [currentDrillNonce]
-      });
-      
-      targets = targetsResult as string[];
-      
-      // Initialize all targets as loading
-      targets.forEach(target => {
-        pingStatuses[target] = 'loading';
-        pingDetails[target] = null;
-        targetAccounts[target] = null;
-      });
-      
-      // Fetch account associations from SignerList for each target
-      const accountPromises = targets.map(async (target) => {
-        try {
-          // Get the latest block number and use a slightly older one to avoid "block not yet mined" errors
-          const latestBlock = await client.getBlockNumber();
-          const queryBlock = latestBlock - 10n; // Use a block that's definitely been mined
-          
-          // Get the owner account for this delegated address
-          const owner = await client.readContract({
-            address: config.contracts.SignerList as `0x${string}`,
-            abi: ABIs.SignerList,
-            functionName: 'getListedEncryptionOwnerAtBlock',
-            args: [target, queryBlock]
-          });
-          
-          if (owner && owner !== '0x0000000000000000000000000000000000000000') {
-            targetAccounts[target] = owner as string;
-          }
-          
-          // Trigger reactivity
-          targetAccounts = {...targetAccounts};
-        } catch (err) {
-          console.error(`Error fetching account for ${target}:`, err);
-        }
-      });
-      
-      // Fetch accounts in parallel with other data
-      Promise.all(accountPromises).catch(console.error);
-      
-      // Mark that we're done loading the target list
-      loadingTargets = false;
-      
-      // Fetch DrillStarted event to get the start block
-      // We'll search in chunks to avoid exceeding block range limits
-      try {
-        const latestBlock = await client.getBlockNumber();
-        const contractDeployBlock = 20000000n; // Approximate deployment block for the contract
-        let searchFromBlock = contractDeployBlock;
-        let drillStartedLogs: any[] = [];
-        
-        // Search in chunks of 40,000 blocks to stay under the 50,000 limit
-        const chunkSize = 40000n;
-        
-        // Start from a reasonable recent block if looking for recent drills
-        if (currentDrillNonce > maxDrillNonce - 10n) {
-          // For recent drills, only search last ~2 months of blocks
-          searchFromBlock = latestBlock - 500000n;
-        }
-        
-        while (searchFromBlock < latestBlock && drillStartedLogs.length === 0) {
-          const searchToBlock = searchFromBlock + chunkSize > latestBlock ? latestBlock : searchFromBlock + chunkSize;
-          
-          try {
-            const logs = await client.getLogs({
-              address: config.contracts.SecurityCouncilDrill as `0x${string}`,
-              event: parseAbiItem('event DrillStarted(uint256 indexed drillNonce, address[] targets)'),
-              args: {
-                drillNonce: currentDrillNonce
-              },
-              fromBlock: searchFromBlock,
-              toBlock: searchToBlock
-            });
-            
-            if (logs.length > 0) {
-              drillStartedLogs = logs;
-              break;
-            }
-          } catch (chunkErr) {
-            console.error(`Error fetching logs in range ${searchFromBlock}-${searchToBlock}:`, chunkErr);
-          }
-          
-          searchFromBlock = searchToBlock + 1n;
-        }
-        
-        if (drillStartedLogs.length > 0) {
-          drillStartBlock = drillStartedLogs[0].blockNumber;
-          // Get the timestamp of the start block
-          const startBlock = await client.getBlock({ blockNumber: drillStartBlock });
-          drillStartTimestamp = startBlock.timestamp;
-        }
-      } catch (err) {
-        console.error('Error fetching drill start event:', err);
-      }
-      
-      // Fetch ping status and events for each target in parallel
-      const pingPromises = targets.map(async (target) => {
-        try {
-          const hasPinged = await client.readContract({
-            address: config.contracts.SecurityCouncilDrill as `0x${string}`,
-            abi: ABIs.SecurityCouncilDrill,
-            functionName: 'hasPinged',
-            args: [currentDrillNonce, target]
-          });
-          
-          pingStatuses[target] = hasPinged as boolean;
-          
-          // If pinged, fetch the event details
-          if (hasPinged) {
-            try {
-              // Use the drill start block if we have it, otherwise search from a reasonable range
-              const latestBlock = await client.getBlockNumber();
-              let searchFromBlock = drillStartBlock || (latestBlock - 500000n);
-              
-              // Make sure we don't exceed the block range limit
-              if (latestBlock - searchFromBlock > 45000n) {
-                searchFromBlock = latestBlock - 45000n;
-              }
-              
-              const pingLogs = await client.getLogs({
-                address: config.contracts.SecurityCouncilDrill as `0x${string}`,
-                event: parseAbiItem('event DrillPinged(uint256 indexed drillNonce, address indexed member)'),
-                args: {
-                  drillNonce: currentDrillNonce,
-                  member: target as `0x${string}`
-                },
-                fromBlock: searchFromBlock,
-                toBlock: latestBlock
-              });
-              
-              if (pingLogs.length > 0) {
-                const pingBlock = await client.getBlock({ blockNumber: pingLogs[0].blockNumber });
-                pingDetails[target] = {
-                  blockNumber: pingLogs[0].blockNumber,
-                  timestamp: pingBlock.timestamp,
-                  transactionHash: pingLogs[0].transactionHash
-                };
-              }
-            } catch (err) {
-              console.error(`Error fetching ping event for ${target}:`, err);
-            }
-          }
-          
-          // Trigger reactivity
-          pingStatuses = {...pingStatuses};
-          pingDetails = {...pingDetails};
-        } catch (err) {
-          console.error(`Error fetching ping status for ${target}:`, err);
-          pingStatuses[target] = false;
-          // Trigger reactivity
-          pingStatuses = {...pingStatuses};
-        }
-      });
-      
-      // Wait for all ping status fetches to complete
-      await Promise.all(pingPromises);
-    } catch (err) {
-      console.error('Error fetching drill data:', err);
-      error = err instanceof Error ? err.message : 'Unknown error occurred fetching drill data';
-      loadingTargets = false;
-    }
-  }
-  
-  function formatResponseTime(startTimestamp: bigint, endTimestamp: bigint): string {
-    const seconds = Number(endTimestamp - startTimestamp);
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    
-    if (days > 0) {
-      return `${days}d ${hours}h`;
-    } else if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    } else {
-      return `${minutes}m`;
-    }
-  }
+			maxDrillNonce = result as unknown as bigint;
 
-  function navigateToDrill(nonce: bigint) {
-    if (nonce >= 1n && nonce <= (maxDrillNonce || 0n)) {
-      currentDrillNonce = nonce;
-      fetchDrillData();
-    }
-  }
+			// Start with the highest (most recent) nonce
+			if (maxDrillNonce && maxDrillNonce > 0n) {
+				currentDrillNonce = maxDrillNonce;
+				await fetchDrillData();
+			}
+		} catch (err) {
+			console.error('Error fetching max drill nonce:', err);
+			error = err instanceof Error ? err.message : 'Unknown error occurred';
+		} finally {
+			loading = false;
+		}
+	}
 
-  function previousDrill() {
-    if (maxDrillNonce && currentDrillNonce < maxDrillNonce) {
-      navigateToDrill(currentDrillNonce + 1n);
-    }
-  }
+	async function fetchDrillData() {
+		if (!client || !maxDrillNonce) return;
 
-  function nextDrill() {
-    if (currentDrillNonce > 1n) {
-      navigateToDrill(currentDrillNonce - 1n);
-    }
-  }
+		loadingTargets = true;
+		targets = [];
+		pingStatuses = {};
+		pingDetails = {};
+		targetAccounts = {};
+		drillStartBlock = null;
+		drillStartTimestamp = null;
 
-  onMount(() => {
-    fetchMaxDrillNonce();
-  });
+		try {
+			// Fetch targets for current drill nonce
+			const targetsResult = await client.readContract({
+				address: config.contracts.SecurityCouncilDrill as `0x${string}`,
+				abi: ABIs.SecurityCouncilDrill,
+				functionName: 'getTargets',
+				args: [currentDrillNonce]
+			});
+
+			targets = targetsResult as string[];
+
+			// Initialize all targets as loading
+			targets.forEach((target) => {
+				pingStatuses[target] = 'loading';
+				pingDetails[target] = null;
+				targetAccounts[target] = null;
+			});
+
+			// Fetch account associations from SignerList for each target
+			const accountPromises = targets.map(async (target) => {
+				try {
+					// Get the latest block number and use a slightly older one to avoid "block not yet mined" errors
+					const latestBlock = await client.getBlockNumber();
+					const queryBlock = latestBlock - 10n; // Use a block that's definitely been mined
+
+					// Get the owner account for this delegated address
+					const owner = await client.readContract({
+						address: config.contracts.SignerList as `0x${string}`,
+						abi: ABIs.SignerList,
+						functionName: 'getListedEncryptionOwnerAtBlock',
+						args: [target, queryBlock]
+					});
+
+					if (
+						owner &&
+						(owner as unknown as string) !== '0x0000000000000000000000000000000000000000'
+					) {
+						targetAccounts[target] = owner as unknown as string;
+					}
+
+					// Trigger reactivity
+					targetAccounts = { ...targetAccounts };
+				} catch (err) {
+					console.error(`Error fetching account for ${target}:`, err);
+				}
+			});
+
+			// Fetch accounts in parallel with other data
+			Promise.all(accountPromises).catch(console.error);
+
+			// Mark that we're done loading the target list
+			loadingTargets = false;
+
+			// Fetch DrillStarted event to get the start block
+			// We'll search in chunks to avoid exceeding block range limits
+			try {
+				const latestBlock = await client.getBlockNumber();
+				const contractDeployBlock = 20000000n; // Approximate deployment block for the contract
+				let searchFromBlock = contractDeployBlock;
+				let drillStartedLogs: Log[] = [];
+
+				// Search in chunks of 40,000 blocks to stay under the 50,000 limit
+				const chunkSize = 40000n;
+
+				// Start from a reasonable recent block if looking for recent drills
+				if (currentDrillNonce > maxDrillNonce - 10n) {
+					// For recent drills, only search last ~2 months of blocks
+					searchFromBlock = latestBlock - 500000n;
+				}
+
+				while (searchFromBlock < latestBlock && drillStartedLogs.length === 0) {
+					const searchToBlock =
+						searchFromBlock + chunkSize > latestBlock ? latestBlock : searchFromBlock + chunkSize;
+
+					try {
+						const logs = await client.getLogs({
+							address: config.contracts.SecurityCouncilDrill as `0x${string}`,
+							event: parseAbiItem(
+								'event DrillStarted(uint256 indexed drillNonce, address[] targets)'
+							),
+							args: {
+								drillNonce: currentDrillNonce
+							},
+							fromBlock: searchFromBlock,
+							toBlock: searchToBlock
+						});
+
+						if (logs.length > 0) {
+							drillStartedLogs = logs;
+							break;
+						}
+					} catch (chunkErr) {
+						console.error(
+							`Error fetching logs in range ${searchFromBlock}-${searchToBlock}:`,
+							chunkErr
+						);
+					}
+
+					searchFromBlock = searchToBlock + 1n;
+				}
+
+				if (drillStartedLogs.length > 0) {
+					drillStartBlock = drillStartedLogs[0].blockNumber;
+					// Get the timestamp of the start block
+					const startBlock = await client.getBlock({ blockNumber: drillStartBlock! });
+					drillStartTimestamp = startBlock.timestamp;
+				}
+			} catch (err) {
+				console.error('Error fetching drill start event:', err);
+			}
+
+			// Fetch ping status and events for each target in parallel
+			const pingPromises = targets.map(async (target) => {
+				try {
+					const hasPinged = await client.readContract({
+						address: config.contracts.SecurityCouncilDrill as `0x${string}`,
+						abi: ABIs.SecurityCouncilDrill,
+						functionName: 'hasPinged',
+						args: [currentDrillNonce, target]
+					});
+
+					pingStatuses[target] = Boolean(hasPinged);
+
+					// If pinged, fetch the event details
+					if (hasPinged) {
+						try {
+							// Use the drill start block if we have it, otherwise search from a reasonable range
+							const latestBlock = await client.getBlockNumber();
+							let searchFromBlock = drillStartBlock || latestBlock - 500000n;
+
+							// Make sure we don't exceed the block range limit
+							if (latestBlock - searchFromBlock > 45000n) {
+								searchFromBlock = latestBlock - 45000n;
+							}
+
+							const pingLogs = await client.getLogs({
+								address: config.contracts.SecurityCouncilDrill as `0x${string}`,
+								event: parseAbiItem(
+									'event DrillPinged(uint256 indexed drillNonce, address indexed member)'
+								),
+								args: {
+									drillNonce: currentDrillNonce,
+									member: target as `0x${string}`
+								},
+								fromBlock: searchFromBlock,
+								toBlock: latestBlock
+							});
+
+							if (pingLogs.length > 0) {
+								const pingBlock = await client.getBlock({ blockNumber: pingLogs[0].blockNumber });
+								pingDetails[target] = {
+									blockNumber: pingLogs[0].blockNumber,
+									timestamp: pingBlock.timestamp,
+									transactionHash: pingLogs[0].transactionHash
+								};
+							}
+						} catch (err) {
+							console.error(`Error fetching ping event for ${target}:`, err);
+						}
+					}
+
+					// Trigger reactivity
+					pingStatuses = { ...pingStatuses };
+					pingDetails = { ...pingDetails };
+				} catch (err) {
+					console.error(`Error fetching ping status for ${target}:`, err);
+					pingStatuses[target] = false;
+					// Trigger reactivity
+					pingStatuses = { ...pingStatuses };
+				}
+			});
+
+			// Wait for all ping status fetches to complete
+			await Promise.all(pingPromises);
+		} catch (err) {
+			console.error('Error fetching drill data:', err);
+			error = err instanceof Error ? err.message : 'Unknown error occurred fetching drill data';
+			loadingTargets = false;
+		}
+	}
+
+	function formatResponseTime(startTimestamp: bigint, endTimestamp: bigint): string {
+		const seconds = Number(endTimestamp - startTimestamp);
+		const days = Math.floor(seconds / 86400);
+		const hours = Math.floor((seconds % 86400) / 3600);
+		const minutes = Math.floor((seconds % 3600) / 60);
+
+		if (days > 0) {
+			return `${days}d ${hours}h`;
+		} else if (hours > 0) {
+			return `${hours}h ${minutes}m`;
+		} else {
+			return `${minutes}m`;
+		}
+	}
+
+	function navigateToDrill(nonce: bigint) {
+		if (nonce >= 1n && nonce <= (maxDrillNonce || 0n)) {
+			currentDrillNonce = nonce;
+			fetchDrillData();
+		}
+	}
+
+	function previousDrill() {
+		if (maxDrillNonce && currentDrillNonce < maxDrillNonce) {
+			navigateToDrill(currentDrillNonce + 1n);
+		}
+	}
+
+	function nextDrill() {
+		if (currentDrillNonce > 1n) {
+			navigateToDrill(currentDrillNonce - 1n);
+		}
+	}
+
+	onMount(() => {
+		fetchMaxDrillNonce();
+	});
 </script>
 
-<div class="container mx-auto p-8">
+<div class="p-8">
+	{#if loading}
+		<div class="card bg-base-200 shadow-xl">
+			<div class="card-body">
+				<div class="flex items-center gap-2">
+					<span class="loading loading-spinner loading-md"></span>
+					<span>Fetching maximum drill nonce...</span>
+				</div>
+			</div>
+		</div>
+	{:else if error && !maxDrillNonce}
+		<div class="alert alert-error">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-6 w-6 shrink-0 stroke-current"
+				fill="none"
+				viewBox="0 0 24 24"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+				/>
+			</svg>
+			<span>{error}</span>
+		</div>
+	{:else if maxDrillNonce !== null}
+		<!-- Drill Navigation -->
+		<div class="card bg-base-200 mb-6 shadow-xl">
+			<div class="card-body">
+				<h2 class="card-title">Drill Navigation</h2>
 
-  {#if loading}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">
-      <div class="flex items-center gap-2">
-        <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <span class="text-gray-700 dark:text-gray-300">Fetching maximum drill nonce...</span>
-      </div>
-    </div>
-  {:else if error && !maxDrillNonce}
-    <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
-      <div class="flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span>{error}</span>
-      </div>
-    </div>
-  {:else if maxDrillNonce !== null}
-    <!-- Drill Navigation -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl mb-6 p-6">
-      <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Drill Navigation</h2>
-      
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex flex-col items-center">
-          <button 
-            class="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            on:click={previousDrill}
-            disabled={currentDrillNonce >= maxDrillNonce || loadingTargets}
-            title="View newer drill"
-            aria-label="View newer drill"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Newer</span>
-        </div>
-        
-        <div class="text-center">
-          <div class="text-sm text-gray-600 dark:text-gray-400">Viewing Drill</div>
-          <div class="text-3xl font-bold text-gray-900 dark:text-white">#{currentDrillNonce.toString()}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-500">(Most recent: #{maxDrillNonce.toString()})</div>
-        </div>
-        
-        <div class="flex flex-col items-center">
-          <button 
-            class="p-3 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            on:click={nextDrill}
-            disabled={currentDrillNonce <= 1n || loadingTargets}
-            title="View older drill"
-            aria-label="View older drill"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-          <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Older</span>
-        </div>
-      </div>
-    </div>
+				<div class="mb-4 flex items-center justify-between">
+					<div class="flex flex-col items-center">
+						<button
+							class="btn btn-circle btn-primary"
+							on:click={previousDrill}
+							disabled={currentDrillNonce >= maxDrillNonce || loadingTargets}
+							title="View newer drill"
+							aria-label="View newer drill"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-6 w-6"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M15 19l-7-7 7-7"
+								/>
+							</svg>
+						</button>
+						<span class="mt-1 text-xs">Newer</span>
+					</div>
 
-    <!-- Drill Data -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">
-      <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Drill #{currentDrillNonce.toString()} Details</h2>
-      
-      {#if drillStartBlock && drillStartTimestamp}
-        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-          <div class="flex items-start gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke="currentColor" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <div class="text-sm text-gray-700 dark:text-gray-300">
-              <span class="font-semibold">Drill Started:</span> Block 
-              <a 
-                href="{config.urls.explorer}block/{drillStartBlock}" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
-              >
-                {drillStartBlock.toString()}
-              </a>
-              <span class="ml-2">
-                ({new Date(Number(drillStartTimestamp) * 1000).toLocaleString()})
-              </span>
-            </div>
-          </div>
-        </div>
-      {/if}
-      
-      {#if loadingTargets}
-        <div class="flex items-center gap-2">
-          <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span class="text-gray-700 dark:text-gray-300">Loading drill data...</span>
-        </div>
-      {:else if targets.length === 0}
-        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-          <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-5 h-5">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" stroke="currentColor" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span>No targets found for this drill</span>
-          </div>
-        </div>
-      {:else}
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">#</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Account</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Response Time</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {#each targets.slice().sort((a, b) => {
-                // Sort by block number (ascending - quickest first)
-                const aBlock = pingDetails[a]?.blockNumber;
-                const bBlock = pingDetails[b]?.blockNumber;
-                
-                // Put pinged items first (those with block numbers)
-                if (aBlock && bBlock) {
-                  // Both have blocks, sort by block number ascending
-                  return Number(aBlock - bBlock);
-                } else if (aBlock) {
-                  // Only a has block, put it first
-                  return -1;
-                } else if (bBlock) {
-                  // Only b has block, put it first
-                  return 1;
-                } else {
-                  // Neither has block, maintain original order
-                  return targets.indexOf(a) - targets.indexOf(b);
-                }
-              }) as target, index}
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{index + 1}</td>
-                  <td class="px-4 py-3">
-                    {#if targetAccounts[target] && profileMap[targetAccounts[target].toLowerCase()]}
-                      {#if pingDetails[target] && pingDetails[target].transactionHash}
-                        <a 
-                          href="{config.urls.explorer}tx/{pingDetails[target].transactionHash}" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline font-medium"
-                          title="View ping transaction"
-                        >
-                          {profileMap[targetAccounts[target].toLowerCase()]}
-                        </a>
-                      {:else}
-                        <span class="font-medium text-gray-900 dark:text-gray-100">
-                          {profileMap[targetAccounts[target].toLowerCase()]}
-                        </span>
-                      {/if}
-                    {:else}
-                      {#if pingDetails[target] && pingDetails[target].transactionHash}
-                        <a 
-                          href="{config.urls.explorer}tx/{pingDetails[target].transactionHash}" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
-                          title="View ping transaction"
-                        >
-                          <code class="text-sm">{target}</code>
-                        </a>
-                      {:else}
-                        <code class="text-sm text-gray-700 dark:text-gray-300">{target}</code>
-                      {/if}
-                    {/if}
-                  </td>
-                  <td class="px-4 py-3 text-sm">
-                    {#if pingDetails[target] && drillStartTimestamp}
-                      <span class="font-medium text-gray-900 dark:text-gray-100">
-                        {formatResponseTime(drillStartTimestamp, pingDetails[target].timestamp)}
-                      </span>
-                    {:else if pingStatuses[target] === 'loading'}
-                      <span class="text-gray-400 dark:text-gray-500">-</span>
-                    {:else}
-                      <span class="text-gray-400 dark:text-gray-500">N/A</span>
-                    {/if}
-                  </td>
-                  <td class="px-4 py-3">
-                    {#if pingStatuses[target] === 'loading'}
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300">
-                        <svg class="animate-spin -ml-0.5 mr-1.5 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Loading
-                      </span>
-                    {:else if pingStatuses[target] === true}
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3 mr-1">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                        Pinged
-                      </span>
-                    {:else}
-                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3 h-3 mr-1">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Not Pinged
-                      </span>
-                    {/if}
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-        
-        <!-- Statistics -->
-        <div class="grid grid-cols-3 gap-4 mt-6">
-          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
-            <div class="text-sm text-gray-600 dark:text-gray-400">Total Targets</div>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{targets.length}</div>
-          </div>
-          <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 text-center">
-            <div class="text-sm text-gray-600 dark:text-gray-400">Pinged</div>
-            <div class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
-              {Object.values(pingStatuses).filter(p => p === true).length}
-            </div>
-          </div>
-          <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 text-center">
-            <div class="text-sm text-gray-600 dark:text-gray-400">Not Pinged</div>
-            <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">
-              {Object.values(pingStatuses).filter(p => p === false).length}
-            </div>
-          </div>
-        </div>
-      {/if}
-    </div>
-  {/if}
+					<div class="text-center">
+						<div class="text-sm">Viewing Drill</div>
+						<div class="text-3xl font-bold">#{currentDrillNonce.toString()}</div>
+						<div class="text-xs">(Most recent: #{maxDrillNonce.toString()})</div>
+					</div>
 
-  <!-- Contract Actions Section -->
-  <div class="mt-8 bg-gray-800 rounded-lg shadow-xl p-6 border border-gray-700">
-    <h2 class="text-xl font-bold mb-4 text-white">Contract Actions</h2>
-    <p class="text-gray-300 mb-4">
-      To interact with the Security Council Drill contract directly:
-    </p>
-    <div class="space-y-2">
-      <p class="text-gray-300">
-        <strong class="text-white">View Contract:</strong> Access the contract on Etherscan to see all available functions
-      </p>
-      <p class="text-gray-300">
-        <strong class="text-white">Start Drill:</strong> Initiate a new drill (requires appropriate permissions)
-      </p>
-      <p class="text-gray-300">
-        <strong class="text-white">Ping Drill:</strong> Respond to a drill if you're a target
-      </p>
-    </div>
-    <div class="mt-6">
-      <a 
-        href="{config.urls.explorer}address/{config.contracts.SecurityCouncilDrill}" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-        </svg>
-        Open Contract on Etherscan
-      </a>
-    </div>
-  </div>
+					<div class="flex flex-col items-center">
+						<button
+							class="btn btn-circle btn-primary"
+							on:click={nextDrill}
+							disabled={currentDrillNonce <= 1n || loadingTargets}
+							title="View older drill"
+							aria-label="View older drill"
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-6 w-6"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M9 5l7 7-7 7"
+								/>
+							</svg>
+						</button>
+						<span class="mt-1 text-xs">Older</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Drill Data -->
+		<div class="card bg-base-200 shadow-xl">
+			<div class="card-body">
+				<h2 class="card-title">Drill #{currentDrillNonce.toString()} Details</h2>
+
+				{#if drillStartBlock && drillStartTimestamp}
+					<div class="alert alert-info mb-4">
+						<div class="flex items-start gap-2">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								class="mt-0.5 h-5 w-5"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									stroke="currentColor"
+									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+								></path>
+							</svg>
+							<div class="text-sm">
+								<span class="font-semibold">Drill Started:</span> Block
+								<a
+									href="{config.urls.explorer}block/{drillStartBlock}"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="underline"
+								>
+									{drillStartBlock.toString()}
+								</a>
+								<span class="ml-2">
+									({new Date(Number(drillStartTimestamp) * 1000).toLocaleString()})
+								</span>
+							</div>
+						</div>
+					</div>
+				{/if}
+
+				{#if loadingTargets}
+					<div class="flex items-center gap-2">
+						<span class="loading loading-spinner loading-md"></span>
+						<span>Loading drill data...</span>
+					</div>
+				{:else if targets.length === 0}
+					<div class="alert alert-warning">
+						<div class="flex items-center gap-2">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								class="h-5 w-5"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									stroke="currentColor"
+									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+								></path>
+							</svg>
+							<span>No targets found for this drill</span>
+						</div>
+					</div>
+				{:else}
+					<div class="overflow-x-auto">
+						<table class="table-zebra table w-full">
+							<thead>
+								<tr>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">#</th
+									>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+										>Account</th
+									>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+										>Response Time</th
+									>
+									<th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+										>Status</th
+									>
+								</tr>
+							</thead>
+							<tbody class="divide-y">
+								{#each targets.slice().sort((a, b) => {
+									// Sort by block number (ascending - quickest first)
+									const aBlock = pingDetails[a]?.blockNumber;
+									const bBlock = pingDetails[b]?.blockNumber;
+
+									// Put pinged items first (those with block numbers)
+									if (aBlock && bBlock) {
+										// Both have blocks, sort by block number ascending
+										return Number(aBlock - bBlock);
+									} else if (aBlock) {
+										// Only a has block, put it first
+										return -1;
+									} else if (bBlock) {
+										// Only b has block, put it first
+										return 1;
+									} else {
+										// Neither has block, maintain original order
+										return targets.indexOf(a) - targets.indexOf(b);
+									}
+								}) as target, index (target)}
+									<tr class="hover:opacity-80">
+										<td class="px-4 py-3 text-sm">{index + 1}</td>
+										<td class="px-4 py-3">
+											{#if targetAccounts[target] && profileMap[targetAccounts[target].toLowerCase()]}
+												{#if pingDetails[target] && pingDetails[target].transactionHash}
+													<a
+														href="{config.urls.explorer}tx/{pingDetails[target].transactionHash}"
+														target="_blank"
+														rel="noopener noreferrer"
+														class="font-medium underline"
+														title="View ping transaction"
+													>
+														{profileMap[targetAccounts[target].toLowerCase()]}
+													</a>
+												{:else}
+													<span class="font-medium">
+														{profileMap[targetAccounts[target].toLowerCase()]}
+													</span>
+												{/if}
+											{:else if pingDetails[target] && pingDetails[target].transactionHash}
+												<a
+													href="{config.urls.explorer}tx/{pingDetails[target].transactionHash}"
+													target="_blank"
+													rel="noopener noreferrer"
+													class="underline"
+													title="View ping transaction"
+												>
+													<code class="text-sm">{target}</code>
+												</a>
+											{:else}
+												<code class="text-sm">{target}</code>
+											{/if}
+										</td>
+										<td class="px-4 py-3 text-sm">
+											{#if pingDetails[target] && drillStartTimestamp}
+												<span class="font-medium">
+													{formatResponseTime(drillStartTimestamp, pingDetails[target].timestamp)}
+												</span>
+											{:else if pingStatuses[target] === 'loading'}
+												<span class="opacity-50">-</span>
+											{:else}
+												<span class="opacity-50">N/A</span>
+											{/if}
+										</td>
+										<td class="px-4 py-3">
+											{#if pingStatuses[target] === 'loading'}
+												<span class="badge badge-ghost gap-1">
+													<svg
+														class="-ml-0.5 mr-1.5 h-3 w-3 animate-spin"
+														xmlns="http://www.w3.org/2000/svg"
+														fill="none"
+														viewBox="0 0 24 24"
+													>
+														<circle
+															class="opacity-25"
+															cx="12"
+															cy="12"
+															r="10"
+															stroke="currentColor"
+															stroke-width="4"
+														></circle>
+														<path
+															class="opacity-75"
+															fill="currentColor"
+															d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+														></path>
+													</svg>
+													Loading
+												</span>
+											{:else if pingStatuses[target] === true}
+												<span class="badge badge-ghost gap-1">
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														fill="none"
+														viewBox="0 0 24 24"
+														stroke-width="2"
+														stroke="currentColor"
+														class="mr-1 h-3 w-3"
+													>
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															d="M4.5 12.75l6 6 9-13.5"
+														/>
+													</svg>
+													Pinged
+												</span>
+											{:else}
+												<span class="badge badge-ghost gap-1">
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														fill="none"
+														viewBox="0 0 24 24"
+														stroke-width="2"
+														stroke="currentColor"
+														class="mr-1 h-3 w-3"
+													>
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+														/>
+													</svg>
+													Not Pinged
+												</span>
+											{/if}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+
+					<!-- Statistics -->
+					<div class="stats stats-vertical lg:stats-horizontal mt-6 w-full shadow">
+						<div class="stat">
+							<div class="stat-title">Total Targets</div>
+							<div class="stat-value">{targets.length}</div>
+						</div>
+						<div class="stat">
+							<div class="stat-title">Pinged</div>
+							<div class="stat-value text-success">
+								{Object.values(pingStatuses).filter((p) => p === true).length}
+							</div>
+						</div>
+						<div class="stat">
+							<div class="stat-title">Not Pinged</div>
+							<div class="stat-value text-warning">
+								{Object.values(pingStatuses).filter((p) => p === false).length}
+							</div>
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
+	<!-- Contract Actions Section -->
+	<div class="card bg-base-200 mt-8 shadow-xl">
+		<div class="card-body">
+			<h2 class="mb-4 text-xl font-bold">Contract Actions</h2>
+			<p class="mb-4">To interact with the Security Council Drill contract directly:</p>
+			<div class="space-y-2">
+				<p>
+					<strong>View Contract:</strong> Access the contract on Etherscan to see all available functions
+				</p>
+				<p>
+					<strong>Start Drill:</strong> Initiate a new drill (requires appropriate permissions)
+				</p>
+				<p>
+					<strong>Ping Drill:</strong> Respond to a drill if you're a target
+				</p>
+			</div>
+			<div class="mt-6">
+				<a
+					href="{config.urls.explorer}address/{config.contracts.SecurityCouncilDrill}"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="btn btn-primary"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2"
+						stroke="currentColor"
+						class="h-5 w-5"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+						/>
+					</svg>
+					Open Contract on Etherscan
+				</a>
+			</div>
+		</div>
+	</div>
 </div>

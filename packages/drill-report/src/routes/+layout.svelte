@@ -5,9 +5,9 @@
 	let { children } = $props();
 </script>
 
-<div class="min-h-screen bg-gray-900">
+<div class="bg-base-100 min-h-screen">
 	<Header />
-	<main>
+	<main class="container mx-auto">
 		{@render children?.()}
 	</main>
 </div>
