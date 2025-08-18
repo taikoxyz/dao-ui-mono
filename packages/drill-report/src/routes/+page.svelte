@@ -310,6 +310,7 @@
             on:click={previousDrill}
             disabled={currentDrillNonce >= maxDrillNonce || loadingTargets}
             title="View newer drill"
+            aria-label="View newer drill"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -330,43 +331,13 @@
             on:click={nextDrill}
             disabled={currentDrillNonce <= 1n || loadingTargets}
             title="View older drill"
+            aria-label="View older drill"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </button>
           <span class="text-xs mt-1 text-gray-600 dark:text-gray-400">Older</span>
-        </div>
-      </div>
-
-      <!-- Quick Jump -->
-      <div class="max-w-xs mx-auto">
-        <label for="jump-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Jump to Drill
-        </label>
-        <div class="flex">
-          <input 
-            id="jump-input"
-            type="number" 
-            min="1" 
-            max={maxDrillNonce.toString()}
-            value={currentDrillNonce.toString()}
-            class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            on:input={(e) => {
-              const value = BigInt(e.currentTarget.value || 1);
-              if (value >= 1n && value <= maxDrillNonce) {
-                navigateToDrill(value);
-              }
-            }}
-            disabled={loadingTargets}
-          />
-          <button 
-            class="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            on:click={() => fetchDrillData()}
-            disabled={loadingTargets}
-          >
-            Go
-          </button>
         </div>
       </div>
     </div>
@@ -548,20 +519,35 @@
     </div>
   {/if}
 
-  <!-- About Section -->
-  <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6">
-    <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">About Security Council Drills</h2>
-    <p class="text-gray-600 dark:text-gray-300 mb-2">
-      This explorer shows Security Council drills starting with the most recent (highest nonce) by default.
-      You can navigate through historical drills to see participation over time. For each drill, you can see:
+  <!-- Contract Actions Section -->
+  <div class="mt-8 bg-gray-800 rounded-lg shadow-xl p-6 border border-gray-700">
+    <h2 class="text-xl font-bold mb-4 text-white">Contract Actions</h2>
+    <p class="text-gray-300 mb-4">
+      To interact with the Security Council Drill contract directly:
     </p>
-    <ul class="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-1">
-      <li>All target addresses assigned to that drill</li>
-      <li>Whether each target has successfully pinged (responded to) the drill</li>
-      <li>Overall statistics for drill participation</li>
-    </ul>
-    <p class="text-gray-600 dark:text-gray-300 mt-3">
-      This data is read directly from the blockchain without requiring any wallet connection.
-    </p>
+    <div class="space-y-2">
+      <p class="text-gray-300">
+        <strong class="text-white">View Contract:</strong> Access the contract on Etherscan to see all available functions
+      </p>
+      <p class="text-gray-300">
+        <strong class="text-white">Start Drill:</strong> Initiate a new drill (requires appropriate permissions)
+      </p>
+      <p class="text-gray-300">
+        <strong class="text-white">Ping Drill:</strong> Respond to a drill if you're a target
+      </p>
+    </div>
+    <div class="mt-6">
+      <a 
+        href="{config.urls.explorer}address/{config.contracts.SecurityCouncilDrill}" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+        </svg>
+        Open Contract on Etherscan
+      </a>
+    </div>
   </div>
 </div>
