@@ -136,13 +136,27 @@
 				// Search in chunks of 40,000 blocks to stay under the 50,000 limit
 				const chunkSize = 40000n;
 
-				// Start from a reasonable recent block if looking for recent drills
-				if (currentDrillNonce > maxDrillNonce - 10n) {
+				// For drill #3 and other older drills, we need to search further back
+				// Drill #3 is likely much older, so we need a wider search range
+				if (currentDrillNonce <= 3n) {
+					// For very old drills, search from contract deployment
+					searchFromBlock = contractDeployBlock;
+				} else if (currentDrillNonce > maxDrillNonce - 10n) {
 					// For recent drills, only search last ~2 months of blocks
 					searchFromBlock = latestBlock - 500000n;
+				} else {
+					// For medium-age drills, search further back
+					searchFromBlock = latestBlock - 2000000n;
 				}
 
-				while (searchFromBlock < latestBlock && drillStartedLogs.length === 0) {
+				let attempts = 0;
+				const maxAttempts = 100; // Allow more attempts for older drills
+
+				while (
+					searchFromBlock < latestBlock &&
+					drillStartedLogs.length === 0 &&
+					attempts < maxAttempts
+				) {
 					const searchToBlock =
 						searchFromBlock + chunkSize > latestBlock ? latestBlock : searchFromBlock + chunkSize;
 
@@ -164,13 +178,11 @@
 							break;
 						}
 					} catch (chunkErr) {
-						console.error(
-							`Error fetching logs in range ${searchFromBlock}-${searchToBlock}:`,
-							chunkErr
-						);
+						// Silently continue to next chunk
 					}
 
 					searchFromBlock = searchToBlock + 1n;
+					attempts++;
 				}
 
 				if (drillStartedLogs.length > 0) {
@@ -198,27 +210,50 @@
 					// If pinged, fetch the event details
 					if (hasPinged) {
 						try {
-							// Use the drill start block if we have it, otherwise search from a reasonable range
 							const latestBlock = await client.getBlockNumber();
 							let searchFromBlock = drillStartBlock || latestBlock - 500000n;
+							let pingLogs: Log[] = [];
 
-							// Make sure we don't exceed the block range limit
-							if (latestBlock - searchFromBlock > 45000n) {
-								searchFromBlock = latestBlock - 45000n;
+							// Search in chunks to handle large block ranges
+							const chunkSize = 40000n;
+							let attempts = 0;
+							const maxAttempts = 20; // Limit search to prevent infinite loops
+
+							while (
+								searchFromBlock < latestBlock &&
+								pingLogs.length === 0 &&
+								attempts < maxAttempts
+							) {
+								const searchToBlock =
+									searchFromBlock + chunkSize > latestBlock
+										? latestBlock
+										: searchFromBlock + chunkSize;
+
+								try {
+									const logs = await client.getLogs({
+										address: config.contracts.SecurityCouncilDrill as `0x${string}`,
+										event: parseAbiItem(
+											'event DrillPinged(uint256 indexed drillNonce, address indexed member)'
+										),
+										args: {
+											drillNonce: currentDrillNonce,
+											member: target as `0x${string}`
+										},
+										fromBlock: searchFromBlock,
+										toBlock: searchToBlock
+									});
+
+									if (logs.length > 0) {
+										pingLogs = logs;
+										break;
+									}
+								} catch (chunkErr) {
+									// Silently continue to next chunk
+								}
+
+								searchFromBlock = searchToBlock + 1n;
+								attempts++;
 							}
-
-							const pingLogs = await client.getLogs({
-								address: config.contracts.SecurityCouncilDrill as `0x${string}`,
-								event: parseAbiItem(
-									'event DrillPinged(uint256 indexed drillNonce, address indexed member)'
-								),
-								args: {
-									drillNonce: currentDrillNonce,
-									member: target as `0x${string}`
-								},
-								fromBlock: searchFromBlock,
-								toBlock: latestBlock
-							});
 
 							if (pingLogs.length > 0) {
 								const pingBlock = await client.getBlock({ blockNumber: pingLogs[0].blockNumber });
