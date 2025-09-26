@@ -19,20 +19,11 @@
 	let error = $state<string | null>(null);
 	let txHash = $state<string | null>(null);
 
-	let connectedAddress = $state<Address | undefined>(undefined);
-
 	// Create a map of addresses to names from the profiles
 	const profiles = securityCouncilProfiles.map((profile: any) => ({
 		address: profile.address.toLowerCase(),
-		name: profile.name,
+		name: profile.name
 	}));
-
-	// Get connected address when modal shows
-	$effect(() => {
-		if (show && $adminStore.address) {
-			connectedAddress = $adminStore.address;
-		}
-	});
 
 	function toggleTarget(address: string) {
 		const newSet = new Set(selectedTargets);
@@ -45,7 +36,7 @@
 	}
 
 	function selectAll() {
-		selectedTargets = new Set(profiles.map(p => p.address));
+		selectedTargets = new Set(profiles.map((p) => p.address));
 	}
 
 	function deselectAll() {
@@ -57,13 +48,16 @@
 		let finalTargets = Array.from(selectedTargets);
 
 		// Add connected wallet if requested and not already included
-		if (includeMyself && connectedAddress) {
-			const alreadyIncluded = finalTargets.some(target =>
-				isAddressEqual(target as Address, connectedAddress)
-			);
+		if (includeMyself) {
+			const currentAddress = $adminStore.address;
+			if (currentAddress) {
+				const alreadyIncluded = finalTargets.some((target) =>
+					isAddressEqual(target as Address, currentAddress)
+				);
 
-			if (!alreadyIncluded) {
-				finalTargets.push(connectedAddress as string);
+				if (!alreadyIncluded) {
+					finalTargets.push(currentAddress as string);
+				}
 			}
 		}
 
@@ -118,8 +112,18 @@
 
 			{#if error}
 				<div class="alert alert-error mt-4">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-6 w-6 shrink-0 stroke-current"
+						fill="none"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
 					</svg>
 					<span>{error}</span>
 				</div>
@@ -127,8 +131,18 @@
 
 			{#if txHash}
 				<div class="alert alert-success mt-4">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-6 w-6 shrink-0 stroke-current"
+						fill="none"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
 					</svg>
 					<div>
 						<p>Drill started successfully!</p>
@@ -138,9 +152,11 @@
 			{/if}
 
 			<div class="mt-4">
-				{#if connectedAddress}
+				{#if $adminStore.address}
 					<div class="mb-4">
-						<label class="label cursor-pointer justify-start gap-2 bg-primary/5 border border-primary/20 rounded-lg p-3">
+						<label
+							class="label bg-primary/5 border-primary/20 cursor-pointer justify-start gap-2 rounded-lg border p-3"
+						>
 							<input
 								type="checkbox"
 								class="checkbox checkbox-primary"
@@ -149,16 +165,19 @@
 							/>
 							<div class="flex flex-col">
 								<span class="font-medium">Include myself as target</span>
-								<span class="text-xs font-mono opacity-60">
-									{connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
+								<span class="font-mono text-xs opacity-60">
+									{$adminStore.address.slice(0, 6)}...{$adminStore.address.slice(-4)}
 								</span>
 							</div>
 						</label>
 					</div>
 				{/if}
 
-				<div class="flex justify-between items-center mb-2">
-					<p class="text-sm">Select Security Council members for the drill ({selectedTargets.size + (includeMyself ? 1 : 0)}/12 selected)</p>
+				<div class="mb-2 flex items-center justify-between">
+					<p class="text-sm">
+						Select Security Council members for the drill ({selectedTargets.size +
+							(includeMyself ? 1 : 0)}/12 selected)
+					</p>
 					<div class="btn-group">
 						<button class="btn btn-xs" onclick={selectAll} disabled={isSubmitting}>
 							Select All
@@ -169,7 +188,7 @@
 					</div>
 				</div>
 
-				<div class="max-h-96 overflow-y-auto border rounded-lg p-2">
+				<div class="max-h-96 overflow-y-auto rounded-lg border p-2">
 					<div class="grid grid-cols-2 gap-2">
 						{#each profiles as profile}
 							<label class="label cursor-pointer justify-start gap-2">
@@ -182,7 +201,7 @@
 								/>
 								<div class="flex flex-col">
 									<span class="font-medium">{profile.name}</span>
-									<span class="text-xs font-mono opacity-60">
+									<span class="font-mono text-xs opacity-60">
 										{profile.address.slice(0, 6)}...{profile.address.slice(-4)}
 									</span>
 								</div>
@@ -205,13 +224,7 @@
 						Start Drill
 					{/if}
 				</button>
-				<button
-					class="btn"
-					onclick={handleClose}
-					disabled={isSubmitting}
-				>
-					Cancel
-				</button>
+				<button class="btn" onclick={handleClose} disabled={isSubmitting}> Cancel </button>
 			</div>
 		</div>
 		<button onclick={handleClose} class="modal-backdrop" disabled={isSubmitting}>Close</button>

@@ -5,7 +5,8 @@ import { defineChain } from 'viem';
 import { http } from '@wagmi/core';
 
 // Use a placeholder project ID if not configured
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '2f05a2c33e87c088e2f5b1e30f6d7e76';
+const projectId =
+	import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '2f05a2c33e87c088e2f5b1e30f6d7e76';
 
 // Define Taiko chain
 const taiko = defineChain({
@@ -14,16 +15,16 @@ const taiko = defineChain({
 	nativeCurrency: {
 		decimals: 18,
 		name: 'Ether',
-		symbol: 'ETH',
+		symbol: 'ETH'
 	},
 	rpcUrls: {
 		default: {
-			http: ['https://rpc.mainnet.taiko.xyz'],
-		},
+			http: ['https://rpc.mainnet.taiko.xyz']
+		}
 	},
 	blockExplorers: {
-		default: { name: 'Taikoscan', url: 'https://taikoscan.io' },
-	},
+		default: { name: 'Taikoscan', url: 'https://taikoscan.io' }
+	}
 });
 
 const metadata = {

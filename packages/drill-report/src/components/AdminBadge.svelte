@@ -37,8 +37,6 @@
 			Admin
 		</div>
 	{:else if adminStatus.error}
-		<div class="badge badge-error" title={adminStatus.error}>
-			Error
-		</div>
+		<div class="badge badge-error" title={adminStatus.error}>Error</div>
 	{/if}
 {/if}

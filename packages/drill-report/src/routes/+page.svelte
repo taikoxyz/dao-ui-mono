@@ -1,6 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createPublicClient, http, type PublicClient, parseAbiItem, type Log, isAddressEqual, getAddress } from 'viem';
+	import {
+		createPublicClient,
+		http,
+		type PublicClient,
+		parseAbiItem,
+		type Log,
+		isAddressEqual,
+		getAddress
+	} from 'viem';
 	import { mainnet } from 'viem/chains';
 	import { ABIs } from '../abi';
 	import config from '../config/mainnet.config.json';
@@ -118,7 +126,10 @@
 
 					if (
 						owner &&
-						!isAddressEqual(owner as unknown as `0x${string}`, '0x0000000000000000000000000000000000000000')
+						!isAddressEqual(
+							owner as unknown as `0x${string}`,
+							'0x0000000000000000000000000000000000000000'
+						)
 					) {
 						targetAccounts[target] = owner as unknown as string;
 					}
@@ -449,7 +460,7 @@
 			<div class="mb-6">
 				<PingButton
 					drillNonce={currentDrillNonce}
-					targets={targets}
+					{targets}
 					onPingSuccess={() => fetchDrillData()}
 				/>
 			</div>
@@ -559,8 +570,14 @@
 										return targets.indexOf(a) - targets.indexOf(b);
 									}
 								}) as target, index (target)}
-									{@const isConnectedWallet = connectedWallet && isAddressEqual(target as `0x${string}`, connectedWallet as `0x${string}`)}
-									<tr class="hover:opacity-80 {isConnectedWallet ? 'bg-primary/10 border-l-4 border-primary' : ''}">
+									{@const isConnectedWallet =
+										connectedWallet &&
+										isAddressEqual(target as `0x${string}`, connectedWallet as `0x${string}`)}
+									<tr
+										class="hover:opacity-80 {isConnectedWallet
+											? 'bg-primary/10 border-primary border-l-4'
+											: ''}"
+									>
 										<td class="px-4 py-3 text-sm">
 											{index + 1}
 											{#if isConnectedWallet}

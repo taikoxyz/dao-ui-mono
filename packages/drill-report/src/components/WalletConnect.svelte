@@ -49,9 +49,7 @@
 
 <div bind:this={container} class="wallet-button-container">
 	{#if !isInitialized}
-		<button class="btn btn-primary" disabled>
-			Loading wallet...
-		</button>
+		<button class="btn btn-primary" disabled> Loading wallet... </button>
 	{/if}
 </div>
 

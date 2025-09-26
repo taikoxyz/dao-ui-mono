@@ -26,7 +26,7 @@ export async function checkAdminRole(address: Address): Promise<boolean> {
 			address: DRILL_CONTRACT_ADDRESS,
 			abi: ABIs.SecurityCouncilDrill,
 			functionName: 'hasRole',
-			args: [DEFAULT_ADMIN_ROLE, address],
+			args: [DEFAULT_ADMIN_ROLE, address]
 		});
 
 		return hasRole as boolean;
@@ -44,7 +44,7 @@ export async function getDrillNonce(): Promise<bigint> {
 		const nonce = await readContract(config, {
 			address: DRILL_CONTRACT_ADDRESS,
 			abi: ABIs.SecurityCouncilDrill,
-			functionName: 'drillNonce',
+			functionName: 'drillNonce'
 		});
 
 		return nonce as bigint;
@@ -63,7 +63,7 @@ export async function getDrillTargets(drillNonce: bigint): Promise<Address[]> {
 			address: DRILL_CONTRACT_ADDRESS,
 			abi: ABIs.SecurityCouncilDrill,
 			functionName: 'getTargets',
-			args: [drillNonce],
+			args: [drillNonce]
 		});
 
 		return targets as Address[];
@@ -76,7 +76,9 @@ export async function getDrillTargets(drillNonce: bigint): Promise<Address[]> {
 /**
  * Start a new drill with specified targets
  */
-export async function startDrill(targets: Address[]): Promise<{ hash: string; success: boolean; error?: string }> {
+export async function startDrill(
+	targets: Address[]
+): Promise<{ hash: string; success: boolean; error?: string }> {
 	try {
 		// Validate targets
 		if (!targets || targets.length === 0) {
@@ -92,24 +94,24 @@ export async function startDrill(targets: Address[]): Promise<{ hash: string; su
 			address: DRILL_CONTRACT_ADDRESS,
 			abi: ABIs.SecurityCouncilDrill,
 			functionName: 'start',
-			args: [targets],
+			args: [targets]
 		});
 
 		// Wait for transaction confirmation
 		const receipt = await waitForTransactionReceipt(config, {
-			hash,
+			hash
 		});
 
 		return {
 			hash,
-			success: receipt.status === 'success',
+			success: receipt.status === 'success'
 		};
 	} catch (error: any) {
 		console.error('Error starting drill:', error);
 		return {
 			hash: '',
 			success: false,
-			error: error?.message || 'Failed to start drill',
+			error: error?.message || 'Failed to start drill'
 		};
 	}
 }
@@ -123,7 +125,7 @@ export async function isTargetInDrill(drillNonce: bigint, address: Address): Pro
 			address: DRILL_CONTRACT_ADDRESS,
 			abi: ABIs.SecurityCouncilDrill,
 			functionName: 'isTarget',
-			args: [drillNonce, address],
+			args: [drillNonce, address]
 		});
 
 		return isTarget as boolean;
@@ -142,7 +144,7 @@ export async function hasPinged(drillNonce: bigint, address: Address): Promise<b
 			address: DRILL_CONTRACT_ADDRESS,
 			abi: ABIs.SecurityCouncilDrill,
 			functionName: 'hasPinged',
-			args: [drillNonce, address],
+			args: [drillNonce, address]
 		});
 
 		return pinged as boolean;
@@ -155,7 +157,9 @@ export async function hasPinged(drillNonce: bigint, address: Address): Promise<b
 /**
  * Ping the drill to confirm participation
  */
-export async function pingDrill(drillNonce: bigint): Promise<{ hash: string; success: boolean; error?: string }> {
+export async function pingDrill(
+	drillNonce: bigint
+): Promise<{ hash: string; success: boolean; error?: string }> {
 	try {
 		console.log('Pinging drill with nonce:', drillNonce);
 
@@ -164,17 +168,17 @@ export async function pingDrill(drillNonce: bigint): Promise<{ hash: string; suc
 			address: DRILL_CONTRACT_ADDRESS,
 			abi: ABIs.SecurityCouncilDrill,
 			functionName: 'ping',
-			args: [drillNonce],
+			args: [drillNonce]
 		});
 
 		// Wait for transaction confirmation
 		const receipt = await waitForTransactionReceipt(config, {
-			hash,
+			hash
 		});
 
 		return {
 			hash,
-			success: receipt.status === 'success',
+			success: receipt.status === 'success'
 		};
 	} catch (error: any) {
 		console.error('Error pinging drill:', error);
@@ -192,7 +196,7 @@ export async function pingDrill(drillNonce: bigint): Promise<{ hash: string; suc
 		return {
 			hash: '',
 			success: false,
-			error: errorMessage,
+			error: errorMessage
 		};
 	}
 }

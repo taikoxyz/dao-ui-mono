@@ -40,7 +40,7 @@ export async function waitForWallet(maxAttempts = 10): Promise<ReturnType<typeof
 		}
 
 		// Wait before next attempt
-		await new Promise(resolve => setTimeout(resolve, 500));
+		await new Promise((resolve) => setTimeout(resolve, 500));
 	}
 
 	console.log('Wallet not ready after max attempts');

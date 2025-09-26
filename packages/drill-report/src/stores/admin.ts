@@ -28,7 +28,7 @@ function createAdminStore() {
 		}
 
 		// Set loading state
-		update(state => ({ ...state, isLoading: true, error: null }));
+		update((state) => ({ ...state, isLoading: true, error: null }));
 
 		try {
 			console.log('Checking admin role for address:', address);
@@ -117,17 +117,18 @@ function createAdminStore() {
 	return {
 		subscribe,
 		checkAdmin,
-		reset: () => set({
-			isAdmin: false,
-			address: undefined,
-			isLoading: false,
-			error: null
-		})
+		reset: () =>
+			set({
+				isAdmin: false,
+				address: undefined,
+				isLoading: false,
+				error: null
+			})
 	};
 }
 
 export const adminStore = createAdminStore();
 
 // Derived store for easy access to admin status
-export const isAdmin = derived(adminStore, $adminStore => $adminStore.isAdmin);
-export const isCheckingAdmin = derived(adminStore, $adminStore => $adminStore.isLoading);
+export const isAdmin = derived(adminStore, ($adminStore) => $adminStore.isAdmin);
+export const isCheckingAdmin = derived(adminStore, ($adminStore) => $adminStore.isLoading);
