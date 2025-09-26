@@ -41,16 +41,16 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
 
   // Convert approvals to votes format
   const approvalVotes = approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [];
-  
-  // Check if current user has already approved  
+
+  // Check if current user has already approved
   const { address } = useAccount();
-  const hasApproved = approvals?.some(approval => approval.approver === address) ?? false;
-  
+  const hasApproved = approvals?.some((approval) => approval.approver === address) ?? false;
+
   // Determine status
   const getApprovalStatus = () => {
-    if (proposal?.executed) return 'executed';
-    if ((proposal?.approvals ?? 0) >= (proposal?.parameters.minApprovals ?? 0)) return 'approved';
-    return 'pending';
+    if (proposal?.executed) return "executed";
+    if ((proposal?.approvals ?? 0) >= (proposal?.parameters.minApprovals ?? 0)) return "approved";
+    return "pending";
   };
 
   if (!proposal || showProposalLoading) {
@@ -101,16 +101,19 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
             <div className="flex w-full flex-col gap-x-12 gap-y-6 md:flex-row">
               <div className="flex flex-col gap-y-6 md:w-[63%] md:shrink-0">
                 <BodySection body={proposal.description ?? "No description was provided"} />
-                
+
                 {/* Emergency Security Council Approval Stage */}
                 <div className="flex flex-col gap-4">
                   <div>
-                    <Heading size="h2" className="mb-3">Emergency Security Council Approval</Heading>
-                    <p className="text-base text-neutral-600 mb-6">
-                      The onchain emergency multisig flow allows its members to create proposals that, if approved by a super majority, will be executed directly by the DAO.
+                    <Heading size="h2" className="mb-3">
+                      Emergency Security Council Approval
+                    </Heading>
+                    <p className="mb-6 text-base text-neutral-600">
+                      The onchain emergency multisig flow allows its members to create proposals that, if approved by a
+                      super majority, will be executed directly by the DAO.
                     </p>
                   </div>
-                  
+
                   <SecurityCouncilApprovalStage
                     status={getApprovalStatus()}
                     approvals={proposal?.approvals ?? 0}
