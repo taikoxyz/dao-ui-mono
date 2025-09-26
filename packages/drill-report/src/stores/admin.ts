@@ -31,9 +31,7 @@ function createAdminStore() {
 		update((state) => ({ ...state, isLoading: true, error: null }));
 
 		try {
-			console.log('Checking admin role for address:', address);
 			const isAdmin = await checkAdminRole(address);
-			console.log('Admin check result:', isAdmin);
 			set({
 				isAdmin,
 				address,
@@ -55,7 +53,6 @@ function createAdminStore() {
 	const initializeWalletCheck = async () => {
 		// Wait for wallet to be ready
 		const account = await waitForWallet();
-		console.log('Initial wallet check on store creation:', account);
 		if (account.address) {
 			checkAdmin(account.address);
 		}
@@ -63,12 +60,9 @@ function createAdminStore() {
 
 	// Watch for account changes
 	if (typeof window !== 'undefined') {
-		console.log('Setting up account watcher');
-
 		// Set up the watcher
 		const unwatch = watchAccount(config, {
 			onChange(account) {
-				console.log('Account changed:', account);
 				// Clear any pending check
 				if (checkTimeout) {
 					clearTimeout(checkTimeout);
@@ -101,7 +95,6 @@ function createAdminStore() {
 			const account = getAccount(config);
 			const currentState = get(adminStore);
 			if (account.address && account.address !== currentState.address) {
-				console.log('Detected different wallet address:', account.address);
 				checkAdmin(account.address);
 			}
 		}, 5000);

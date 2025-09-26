@@ -12,10 +12,6 @@
 		adminStatus = $adminStore;
 	});
 
-	onMount(() => {
-		console.log('AdminNavbar mounted, initial admin state:', admin);
-	});
-
 	function handleDrillSuccess() {
 		showStartDrillModal = false;
 		// Could trigger a global refresh here if needed

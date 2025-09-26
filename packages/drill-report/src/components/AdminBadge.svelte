@@ -11,10 +11,6 @@
 		checking = $isCheckingAdmin;
 		adminStatus = $adminStore;
 	});
-
-	onMount(() => {
-		console.log('AdminBadge mounted, admin:', $isAdmin);
-	});
 </script>
 
 {#if adminStatus.address}

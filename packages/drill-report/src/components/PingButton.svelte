@@ -31,10 +31,6 @@
 			const account = getAccount(config);
 			connectedAddress = account.address;
 
-			console.log('PingButton - Checking status for wallet:', connectedAddress);
-			console.log('PingButton - Drill nonce:', drillNonce);
-			console.log('PingButton - Targets:', targets);
-
 			if (!connectedAddress) {
 				isTarget = false;
 				alreadyPinged = false;
@@ -47,17 +43,13 @@
 				isAddressEqual(target as Address, connectedAddress)
 			);
 
-			console.log('PingButton - Is target (local check):', targetCheck);
-
 			// Double check with contract
 			if (targetCheck) {
 				isTarget = await isTargetInDrill(drillNonce, connectedAddress);
-				console.log('PingButton - Is target (contract check):', isTarget);
 
 				if (isTarget) {
 					// Check if already pinged
 					alreadyPinged = await hasPinged(drillNonce, connectedAddress);
-					console.log('PingButton - Already pinged:', alreadyPinged);
 				}
 			} else {
 				isTarget = false;

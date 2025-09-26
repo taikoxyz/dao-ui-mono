@@ -1,6 +1,7 @@
 import { readContract, writeContract, waitForTransactionReceipt } from '@wagmi/core';
 import { config } from '$lib/wagmi';
 import type { Address } from 'viem';
+import { zeroHash } from 'viem';
 import { ABIs } from '../abi';
 import mainnetConfig from '../config/mainnet.config.json';
 
@@ -8,7 +9,7 @@ import mainnetConfig from '../config/mainnet.config.json';
 const DRILL_CONTRACT_ADDRESS = mainnetConfig.contracts.SecurityCouncilDrill as Address;
 
 // The DEFAULT_ADMIN_ROLE is typically 0x00... (32 bytes of zeros)
-const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000';
+const DEFAULT_ADMIN_ROLE = zeroHash;
 
 export interface AdminStatus {
 	isAdmin: boolean;
@@ -161,8 +162,6 @@ export async function pingDrill(
 	drillNonce: bigint
 ): Promise<{ hash: string; success: boolean; error?: string }> {
 	try {
-		console.log('Pinging drill with nonce:', drillNonce);
-
 		// Write to the contract
 		const hash = await writeContract(config, {
 			address: DRILL_CONTRACT_ADDRESS,
