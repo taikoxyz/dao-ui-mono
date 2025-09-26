@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createPublicClient, http, type PublicClient, parseAbiItem, type Log } from 'viem';
+	import { createPublicClient, http, type PublicClient, parseAbiItem, type Log, isAddressEqual, getAddress } from 'viem';
 	import { mainnet } from 'viem/chains';
 	import { ABIs } from '../abi';
 	import config from '../config/mainnet.config.json';
 	import securityCouncilProfiles from '../../../ui/src/data/security-council-profiles.json';
+	import AdminPanel from '../components/AdminPanel.svelte';
 
 	let maxDrillNonce: bigint | null = null;
 	let currentDrillNonce: bigint = 1n;
@@ -25,7 +26,14 @@
 	// Create a map of addresses to names from the profiles
 	const profileMap: Record<string, string> = {};
 	securityCouncilProfiles.forEach((profile: { address: string; name: string }) => {
-		profileMap[profile.address.toLowerCase()] = profile.name;
+		try {
+			// Use getAddress to normalize the address to checksummed format
+			const normalizedAddress = getAddress(profile.address);
+			profileMap[normalizedAddress] = profile.name;
+		} catch {
+			// Fallback if address is invalid
+			profileMap[profile.address.toLowerCase()] = profile.name;
+		}
 	});
 
 	async function fetchMaxDrillNonce() {
@@ -107,7 +115,7 @@
 
 					if (
 						owner &&
-						(owner as unknown as string) !== '0x0000000000000000000000000000000000000000'
+						!isAddressEqual(owner as unknown as `0x${string}`, '0x0000000000000000000000000000000000000000')
 					) {
 						targetAccounts[target] = owner as unknown as string;
 					}
@@ -420,6 +428,11 @@
 					</div>
 				</div>
 			</div>
+		</div>
+
+		<!-- Admin Panel -->
+		<div class="mb-6">
+			<AdminPanel />
 		</div>
 
 		<!-- Drill Data -->
