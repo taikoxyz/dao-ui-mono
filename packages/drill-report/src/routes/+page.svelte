@@ -5,7 +5,9 @@
 	import { ABIs } from '../abi';
 	import config from '../config/mainnet.config.json';
 	import securityCouncilProfiles from '../../../ui/src/data/security-council-profiles.json';
-	import AdminPanel from '../components/AdminPanel.svelte';
+	import PingButton from '../components/PingButton.svelte';
+	import { getAccount } from '@wagmi/core';
+	import { config as wagmiConfig } from '../lib/wagmi';
 
 	let maxDrillNonce: bigint | null = null;
 	let currentDrillNonce: bigint = 1n;
@@ -22,6 +24,7 @@
 	let drillStartBlock: bigint | null = null;
 	let drillStartTimestamp: bigint | null = null;
 	let targetAccounts: Record<string, string | null> = {}; // Maps delegated address to main account
+	let connectedWallet: string | null = null;
 
 	// Create a map of addresses to names from the profiles
 	const profileMap: Record<string, string> = {};
@@ -332,6 +335,17 @@
 
 	onMount(() => {
 		fetchMaxDrillNonce();
+
+		// Check connected wallet periodically
+		const checkWallet = () => {
+			const account = getAccount(wagmiConfig);
+			connectedWallet = account.address || null;
+		};
+
+		checkWallet();
+		const interval = setInterval(checkWallet, 2000);
+
+		return () => clearInterval(interval);
 	});
 </script>
 
@@ -430,10 +444,16 @@
 			</div>
 		</div>
 
-		<!-- Admin Panel -->
-		<div class="mb-6">
-			<AdminPanel />
-		</div>
+		<!-- Ping Button for Targets -->
+		{#if targets.length > 0}
+			<div class="mb-6">
+				<PingButton
+					drillNonce={currentDrillNonce}
+					targets={targets}
+					onPingSuccess={() => fetchDrillData()}
+				/>
+			</div>
+		{/if}
 
 		<!-- Drill Data -->
 		<div class="card bg-base-200 shadow-xl">
@@ -539,8 +559,14 @@
 										return targets.indexOf(a) - targets.indexOf(b);
 									}
 								}) as target, index (target)}
-									<tr class="hover:opacity-80">
-										<td class="px-4 py-3 text-sm">{index + 1}</td>
+									{@const isConnectedWallet = connectedWallet && isAddressEqual(target as `0x${string}`, connectedWallet as `0x${string}`)}
+									<tr class="hover:opacity-80 {isConnectedWallet ? 'bg-primary/10 border-l-4 border-primary' : ''}">
+										<td class="px-4 py-3 text-sm">
+											{index + 1}
+											{#if isConnectedWallet}
+												<span class="badge badge-primary badge-xs ml-2">You</span>
+											{/if}
+										</td>
 										<td class="px-4 py-3">
 											{#if targetAccounts[target] && profileMap[targetAccounts[target].toLowerCase()]}
 												{#if pingDetails[target] && pingDetails[target].transactionHash}

@@ -113,3 +113,86 @@ export async function startDrill(targets: Address[]): Promise<{ hash: string; su
 		};
 	}
 }
+
+/**
+ * Check if a wallet address is a target in a specific drill
+ */
+export async function isTargetInDrill(drillNonce: bigint, address: Address): Promise<boolean> {
+	try {
+		const isTarget = await readContract(config, {
+			address: DRILL_CONTRACT_ADDRESS,
+			abi: ABIs.SecurityCouncilDrill,
+			functionName: 'isTarget',
+			args: [drillNonce, address],
+		});
+
+		return isTarget as boolean;
+	} catch (error) {
+		console.error('Error checking if target in drill:', error);
+		return false;
+	}
+}
+
+/**
+ * Check if a wallet has already pinged in a specific drill
+ */
+export async function hasPinged(drillNonce: bigint, address: Address): Promise<boolean> {
+	try {
+		const pinged = await readContract(config, {
+			address: DRILL_CONTRACT_ADDRESS,
+			abi: ABIs.SecurityCouncilDrill,
+			functionName: 'hasPinged',
+			args: [drillNonce, address],
+		});
+
+		return pinged as boolean;
+	} catch (error) {
+		console.error('Error checking ping status:', error);
+		return false;
+	}
+}
+
+/**
+ * Ping the drill to confirm participation
+ */
+export async function pingDrill(drillNonce: bigint): Promise<{ hash: string; success: boolean; error?: string }> {
+	try {
+		console.log('Pinging drill with nonce:', drillNonce);
+
+		// Write to the contract
+		const hash = await writeContract(config, {
+			address: DRILL_CONTRACT_ADDRESS,
+			abi: ABIs.SecurityCouncilDrill,
+			functionName: 'ping',
+			args: [drillNonce],
+		});
+
+		// Wait for transaction confirmation
+		const receipt = await waitForTransactionReceipt(config, {
+			hash,
+		});
+
+		return {
+			hash,
+			success: receipt.status === 'success',
+		};
+	} catch (error: any) {
+		console.error('Error pinging drill:', error);
+
+		// Parse common error messages
+		let errorMessage = 'Failed to ping drill';
+		if (error?.message?.includes('AlreadyPinged')) {
+			errorMessage = 'You have already pinged this drill';
+		} else if (error?.message?.includes('NotAuthorized')) {
+			errorMessage = 'You are not authorized to ping this drill';
+		} else if (error?.message) {
+			errorMessage = error.message;
+		}
+
+		return {
+			hash: '',
+			success: false,
+			error: errorMessage,
+		};
+	}
+}

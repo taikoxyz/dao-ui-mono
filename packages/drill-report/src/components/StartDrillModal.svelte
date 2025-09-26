@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { startDrill } from '../services/drill-admin';
+	import { adminStore } from '../stores/admin';
 	import type { Address } from 'viem';
+	import { isAddressEqual } from 'viem';
 	import securityCouncilProfiles from '../../../ui/src/data/security-council-profiles.json';
 
 	interface Props {
@@ -12,15 +14,25 @@
 	let { show = $bindable(), onClose, onSuccess }: Props = $props();
 
 	let selectedTargets = $state<Set<string>>(new Set());
+	let includeMyself = $state(false);
 	let isSubmitting = $state(false);
 	let error = $state<string | null>(null);
 	let txHash = $state<string | null>(null);
+
+	let connectedAddress = $state<Address | undefined>(undefined);
 
 	// Create a map of addresses to names from the profiles
 	const profiles = securityCouncilProfiles.map((profile: any) => ({
 		address: profile.address.toLowerCase(),
 		name: profile.name,
 	}));
+
+	// Get connected address when modal shows
+	$effect(() => {
+		if (show && $adminStore.address) {
+			connectedAddress = $adminStore.address;
+		}
+	});
 
 	function toggleTarget(address: string) {
 		const newSet = new Set(selectedTargets);
@@ -41,12 +53,26 @@
 	}
 
 	async function handleStartDrill() {
-		if (selectedTargets.size === 0) {
+		// Build the final targets list
+		let finalTargets = Array.from(selectedTargets);
+
+		// Add connected wallet if requested and not already included
+		if (includeMyself && connectedAddress) {
+			const alreadyIncluded = finalTargets.some(target =>
+				isAddressEqual(target as Address, connectedAddress)
+			);
+
+			if (!alreadyIncluded) {
+				finalTargets.push(connectedAddress as string);
+			}
+		}
+
+		if (finalTargets.length === 0) {
 			error = 'Please select at least one target';
 			return;
 		}
 
-		if (selectedTargets.size > 12) {
+		if (finalTargets.length > 12) {
 			error = 'Maximum 12 targets allowed';
 			return;
 		}
@@ -56,8 +82,7 @@
 		txHash = null;
 
 		try {
-			const targets = Array.from(selectedTargets) as Address[];
-			const result = await startDrill(targets);
+			const result = await startDrill(finalTargets as Address[]);
 
 			if (result.success) {
 				txHash = result.hash;
@@ -78,6 +103,7 @@
 	function handleClose() {
 		if (!isSubmitting) {
 			selectedTargets = new Set();
+			includeMyself = false;
 			error = null;
 			txHash = null;
 			onClose();
@@ -112,8 +138,27 @@
 			{/if}
 
 			<div class="mt-4">
+				{#if connectedAddress}
+					<div class="mb-4">
+						<label class="label cursor-pointer justify-start gap-2 bg-primary/5 border border-primary/20 rounded-lg p-3">
+							<input
+								type="checkbox"
+								class="checkbox checkbox-primary"
+								bind:checked={includeMyself}
+								disabled={isSubmitting}
+							/>
+							<div class="flex flex-col">
+								<span class="font-medium">Include myself as target</span>
+								<span class="text-xs font-mono opacity-60">
+									{connectedAddress.slice(0, 6)}...{connectedAddress.slice(-4)}
+								</span>
+							</div>
+						</label>
+					</div>
+				{/if}
+
 				<div class="flex justify-between items-center mb-2">
-					<p class="text-sm">Select Security Council members for the drill ({selectedTargets.size}/12 selected)</p>
+					<p class="text-sm">Select Security Council members for the drill ({selectedTargets.size + (includeMyself ? 1 : 0)}/12 selected)</p>
 					<div class="btn-group">
 						<button class="btn btn-xs" onclick={selectAll} disabled={isSubmitting}>
 							Select All
@@ -151,7 +196,7 @@
 				<button
 					class="btn btn-primary"
 					onclick={handleStartDrill}
-					disabled={isSubmitting || selectedTargets.size === 0}
+					disabled={isSubmitting || (selectedTargets.size === 0 && !includeMyself)}
 				>
 					{#if isSubmitting}
 						<span class="loading loading-spinner loading-sm"></span>
