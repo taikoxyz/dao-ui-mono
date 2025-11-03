@@ -1,26 +1,15 @@
-import { PUB_CHAIN, PUB_CHAIN_NAME, PUB_WEB3_ENDPOINT } from "@/constants";
+import { PUB_CHAIN, PUB_CHAIN_NAME } from "@/constants";
+import { config } from "@/context/Web3Modal";
 import { formatHexString } from "@/utils/evm";
 import { MemberAvatar } from "@aragon/ods";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import classNames from "classnames";
 import { useEffect } from "react";
-import { createClient, http } from "viem";
 import { normalize } from "viem/ens";
-import { createConfig, useAccount, useEnsAvatar, useEnsName, useSwitchChain } from "wagmi";
+import { useAccount, useEnsAvatar, useEnsName, useSwitchChain } from "wagmi";
 import { holesky, mainnet } from "wagmi/chains";
 
 const activeChain = PUB_CHAIN_NAME === "holesky" ? holesky : mainnet;
-
-const config = createConfig({
-  chains: [mainnet, holesky],
-  ssr: true,
-  client({ chain }) {
-    return createClient({
-      chain,
-      transport: http(PUB_WEB3_ENDPOINT, { batch: true }),
-    });
-  },
-});
 
 // TODO: update with ODS wallet module - [https://linear.app/aragon/issue/RD-198/create-ods-walletmodule]
 const WalletContainer = () => {
