@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.2.1...dao-ui-v0.2.2) (2025-11-07)
+
+
+### Bug Fixes
+
+* **dao-ui:** update Daniel Wang's SC profile name to Taiko Labs ([7877386](https://github.com/taikoxyz/dao-ui-mono/commit/78773862b0654b70ceceecf6b318358456a715e9))
+
 ## [0.2.1](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.2.0...dao-ui-v0.2.1) (2025-11-05)
 
 
