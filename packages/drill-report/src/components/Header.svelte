@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import WalletConnect from './WalletConnect.svelte';
+	import AdminBadge from './AdminBadge.svelte';
 
 	let theme = $state('dark');
 
@@ -36,7 +38,9 @@
 	<div class="flex-1">
 		<a href="/" class="btn btn-ghost text-xl"> Taiko DAO Drill Report </a>
 	</div>
-	<div class="flex-none">
+	<div class="flex-none gap-2">
+		<AdminBadge />
+		<WalletConnect />
 		<label class="swap swap-rotate">
 			<input type="checkbox" checked={theme === 'dark'} onchange={toggleTheme} />
 
