@@ -60,22 +60,46 @@ async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
     if (!ipfsUri) throw new Error("Invalid IPFS URI");
   }
 
-  const uriPrefixes = PUB_IPFS_ENDPOINTS.split(",").filter((uri) => !!uri.trim());
-  if (!uriPrefixes.length) throw new Error("No available IPFS endpoints to fetch from");
-
   const cid = resolvePath(ipfsUri);
 
-  for (const uriPrefix of uriPrefixes) {
-    const controller = new AbortController();
-    const abortId = setTimeout(() => controller.abort(), IPFS_FETCH_TIMEOUT);
-    const response = await fetch(`${uriPrefix}/${cid}`, {
-      method: "GET",
-      signal: controller.signal,
-    });
-    clearTimeout(abortId);
-    if (!response.ok) continue;
+  // Try Pinata gateway with JWT authentication first
+  if (PUB_PINATA_JWT) {
+    try {
+      const controller = new AbortController();
+      const abortId = setTimeout(() => controller.abort(), IPFS_FETCH_TIMEOUT);
+      const response = await fetch(`https://gateway.pinata.cloud/ipfs/${cid}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${PUB_PINATA_JWT}`,
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(abortId);
+      if (response.ok) return response;
+    } catch {
+      // Fall through to other endpoints
+    }
+  }
 
-    return response; // .json(), .text(), .blob(), etc.
+  // Fallback to configured IPFS endpoints
+  const uriPrefixes = PUB_IPFS_ENDPOINTS.split(",").filter((uri) => !!uri.trim());
+  if (!uriPrefixes.length && !PUB_PINATA_JWT) {
+    throw new Error("No available IPFS endpoints to fetch from");
+  }
+
+  for (const uriPrefix of uriPrefixes) {
+    try {
+      const controller = new AbortController();
+      const abortId = setTimeout(() => controller.abort(), IPFS_FETCH_TIMEOUT);
+      const response = await fetch(`${uriPrefix}/${cid}`, {
+        method: "GET",
+        signal: controller.signal,
+      });
+      clearTimeout(abortId);
+      if (response.ok) return response;
+    } catch {
+      continue;
+    }
   }
 
   throw new Error("Could not connect to any of the IPFS endpoints");
