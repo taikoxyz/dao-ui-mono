@@ -15,6 +15,7 @@ import { Else, ElseIf, If, Then } from "@/components/if";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { CardEmptyState } from "@aragon/ods";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
+import { useExecutionTimestamp } from "@/hooks/useExecutionTimestamp";
 
 export default function ProposalDetail({ id: proposalId }: { id: string }) {
   const { isConnected } = useAccount();
@@ -38,6 +39,9 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     isOptimistic: false,
     isEmergency: true,
   });
+
+  // Fetch execution timestamp if proposal was executed
+  const { executionTimestamp } = useExecutionTimestamp(gqlProposal?.executionBlockNumber);
 
   // Convert approvals to votes format
   const approvalVotes = approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [];
@@ -131,6 +135,8 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
                     isEmergency={true}
                     executed={proposal?.executed ?? false}
                     snapshotBlock={Number(proposal?.parameters.snapshotBlock)}
+                    executionTxHash={gqlProposal?.executor?.txHash}
+                    executedAt={executionTimestamp ?? undefined}
                   />
                 </div>
                 <ProposalActions

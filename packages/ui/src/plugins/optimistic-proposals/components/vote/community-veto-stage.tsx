@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { Card, Tag, Button, Icon, IconType, Tabs } from "@aragon/ods";
+import { Card, Tag, Button, Icon, IconType, Tabs, Link } from "@aragon/ods";
 import { Tabs as RadixTabsRoot } from "@radix-ui/react-tabs";
 import { formatUnits } from "viem";
 import { compactNumber } from "@/utils/numbers";
@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { VotesDataList } from "@/components/proposalVoting/votesDataList/votesDataList";
 import type { IVote } from "@/utils/types";
+import { PUB_CHAIN } from "@/constants";
 
 dayjs.extend(relativeTime);
 
@@ -24,6 +25,8 @@ interface CommunityVetoStageProps {
   tokenSymbol?: string;
   votes?: IVote[];
   snapshotBlock?: number;
+  executionTxHash?: string;
+  executedAt?: number;
 }
 
 export const CommunityVetoStage: FC<CommunityVetoStageProps> = ({
@@ -40,6 +43,8 @@ export const CommunityVetoStage: FC<CommunityVetoStageProps> = ({
   tokenSymbol = "TAIKO",
   votes = [],
   snapshotBlock,
+  executionTxHash,
+  executedAt,
 }) => {
   const vetoPercentage = totalSupply > 0n ? Number((10000n * vetoCount) / totalSupply) / 100 : 0;
   const thresholdPercentage = threshold * 100;
@@ -102,7 +107,8 @@ export const CommunityVetoStage: FC<CommunityVetoStageProps> = ({
                   <p className="font-medium text-sm text-neutral-800">
                     {status === "defeated" && "Community successfully vetoed this proposal"}
                     {status === "passed" && "Veto period ended without reaching threshold"}
-                    {status === "executed" && "Proposal has been executed"}
+                    {status === "executed" &&
+                      `Proposal has been executed${executedAt ? ` on ${dayjs(executedAt).format("MMM D, YYYY [at] HH:mm")}` : ""}`}
                     {status === "active" && thresholdReached && "Veto threshold reached - proposal will be defeated"}
                     {status === "active" &&
                       !thresholdReached &&
@@ -115,6 +121,17 @@ export const CommunityVetoStage: FC<CommunityVetoStageProps> = ({
                         ? `${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} ${hoursRemaining}h remaining`
                         : `${hoursRemaining} hour${hoursRemaining !== 1 ? "s" : ""} remaining`}
                     </p>
+                  )}
+                  {status === "executed" && executionTxHash && (
+                    <Link
+                      href={`${PUB_CHAIN.blockExplorers?.default.url}/tx/${executionTxHash}`}
+                      target="_blank"
+                      variant="primary"
+                      iconRight={IconType.LINK_EXTERNAL}
+                      className="mt-2 inline-flex text-sm"
+                    >
+                      View execution transaction
+                    </Link>
                   )}
                 </div>
               </div>
@@ -275,6 +292,29 @@ export const CommunityVetoStage: FC<CommunityVetoStageProps> = ({
                 <dt className="text-sm text-neutral-500">Token</dt>
                 <dd className="font-medium text-sm text-neutral-800">{tokenSymbol}</dd>
               </div>
+              {status === "executed" && executedAt && (
+                <div>
+                  <dt className="text-sm text-neutral-500">Executed</dt>
+                  <dd className="font-medium text-sm text-neutral-800">
+                    {dayjs(executedAt).format("MMM D, YYYY HH:mm")}
+                  </dd>
+                </div>
+              )}
+              {status === "executed" && executionTxHash && (
+                <div>
+                  <dt className="text-sm text-neutral-500">Execution Transaction</dt>
+                  <dd className="font-medium text-sm text-neutral-800">
+                    <Link
+                      href={`${PUB_CHAIN.blockExplorers?.default.url}/tx/${executionTxHash}`}
+                      target="_blank"
+                      variant="primary"
+                      iconRight={IconType.LINK_EXTERNAL}
+                    >
+                      View on explorer
+                    </Link>
+                  </dd>
+                </div>
+              )}
             </dl>
           </div>
         </Tabs.Content>

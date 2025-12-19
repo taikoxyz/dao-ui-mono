@@ -7,6 +7,10 @@ import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { isAddressEqual } from "viem";
 import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import { IGqlProposalMixin } from "@/utils/gql/types";
+import { PUB_CHAIN } from "@/constants";
+import { usePublicClient } from "wagmi";
+import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 
 interface ICardResourcesProps {
   displayLink?: boolean;
@@ -27,10 +31,24 @@ export const CardResources: React.FC<ICardResourcesProps> = (props) => {
 
 const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
   const { gqlProposal, relatedProposal } = props;
+  const publicClient = usePublicClient();
 
   const creator = relatedProposal?.creator ?? gqlProposal?.creator ?? zeroAddress;
 
   const executor = relatedProposal?.executor ?? gqlProposal?.executor;
+  const executionBlockNumber = relatedProposal?.executionBlockNumber ?? gqlProposal?.executionBlockNumber;
+
+  // Fetch execution block timestamp
+  const { data: executionTimestamp } = useQuery({
+    queryKey: ["execution-block-timestamp", executionBlockNumber],
+    queryFn: async () => {
+      if (!publicClient || !executionBlockNumber) return null;
+      const block = await publicClient.getBlock({ blockNumber: BigInt(executionBlockNumber) });
+      return Number(block.timestamp) * 1000; // Convert to milliseconds
+    },
+    enabled: !!publicClient && !!executionBlockNumber && !!executor,
+    staleTime: Infinity, // Block data never changes
+  });
 
   const { data: encryptionAccounts } = useEncryptionAccountsEmergency();
   const owner =
@@ -67,14 +85,14 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
           </tr>
           <tr>
             <td>
-              <Link target="_blank" href={`https://etherscan.io/address/${relatedProposal.creator}`} variant="primary">
+              <Link target="_blank" href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${relatedProposal.creator}`} variant="primary">
                 {creatorProfile?.name}
               </Link>
             </td>
             <td>
               <Link
                 target="_blank"
-                href={`https://etherscan.io/tx/${relatedProposal.creationTxHash}`}
+                href={`${PUB_CHAIN.blockExplorers?.default.url}/tx/${relatedProposal.creationTxHash}`}
                 variant="primary"
                 iconRight={IconType.LINK_EXTERNAL}
               >
@@ -90,7 +108,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
               <td>
                 <Link
                   target="_blank"
-                  href={`https://etherscan.io/address/${approver.address}`}
+                  href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${approver.address}`}
                   variant="primary"
                   key={i}
                 >
@@ -100,7 +118,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
               <td>
                 <Link
                   target="_blank"
-                  href={`https://etherscan.io/tx/${approver.txHash}`}
+                  href={`${PUB_CHAIN.blockExplorers?.default.url}/tx/${approver.txHash}`}
                   variant="primary"
                   iconRight={IconType.LINK_EXTERNAL}
                   key={i}
@@ -122,14 +140,14 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
             <tr key={`vetoer-${i}`}>
               {" "}
               <td>
-                <Link target="_blank" href={`https://etherscan.io/address/${vetoer.address}`} variant="primary" key={i}>
+                <Link target="_blank" href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${vetoer.address}`} variant="primary" key={i}>
                   {vetoer.address.replace(/^(.{6}).*(.{4})$/, "$1...$2")}
                 </Link>
               </td>
               <td>
                 <Link
                   target="_blank"
-                  href={`https://etherscan.io/tx/${vetoer.txHash}`}
+                  href={`${PUB_CHAIN.blockExplorers?.default.url}/tx/${vetoer.txHash}`}
                   variant="primary"
                   iconRight={IconType.LINK_EXTERNAL}
                   key={i}
@@ -150,19 +168,27 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
           {!hideExecutionTx && (
             <tr>
               <td>
-                <Link target="_blank" href={`https://etherscan.io/address/${executor?.address}`} variant="primary">
+                <Link target="_blank" href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${executor?.address}`} variant="primary">
                   {executorProfile?.name}
                 </Link>
               </td>
               <td>
                 <Link
                   target="_blank"
-                  href={`https://etherscan.io/tx/${executor?.txHash}`}
+                  href={`${PUB_CHAIN.blockExplorers?.default.url}/tx/${executor?.txHash}`}
                   variant="primary"
                   iconRight={IconType.LINK_EXTERNAL}
                 >
                   tx
                 </Link>
+              </td>
+            </tr>
+          )}
+
+          {!hideExecutionTx && executionTimestamp && (
+            <tr>
+              <td colSpan={2} className="pt-1 text-sm text-neutral-500">
+                Executed {dayjs(executionTimestamp).format("MMM D, YYYY [at] HH:mm")}
               </td>
             </tr>
           )}

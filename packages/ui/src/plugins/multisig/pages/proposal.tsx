@@ -18,6 +18,7 @@ import {
   AccountEncryptionStatus,
   useAccountEncryptionStatus,
 } from "@/plugins/security-council/hooks/useAccountEncryptionStatus";
+import { useExecutionTimestamp } from "@/hooks/useExecutionTimestamp";
 
 export default function ProposalDetail({ id: proposalId }: { id: string }) {
   const {
@@ -39,6 +40,9 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     isOptimistic: false,
     isEmergency: false,
   });
+
+  // Fetch execution timestamp if proposal was executed
+  const { executionTimestamp } = useExecutionTimestamp(gqlProposal?.executionBlockNumber);
 
   // Convert approvals to votes format
   const approvalVotes = approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [];
@@ -149,6 +153,8 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
                 isEmergency={false}
                 executed={proposal?.executed ?? false}
                 snapshotBlock={Number(proposal?.parameters.snapshotBlock)}
+                executionTxHash={gqlProposal?.executor?.txHash}
+                executedAt={executionTimestamp ?? undefined}
               />
             </div>
             <ProposalActions actions={proposal.actions} />
