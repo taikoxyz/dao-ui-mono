@@ -1,9 +1,10 @@
 import { FC } from "react";
-import { Card, Tag, Button, Icon, IconType, Tabs } from "@aragon/ods";
+import { Card, Tag, Button, Icon, IconType, Tabs, Link } from "@aragon/ods";
 import { Tabs as RadixTabsRoot } from "@radix-ui/react-tabs";
 import dayjs from "dayjs";
 import { VotesDataList } from "@/components/proposalVoting/votesDataList/votesDataList";
 import type { IVote } from "@/utils/types";
+import { PUB_CHAIN } from "@/constants";
 
 interface SecurityCouncilApprovalStageProps {
   status: "pending" | "approved" | "rejected" | "executed";
@@ -22,6 +23,8 @@ interface SecurityCouncilApprovalStageProps {
   isEmergency?: boolean;
   executed?: boolean;
   snapshotBlock?: number;
+  executionTxHash?: string;
+  executedAt?: number;
 }
 
 export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps> = ({
@@ -41,6 +44,8 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
   isEmergency = false,
   executed = false,
   snapshotBlock,
+  executionTxHash,
+  executedAt,
 }) => {
   const progressPercentage = (approvals / requiredApprovals) * 100;
   const thresholdReached = approvals >= requiredApprovals;
@@ -60,7 +65,10 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
   };
 
   const getStatusMessage = () => {
-    if (executed) return "Proposal has been executed";
+    if (executed) {
+      const executedText = executedAt ? ` on ${dayjs(executedAt).format("MMM D, YYYY [at] HH:mm")}` : "";
+      return `Proposal has been executed${executedText}`;
+    }
     if (thresholdReached && isEmergency)
       return `Approved by ${approvals} of ${requiredApprovals} Security Council members - Ready for execution`;
     if (thresholdReached && !isEmergency)
@@ -113,6 +121,17 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                     <p className="mt-1 text-xs text-neutral-500">
                       Expires {dayjs(expirationDate).format("MMM D, YYYY HH:mm")}
                     </p>
+                  )}
+                  {executed && executionTxHash && (
+                    <Link
+                      href={`${PUB_CHAIN.blockExplorers?.default.url}/tx/${executionTxHash}`}
+                      target="_blank"
+                      variant="primary"
+                      iconRight={IconType.LINK_EXTERNAL}
+                      className="mt-2 inline-flex text-sm"
+                    >
+                      View execution transaction
+                    </Link>
                   )}
                 </div>
               </div>
@@ -269,6 +288,29 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                   {isEmergency ? "Emergency Proposal" : "Standard Proposal"}
                 </dd>
               </div>
+              {executed && executedAt && (
+                <div>
+                  <dt className="text-sm text-neutral-500">Executed</dt>
+                  <dd className="font-medium text-sm text-neutral-800">
+                    {dayjs(executedAt).format("MMM D, YYYY HH:mm")}
+                  </dd>
+                </div>
+              )}
+              {executed && executionTxHash && (
+                <div>
+                  <dt className="text-sm text-neutral-500">Execution Transaction</dt>
+                  <dd className="font-medium text-sm text-neutral-800">
+                    <Link
+                      href={`${PUB_CHAIN.blockExplorers?.default.url}/tx/${executionTxHash}`}
+                      target="_blank"
+                      variant="primary"
+                      iconRight={IconType.LINK_EXTERNAL}
+                    >
+                      View on explorer
+                    </Link>
+                  </dd>
+                </div>
+              )}
             </dl>
           </div>
         </Tabs.Content>

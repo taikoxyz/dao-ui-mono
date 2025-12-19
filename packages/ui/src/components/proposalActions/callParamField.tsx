@@ -1,7 +1,7 @@
-import { decodeCamelCase } from "@/utils/case";
-import { InputText, TextArea } from "@aragon/ods";
+import { InputText } from "@aragon/ods";
 import { toFunctionSignature, type AbiFunction } from "viem";
-import { resolveFieldTitle, resolveParamValue, type CallParameterFieldType } from "@/utils/abi-helpers";
+import { resolveFieldTitle, type CallParameterFieldType } from "@/utils/abi-helpers";
+import { ParamDisplay } from "./paramDisplay";
 
 interface ICallParamFiledProps {
   value: CallParameterFieldType;
@@ -13,19 +13,16 @@ interface ICallFunctionSignatureFieldProps {
 }
 
 export const CallParamField: React.FC<ICallParamFiledProps> = ({ value, idx, functionAbi }) => {
-  if (functionAbi?.type !== "function") return;
+  if (functionAbi?.type !== "function") return null;
 
-  const resolvedValue = resolveParamValue(value, functionAbi.inputs?.[idx]);
-  const label = resolveFieldTitle(functionAbi.inputs?.[idx].name ?? "", functionAbi.inputs?.[idx].type, idx);
+  const abiParam = functionAbi.inputs?.[idx];
+  const label = resolveFieldTitle(abiParam?.name ?? "", abiParam?.type, idx);
 
-  if (resolvedValue.length > 42) {
-    return <TextArea label={decodeCamelCase(label)} className="h-full w-full" value={resolvedValue} disabled={true} />;
-  }
-  return <InputText label={decodeCamelCase(label)} className="w-full" value={resolvedValue} disabled={true} />;
+  return <ParamDisplay value={value} abiParam={abiParam} label={label} />;
 };
 
 export const CallFunctionSignatureField: React.FC<ICallFunctionSignatureFieldProps> = ({ functionAbi }) => {
-  if (functionAbi?.type !== "function") return;
+  if (functionAbi?.type !== "function") return null;
 
   const sig = toFunctionSignature(functionAbi);
 

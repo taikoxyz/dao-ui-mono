@@ -24,6 +24,7 @@ import { useGetGqlRelatedProposal } from "@/utils/gql/hooks/useGetGqlRelatedProp
 import { SecurityCouncilStage } from "../components/vote/security-council-stage";
 import { CommunityVetoStage } from "../components/vote/community-veto-stage";
 import { useRouter } from "next/router";
+import { useExecutionTimestamp } from "@/hooks/useExecutionTimestamp";
 
 const ZERO = BigInt(0);
 
@@ -65,6 +66,9 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
     isStandard: !isEmergency,
     isEmergency: isEmergency,
   });
+
+  // Fetch execution timestamp if proposal was executed
+  const { executionTimestamp } = useExecutionTimestamp(gqlProposal?.executionBlockNumber);
 
   // Determine Security Council status
   // Since this is an optimistic proposal that reached public stage, Security Council has already approved it
@@ -186,6 +190,8 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
                           ) ?? []
                         }
                         snapshotBlock={Number(proposal?.parameters.snapshotTimestamp ?? 0)}
+                        executionTxHash={gqlProposal?.executor?.txHash}
+                        executedAt={executionTimestamp ?? undefined}
                       />
                     </div>
                   )}
