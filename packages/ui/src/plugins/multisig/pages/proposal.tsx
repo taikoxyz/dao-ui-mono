@@ -13,6 +13,7 @@ import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle"
 import { useAccount } from "wagmi";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useDerivedWallet } from "@/hooks/useDerivedWallet";
+import { useBlockTimestamp } from "@/hooks/useBlockTimestamp";
 import { CardEmptyState } from "@aragon/ods";
 import {
   AccountEncryptionStatus,
@@ -20,6 +21,11 @@ import {
 } from "@/plugins/security-council/hooks/useAccountEncryptionStatus";
 
 export default function ProposalDetail({ id: proposalId }: { id: string }) {
+  const { isConnected, address } = useAccount();
+  const { open } = useWeb3Modal();
+  const { publicKey, requestSignature } = useDerivedWallet();
+  const { status } = useAccountEncryptionStatus(address);
+
   const {
     proposal,
     proposalFetchStatus,
@@ -40,11 +46,21 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     isEmergency: false,
   });
 
-  // Convert approvals to votes format
-  const approvalVotes = approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [];
+  // Get the actual creation timestamp from the block number
+  const { timestamp: creationTimestamp } = useBlockTimestamp(gqlProposal?.creationBlockNumber);
 
-  // Check if current user has already approved
-  const hasApproved = approvals?.some((approval) => approval.approver === address) ?? false;
+  // Convert approvals to votes format - prefer subgraph data (gqlProposal.approvers) over event logs (approvals)
+  // The subgraph data is more reliable as event log fetching can fail or return empty
+  const approvalVotes: IVote[] =
+    (gqlProposal?.approvers?.length ?? 0) > 0
+      ? gqlProposal!.approvers.map(({ address: approverAddress }) => ({ address: approverAddress, variant: "approve" }) as IVote)
+      : approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [];
+
+  // Check if current user has already approved - check both subgraph and event data
+  const hasApproved =
+    gqlProposal?.approvers?.some((approver) => approver.address === address) ||
+    approvals?.some((approval) => approval.approver === address) ||
+    false;
 
   // Determine status
   const getApprovalStatus = () => {
@@ -52,11 +68,6 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     if ((proposal?.approvals ?? 0) >= (proposal?.parameters.minApprovals ?? 0)) return "approved";
     return "pending";
   };
-
-  const { isConnected, address } = useAccount();
-  const { open } = useWeb3Modal();
-  const { publicKey, requestSignature } = useDerivedWallet();
-  const { status } = useAccountEncryptionStatus(address);
 
   if (!isConnected) {
     return (
@@ -144,7 +155,7 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
                 onExecute={executeProposal}
                 isExecuteLoading={isConfirmingExecution}
                 hasApproved={hasApproved}
-                createdAt={Number(proposal?.parameters.snapshotBlock) * 1000} // Estimate based on snapshot
+                createdAt={creationTimestamp}
                 expirationDate={Number(proposal?.parameters.expirationDate) * 1000}
                 isEmergency={false}
                 executed={proposal?.executed ?? false}
