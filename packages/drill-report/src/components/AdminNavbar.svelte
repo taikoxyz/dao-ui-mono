@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { isAdmin, adminStore } from '../stores/admin';
 	import StartDrillModal from './StartDrillModal.svelte';
-	import { onMount } from 'svelte';
 
 	let admin = $state($isAdmin);
 	let adminStatus = $state($adminStore);

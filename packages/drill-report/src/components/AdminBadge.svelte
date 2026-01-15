@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { adminStore, isAdmin, isCheckingAdmin } from '../stores/admin';
-	import { onMount } from 'svelte';
 
 	let admin = $state($isAdmin);
 	let checking = $state($isCheckingAdmin);

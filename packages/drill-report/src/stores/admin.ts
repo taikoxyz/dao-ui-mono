@@ -1,9 +1,10 @@
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import { watchAccount, getAccount } from '@wagmi/core';
 import { config } from '$lib/wagmi';
 import { checkAdminRole, type AdminStatus } from '../services/drill-admin';
-import { waitForWallet } from '$lib/wallet-utils';
 import type { Address } from 'viem';
+
+let unwatch: (() => void) | null = null;
 
 function createAdminStore() {
 	const { subscribe, set, update } = writable<AdminStatus>({
@@ -12,8 +13,6 @@ function createAdminStore() {
 		isLoading: false,
 		error: null
 	});
-
-	let checkTimeout: NodeJS.Timeout | null = null;
 
 	// Function to check admin status for an address
 	async function checkAdmin(address: Address | undefined) {
@@ -49,32 +48,22 @@ function createAdminStore() {
 		}
 	}
 
-	// Function to initialize and check wallet
-	const initializeWalletCheck = async () => {
-		// Wait for wallet to be ready
-		const account = await waitForWallet();
+	// Initialize watcher - call this from a component's onMount
+	function init() {
+		if (typeof window === 'undefined' || unwatch) return;
+
+		// Check current account immediately
+		const account = getAccount(config);
 		if (account.address) {
 			checkAdmin(account.address);
 		}
-	};
 
-	// Watch for account changes
-	if (typeof window !== 'undefined') {
-		// Set up the watcher
-		const unwatch = watchAccount(config, {
+		// Watch for account changes
+		unwatch = watchAccount(config, {
 			onChange(account) {
-				// Clear any pending check
-				if (checkTimeout) {
-					clearTimeout(checkTimeout);
-				}
-
-				// Debounce the admin check
 				if (account.address) {
-					checkTimeout = setTimeout(() => {
-						checkAdmin(account.address);
-					}, 500);
+					checkAdmin(account.address);
 				} else {
-					// Reset if disconnected
 					set({
 						isAdmin: false,
 						address: undefined,
@@ -84,32 +73,21 @@ function createAdminStore() {
 				}
 			}
 		});
+	}
 
-		// Check after a delay to allow AppKit to initialize
-		setTimeout(() => {
-			initializeWalletCheck();
-		}, 1500);
-
-		// Also check periodically for connection state
-		const intervalId = setInterval(() => {
-			const account = getAccount(config);
-			const currentState = get(adminStore);
-			if (account.address && account.address !== currentState.address) {
-				checkAdmin(account.address);
-			}
-		}, 5000);
-
-		// Store cleanup functions
-		(window as any).__adminStoreCleanup = () => {
+	// Cleanup watcher - call this from a component's onDestroy
+	function cleanup() {
+		if (unwatch) {
 			unwatch();
-			clearInterval(intervalId);
-			if (checkTimeout) clearTimeout(checkTimeout);
-		};
+			unwatch = null;
+		}
 	}
 
 	return {
 		subscribe,
 		checkAdmin,
+		init,
+		cleanup,
 		reset: () =>
 			set({
 				isAdmin: false,

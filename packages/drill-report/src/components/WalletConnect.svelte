@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { initializeAppKit } from '$lib/wagmi';
-	import { getAccount } from '@wagmi/core';
-	import { config } from '$lib/wagmi';
 
 	let container: HTMLDivElement;
 	let isInitialized = $state(false);
@@ -22,18 +20,11 @@
 		const button = document.createElement('appkit-button');
 		container.appendChild(button);
 		isInitialized = true;
-
-		// Check connection status after button is created
-		setTimeout(() => {
-			const account = getAccount(config);
-			console.log('WalletConnect - account status after init:', account);
-		}, 1000);
 	}
 
 	onMount(() => {
 		// Initialize AppKit
-		const kit = initializeAppKit();
-		console.log('WalletConnect - AppKit initialized:', kit);
+		initializeAppKit();
 
 		// Try to create the button
 		setTimeout(createButton, 300);
@@ -56,9 +47,5 @@
 <style>
 	.wallet-button-container {
 		display: inline-block;
-	}
-
-	.hidden {
-		display: none !important;
 	}
 </style>
