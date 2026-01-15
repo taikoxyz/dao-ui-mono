@@ -126,47 +126,35 @@
 			loadingTargets = false;
 
 			// Fetch DrillStarted event to get the start block
-			// We'll search in chunks to avoid exceeding block range limits
+			// Search backwards from latest block in chunks to find the event efficiently
 			try {
 				const latestBlock = await client.getBlockNumber();
-				const contractDeployBlock = 20000000n; // Approximate deployment block for the contract
-				let searchFromBlock = contractDeployBlock;
+				const contractDeployBlock = 20000000n;
 				let drillStartedLogs: Log[] = [];
 
 				// Search in chunks of 40,000 blocks to stay under the 50,000 limit
 				const chunkSize = 40000n;
 
-				// For drill #3 and other older drills, we need to search further back
-				// Drill #3 is likely much older, so we need a wider search range
-				if (currentDrillNonce <= 3n) {
-					// For very old drills, search from contract deployment
-					searchFromBlock = contractDeployBlock;
-				} else {
-					// For all other drills, search from ~6 months back (~1.3M blocks)
-					// This ensures we catch drills that may have started a while ago
-					searchFromBlock = latestBlock - 1300000n;
-					if (searchFromBlock < contractDeployBlock) {
-						searchFromBlock = contractDeployBlock;
-					}
-				}
-
-				console.log('[DEBUG] DrillStarted search:', {
+				console.log('[DEBUG] DrillStarted search (backwards):', {
 					currentDrillNonce: currentDrillNonce.toString(),
 					maxDrillNonce: maxDrillNonce.toString(),
-					latestBlock: latestBlock.toString(),
-					searchFromBlock: searchFromBlock.toString()
+					latestBlock: latestBlock.toString()
 				});
 
 				let attempts = 0;
-				const maxAttempts = 100; // Allow more attempts for older drills
+				const maxAttempts = 200;
+				let searchToBlock = latestBlock;
 
+				// Search backwards from latest block until we find the event or hit contract deployment
 				while (
-					searchFromBlock < latestBlock &&
+					searchToBlock > contractDeployBlock &&
 					drillStartedLogs.length === 0 &&
 					attempts < maxAttempts
 				) {
-					const searchToBlock =
-						searchFromBlock + chunkSize > latestBlock ? latestBlock : searchFromBlock + chunkSize;
+					const searchFromBlock =
+						searchToBlock - chunkSize < contractDeployBlock
+							? contractDeployBlock
+							: searchToBlock - chunkSize;
 
 					try {
 						const logs = await client.getLogs({
@@ -190,7 +178,7 @@
 						console.log('[DEBUG] Chunk error at attempt', attempts, ':', chunkErr);
 					}
 
-					searchFromBlock = searchToBlock + 1n;
+					searchToBlock = searchFromBlock - 1n;
 					attempts++;
 				}
 
@@ -214,6 +202,7 @@
 			}
 
 			// Fetch ping status and events for each target in parallel
+			// Now that we have drillStartBlock, we can search forward from there
 			const pingPromises = targets.map(async (target) => {
 				try {
 					const hasPinged = await client.readContract({
@@ -230,51 +219,100 @@
 					if (hasPinged) {
 						try {
 							const latestBlock = await client.getBlockNumber();
-							let searchFromBlock = drillStartBlock || latestBlock - 500000n;
 							let pingLogs: Log[] = [];
 
-							console.log('[DEBUG] Searching DrillPinged for', target.slice(0, 10), 'from block:', searchFromBlock.toString(), 'drillStartBlock:', drillStartBlock?.toString() || 'null');
+							// If we have drillStartBlock, search forward from there (efficient)
+							// Otherwise, search backwards from latest (fallback)
+							if (drillStartBlock) {
+								console.log('[DEBUG] Searching DrillPinged for', target.slice(0, 10), 'forward from drillStartBlock:', drillStartBlock.toString());
 
-							// Search in chunks to handle large block ranges
-							const chunkSize = 40000n;
-							let attempts = 0;
-							const maxAttempts = 20; // Limit search to prevent infinite loops
+								const chunkSize = 40000n;
+								let searchFromBlock = drillStartBlock;
+								let attempts = 0;
+								const maxAttempts = 50;
 
-							while (
-								searchFromBlock < latestBlock &&
-								pingLogs.length === 0 &&
-								attempts < maxAttempts
-							) {
-								const searchToBlock =
-									searchFromBlock + chunkSize > latestBlock
-										? latestBlock
-										: searchFromBlock + chunkSize;
+								while (
+									searchFromBlock < latestBlock &&
+									pingLogs.length === 0 &&
+									attempts < maxAttempts
+								) {
+									const searchToBlock =
+										searchFromBlock + chunkSize > latestBlock
+											? latestBlock
+											: searchFromBlock + chunkSize;
 
-								try {
-									const logs = await client.getLogs({
-										address: config.contracts.SecurityCouncilDrill as `0x${string}`,
-										event: parseAbiItem(
-											'event DrillPinged(uint256 indexed drillNonce, address indexed member)'
-										),
-										args: {
-											drillNonce: currentDrillNonce,
-											member: target as `0x${string}`
-										},
-										fromBlock: searchFromBlock,
-										toBlock: searchToBlock
-									});
+									try {
+										const logs = await client.getLogs({
+											address: config.contracts.SecurityCouncilDrill as `0x${string}`,
+											event: parseAbiItem(
+												'event DrillPinged(uint256 indexed drillNonce, address indexed member)'
+											),
+											args: {
+												drillNonce: currentDrillNonce,
+												member: target as `0x${string}`
+											},
+											fromBlock: searchFromBlock,
+											toBlock: searchToBlock
+										});
 
-									if (logs.length > 0) {
-										pingLogs = logs;
-										console.log('[DEBUG] Found DrillPinged for', target.slice(0, 10), 'at block:', logs[0].blockNumber.toString());
-										break;
+										if (logs.length > 0) {
+											pingLogs = logs;
+											console.log('[DEBUG] Found DrillPinged for', target.slice(0, 10), 'at block:', logs[0].blockNumber.toString());
+											break;
+										}
+									} catch (chunkErr) {
+										console.log('[DEBUG] DrillPinged chunk error for', target.slice(0, 10), ':', chunkErr);
 									}
-								} catch (chunkErr) {
-									console.log('[DEBUG] DrillPinged chunk error for', target.slice(0, 10), ':', chunkErr);
-								}
 
-								searchFromBlock = searchToBlock + 1n;
-								attempts++;
+									searchFromBlock = searchToBlock + 1n;
+									attempts++;
+								}
+							} else {
+								// Fallback: search backwards from latest block
+								console.log('[DEBUG] Searching DrillPinged for', target.slice(0, 10), 'backwards (no drillStartBlock)');
+
+								const chunkSize = 40000n;
+								const contractDeployBlock = 20000000n;
+								let searchToBlock = latestBlock;
+								let attempts = 0;
+								const maxAttempts = 200;
+
+								while (
+									searchToBlock > contractDeployBlock &&
+									pingLogs.length === 0 &&
+									attempts < maxAttempts
+								) {
+									const searchFromBlock =
+										searchToBlock - chunkSize < contractDeployBlock
+											? contractDeployBlock
+											: searchToBlock - chunkSize;
+
+									try {
+										const logs = await client.getLogs({
+											address: config.contracts.SecurityCouncilDrill as `0x${string}`,
+											event: parseAbiItem(
+												'event DrillPinged(uint256 indexed drillNonce, address indexed member)'
+											),
+											args: {
+												drillNonce: currentDrillNonce,
+												member: target as `0x${string}`
+											},
+											fromBlock: searchFromBlock,
+											toBlock: searchToBlock
+										});
+
+										if (logs.length > 0) {
+											pingLogs = logs;
+											console.log('[DEBUG] Found DrillPinged for', target.slice(0, 10), 'at block:', logs[0].blockNumber.toString());
+											break;
+										}
+									} catch (chunkErr) {
+										console.log('[DEBUG] DrillPinged chunk error for', target.slice(0, 10), ':', chunkErr);
+									}
+
+									searchToBlock = searchFromBlock - 1n;
+									attempts++;
+								}
 							}
 
 							if (pingLogs.length > 0) {
@@ -286,7 +324,7 @@
 								};
 								console.log('[DEBUG] pingDetails set for', target.slice(0, 10), ':', pingDetails[target]);
 							} else {
-								console.log('[DEBUG] No DrillPinged found for', target.slice(0, 10), 'after', attempts, 'attempts');
+								console.log('[DEBUG] No DrillPinged found for', target.slice(0, 10));
 							}
 						} catch (err) {
 							console.error(`Error fetching ping event for ${target}:`, err);
