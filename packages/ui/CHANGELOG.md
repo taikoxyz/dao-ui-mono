@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.2](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.2.1...dao-ui-v0.2.2) (2025-11-07)
+
+
+### Bug Fixes
+
+* **dao-ui:** update Daniel Wang's SC profile name to Taiko Labs ([7877386](https://github.com/taikoxyz/dao-ui-mono/commit/78773862b0654b70ceceecf6b318358456a715e9))
+
+## [0.2.1](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.2.0...dao-ui-v0.2.1) (2025-11-05)
+
+
+### Bug Fixes
+
+* **dao-ui:** release fixes ([74540d7](https://github.com/taikoxyz/dao-ui-mono/commit/74540d735a9cf8629c9c9411f6652dfaab3700b0))
+* **dao-ui:** remove duplicate wagmi config causing React initialization error ([16a3ade](https://github.com/taikoxyz/dao-ui-mono/commit/16a3adeb3b0a1c37ebe2e1e5c4ae0c7ff1a9b6b3))
+* remove duplicate wagmi config causing React initialization error ([042280a](https://github.com/taikoxyz/dao-ui-mono/commit/042280aca1ff2966f94a99d0b372f4cf776adba7))
+
 ## [0.2.0](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.1.0...dao-ui-v0.2.0) (2025-08-12)
 
 

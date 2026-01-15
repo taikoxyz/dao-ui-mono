@@ -30,9 +30,9 @@ const ZERO = BigInt(0);
 export default function ProposalDetail({ index: proposalIdx }: { index: number }) {
   const { address } = useAccount();
   const router = useRouter();
-  
+
   // Check if we're on a security-council route to hide Stage 2
-  const isSecurityCouncilRoute = router.asPath.includes('/security-council');
+  const isSecurityCouncilRoute = router.asPath.includes("/security-council");
   const {
     proposal,
     proposalFetchStatus,
@@ -47,7 +47,6 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   const { proposalId } = useProposalId(proposalIdx);
   const { executeProposal, canExecute, isConfirming: isConfirmingExecution } = useProposalExecute(proposalIdx);
 
-
   const showProposalLoading = getShowProposalLoading(proposal, proposalFetchStatus);
   const { status: proposalStatus } = useProposalStatus(proposal!);
 
@@ -58,8 +57,6 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
     isEmergency: false,
   });
   const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp ?? BigInt(0));
-
-
 
   const { isEmergency } = useProposalStatus(proposal);
 
@@ -72,21 +69,24 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   // Determine Security Council status
   // Since this is an optimistic proposal that reached public stage, Security Council has already approved it
   const getSecurityCouncilStatus = () => {
-    if (proposal?.executed) return 'executed';
+    if (proposal?.executed) return "executed";
     // For optimistic proposals, if they exist in the public stage, they were already approved by Security Council
-    if (proposalStatus === ProposalStatus.VETOED || 
-        proposalStatus === ProposalStatus.ACCEPTED || 
-        proposalStatus === ProposalStatus.ACTIVE) return 'approved';
-    return 'pending';
+    if (
+      proposalStatus === ProposalStatus.VETOED ||
+      proposalStatus === ProposalStatus.ACCEPTED ||
+      proposalStatus === ProposalStatus.ACTIVE
+    )
+      return "approved";
+    return "pending";
   };
-  
+
   // Determine Community Veto status
   const getCommunityVetoStatus = () => {
-    if (proposal?.executed) return 'executed';
-    if (proposalStatus === ProposalStatus.VETOED) return 'defeated';
-    if (proposalStatus === ProposalStatus.ACCEPTED) return 'passed';
-    if (proposalStatus === ProposalStatus.ACTIVE) return 'active';
-    return 'pending';
+    if (proposal?.executed) return "executed";
+    if (proposalStatus === ProposalStatus.VETOED) return "defeated";
+    if (proposalStatus === ProposalStatus.ACCEPTED) return "passed";
+    if (proposalStatus === ProposalStatus.ACTIVE) return "active";
+    return "pending";
   };
 
   const hasBalance = balance !== undefined && balance > ZERO;
@@ -120,61 +120,76 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
                     canVeto={canVeto}
                   />
                 </If>
-                
+
                 {/* Voting Stages Section with clear separation */}
                 <div className="flex flex-col gap-6">
                   <div>
-                    <Heading size="h2" className="mb-3">Governance Process</Heading>
-                    <p className="text-base text-neutral-600 mb-6">
-                      Proposals approved by the Security Council become eventually executable, unless the community reaches the veto threshold during the community veto stage.
+                    <Heading size="h2" className="mb-3">
+                      Governance Process
+                    </Heading>
+                    <p className="mb-6 text-base text-neutral-600">
+                      Proposals approved by the Security Council become eventually executable, unless the community
+                      reaches the veto threshold during the community veto stage.
                     </p>
                   </div>
-                  
+
                   {/* Stage 1: Security Council Approval */}
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 bg-neutral-100 text-neutral-700 text-xs font-medium rounded">Stage 1</span>
+                      <span className="font-medium rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-700">
+                        Stage 1
+                      </span>
                     </div>
                     <SecurityCouncilStage
                       status={getSecurityCouncilStatus()}
-                      approvals={getSecurityCouncilStatus() === 'approved' ? 5 : 0} // If approved, show full approvals
+                      approvals={getSecurityCouncilStatus() === "approved" ? 5 : 0} // If approved, show full approvals
                       requiredApprovals={5}
                       createdAt={Number(proposal?.parameters.vetoStartDate ?? 0) * 1000 - 7 * 24 * 60 * 60 * 1000} // Estimate
-                      approvedAt={getSecurityCouncilStatus() === 'approved' ? Number(proposal?.parameters.vetoStartDate ?? 0) * 1000 : undefined}
+                      approvedAt={
+                        getSecurityCouncilStatus() === "approved"
+                          ? Number(proposal?.parameters.vetoStartDate ?? 0) * 1000
+                          : undefined
+                      }
                       isEmergency={false}
                     />
                   </div>
-                  
+
                   {/* Stage 2: Community Veto Period - Hidden for security-council routes */}
                   {!isSecurityCouncilRoute && (
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-1 bg-neutral-100 text-neutral-700 text-xs font-medium rounded">Stage 2</span>
+                        <span className="font-medium rounded bg-neutral-100 px-2 py-1 text-xs text-neutral-700">
+                          Stage 2
+                        </span>
                       </div>
                       <CommunityVetoStage
                         vetoCount={proposal?.vetoTally ?? BigInt(0)}
                         totalSupply={pastSupply ?? BigInt(0)}
-                        threshold={proposal?.parameters.minVetoRatio ? Number(proposal.parameters.minVetoRatio) / 1000000 : 0.1}
+                        threshold={
+                          proposal?.parameters.minVetoRatio ? Number(proposal.parameters.minVetoRatio) / 1000000 : 0.1
+                        }
                         status={getCommunityVetoStatus()}
                         startDate={Number(proposal?.parameters.vetoStartDate ?? 0) * 1000}
                         endDate={Number(proposal?.parameters.vetoEndDate ?? 0) * 1000}
                         canVeto={canVeto}
                         onVeto={vetoProposal}
                         isVetoLoading={isConfirmingVeto}
-                        hasVetoed={vetoes?.some(v => v.voter === address)}
+                        hasVetoed={vetoes?.some((v) => v.voter === address)}
                         tokenSymbol={tokenSymbol ?? "TAIKO"}
-                        votes={gqlProposal?.vetoes?.map(
-                          (veto) =>
-                            ({
-                              address: veto.address,
-                              variant: "no",
-                            }) as IVote
-                        ) ?? []}
+                        votes={
+                          gqlProposal?.vetoes?.map(
+                            (veto) =>
+                              ({
+                                address: veto.address,
+                                variant: "no",
+                              }) as IVote
+                          ) ?? []
+                        }
                         snapshotBlock={Number(proposal?.parameters.snapshotTimestamp ?? 0)}
                       />
                     </div>
                   )}
-                  
+
                   {/* Execute button for passed proposals - Hidden for security-council routes */}
                   {!isSecurityCouncilRoute && proposalStatus === ProposalStatus.ACCEPTED && (
                     <div className="mt-4">

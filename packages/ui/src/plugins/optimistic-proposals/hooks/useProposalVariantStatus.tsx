@@ -67,7 +67,7 @@ export const useProposalStatus = (proposal: OptimisticProposal | null) => {
     // Ensure vetoTally is treated as BigInt (it might be undefined or null)
     const vetoTally = proposal.vetoTally ? BigInt(proposal.vetoTally) : BigInt(0);
     const isVetoed = vetoTally >= minVetoVotingPower;
-    
+
     setStatus(
       isVetoed
         ? ProposalStatus.VETOED

@@ -10,6 +10,7 @@ import { Heading } from "@aragon/ods";
 import { ProposalActions } from "@/components/proposalActions/proposalActions";
 import { CardResources } from "@/components/proposal/cardResources";
 import { useDerivedWallet } from "../../../hooks/useDerivedWallet";
+import { useBlockTimestamp } from "@/hooks/useBlockTimestamp";
 import { useAccount } from "wagmi";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
@@ -17,8 +18,10 @@ import { CardEmptyState } from "@aragon/ods";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 
 export default function ProposalDetail({ id: proposalId }: { id: string }) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const { open } = useWeb3Modal();
+  const { publicKey, requestSignature } = useDerivedWallet();
+
   const {
     proposal,
     proposalFetchStatus,
@@ -28,7 +31,6 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     approveProposal,
   } = useProposalApprove(proposalId);
   const { executeProposal, canExecute, isConfirming: isConfirmingExecution } = useProposalExecute(proposalId);
-  const { publicKey, requestSignature } = useDerivedWallet();
 
   const showProposalLoading = getShowProposalLoading(proposal, proposalFetchStatus);
 
@@ -39,18 +41,27 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     isEmergency: true,
   });
 
-  // Convert approvals to votes format
-  const approvalVotes = approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [];
-  
-  // Check if current user has already approved  
-  const { address } = useAccount();
-  const hasApproved = approvals?.some(approval => approval.approver === address) ?? false;
-  
+  // Get the actual creation timestamp from the block number
+  const { timestamp: creationTimestamp } = useBlockTimestamp(gqlProposal?.creationBlockNumber);
+
+  // Convert approvals to votes format - prefer subgraph data (gqlProposal.approvers) over event logs (approvals)
+  // The subgraph data is more reliable as event log fetching can fail or return empty
+  const approvalVotes: IVote[] =
+    (gqlProposal?.approvers?.length ?? 0) > 0
+      ? gqlProposal!.approvers.map(({ address: approverAddress }) => ({ address: approverAddress, variant: "approve" }) as IVote)
+      : approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [];
+
+  // Check if current user has already approved - check both subgraph and event data
+  const hasApproved =
+    gqlProposal?.approvers?.some((approver) => approver.address === address) ||
+    approvals?.some((approval) => approval.approver === address) ||
+    false;
+
   // Determine status
   const getApprovalStatus = () => {
-    if (proposal?.executed) return 'executed';
-    if ((proposal?.approvals ?? 0) >= (proposal?.parameters.minApprovals ?? 0)) return 'approved';
-    return 'pending';
+    if (proposal?.executed) return "executed";
+    if ((proposal?.approvals ?? 0) >= (proposal?.parameters.minApprovals ?? 0)) return "approved";
+    return "pending";
   };
 
   if (!proposal || showProposalLoading) {
@@ -101,16 +112,19 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
             <div className="flex w-full flex-col gap-x-12 gap-y-6 md:flex-row">
               <div className="flex flex-col gap-y-6 md:w-[63%] md:shrink-0">
                 <BodySection body={proposal.description ?? "No description was provided"} />
-                
+
                 {/* Emergency Security Council Approval Stage */}
                 <div className="flex flex-col gap-4">
                   <div>
-                    <Heading size="h2" className="mb-3">Emergency Security Council Approval</Heading>
-                    <p className="text-base text-neutral-600 mb-6">
-                      The onchain emergency multisig flow allows its members to create proposals that, if approved by a super majority, will be executed directly by the DAO.
+                    <Heading size="h2" className="mb-3">
+                      Emergency Security Council Approval
+                    </Heading>
+                    <p className="mb-6 text-base text-neutral-600">
+                      The onchain emergency multisig flow allows its members to create proposals that, if approved by a
+                      super majority, will be executed directly by the DAO.
                     </p>
                   </div>
-                  
+
                   <SecurityCouncilApprovalStage
                     status={getApprovalStatus()}
                     approvals={proposal?.approvals ?? 0}
@@ -123,7 +137,7 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
                     onExecute={executeProposal}
                     isExecuteLoading={isConfirmingExecution}
                     hasApproved={hasApproved}
-                    createdAt={Number(proposal?.parameters.snapshotBlock) * 1000} // Estimate based on snapshot
+                    createdAt={creationTimestamp}
                     expirationDate={Number(proposal?.parameters.expirationDate) * 1000}
                     isEmergency={true}
                     executed={proposal?.executed ?? false}

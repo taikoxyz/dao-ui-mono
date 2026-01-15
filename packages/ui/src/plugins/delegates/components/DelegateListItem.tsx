@@ -95,16 +95,16 @@ export const DelegateListItem: React.FC<IDelegateListItemProps> = (props) => {
         <If condition={votingPowerFormatted}>
           <div className="flex h-12 flex-col gap-y-2">
             <div className="flex items-baseline gap-x-2">
-              <span className="text-neutral-500 text-sm md:text-base">Voting Power: </span>
-              <span 
-                className="text-sm md:text-base font-medium cursor-help" 
+              <span className="text-sm text-neutral-500 md:text-base">Voting Power: </span>
+              <span
+                className="font-medium cursor-help text-sm md:text-base"
                 title={votingPowerFormatted ? `${votingPowerFormatted.full} ${PUB_TOKEN_SYMBOL}` : undefined}
               >
                 {votingPowerFormatted?.formatted}
               </span>
-              <span className="text-neutral-500 text-sm">{PUB_TOKEN_SYMBOL}</span>
+              <span className="text-sm text-neutral-500">{PUB_TOKEN_SYMBOL}</span>
               {votingPowerPercentage && (
-                <span className="text-xs px-1.5 py-0.5 bg-neutral-100 text-neutral-600 rounded">
+                <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-600">
                   {votingPowerPercentage}
                 </span>
               )}

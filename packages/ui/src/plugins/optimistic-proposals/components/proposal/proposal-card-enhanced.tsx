@@ -64,7 +64,6 @@ export default function EnhancedProposalCard(props: ProposalInputs) {
     );
   }
 
-
   const thresholdPercentage = proposal?.parameters.minVetoRatio ? Number(proposal.parameters.minVetoRatio) / 10000 : 10; // Convert to percentage (e.g., 100000 -> 10%)
   const actualVetoPercentage = pastSupply > 0n ? Number((10000n * (proposal?.vetoTally ?? 0n)) / pastSupply) / 100 : 0;
   const progressPercentage = Math.min((actualVetoPercentage / thresholdPercentage) * 100, 100);
@@ -96,44 +95,56 @@ export default function EnhancedProposalCard(props: ProposalInputs) {
   // Determine Security Council status - if proposal reached public/optimistic stage, it was already approved
   const getSecurityCouncilStatus = () => {
     // Optimistic proposals only reach public voting if Security Council already approved them
-    if (proposalStatus === ProposalStatus.ACTIVE || 
-        proposalStatus === ProposalStatus.ACCEPTED || 
-        proposalStatus === ProposalStatus.VETOED || 
-        proposalStatus === ProposalStatus.EXECUTED) {
-      return 'approved';
+    if (
+      proposalStatus === ProposalStatus.ACTIVE ||
+      proposalStatus === ProposalStatus.ACCEPTED ||
+      proposalStatus === ProposalStatus.VETOED ||
+      proposalStatus === ProposalStatus.EXECUTED
+    ) {
+      return "approved";
     }
-    return 'pending';
+    return "pending";
   };
 
   const securityCouncilStatus = getSecurityCouncilStatus();
 
   return (
-    <Link href={`${prefix}#/proposals/${props.proposalIndex}`} className="w-full block">
-      <Card className="p-0 hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+    <Link href={`${prefix}#/proposals/${props.proposalIndex}`} className="block w-full">
+      <Card className="hover:shadow-lg overflow-hidden p-0 transition-shadow duration-200">
         {/* Header with proposal type */}
-        <div className="px-6 pt-4 pb-3 border-b border-neutral-100 bg-neutral-50">
+        <div className="border-b border-neutral-100 bg-neutral-50 px-6 pb-3 pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {getProposalTypeIcon()}
-              <span className="text-sm font-medium text-neutral-700">
+              <span className="font-medium text-sm text-neutral-700">
                 {isEmergency ? "Emergency Proposal" : isStandard ? "Standard Proposal" : "Proposal"}
               </span>
               <span className="text-sm text-neutral-500">#{props.proposalIndex}</span>
             </div>
             <div className="flex items-center gap-2">
               {getStatusIcon()}
-              <Tag 
+              <Tag
                 variant={
-                  proposalStatus === ProposalStatus.VETOED ? "critical" :
-                  proposalStatus === ProposalStatus.ACCEPTED ? "success" :
-                  proposalStatus === ProposalStatus.EXECUTED ? "neutral" :
-                  proposalStatus === ProposalStatus.ACTIVE ? "primary" : "neutral"
+                  proposalStatus === ProposalStatus.VETOED
+                    ? "critical"
+                    : proposalStatus === ProposalStatus.ACCEPTED
+                      ? "success"
+                      : proposalStatus === ProposalStatus.EXECUTED
+                        ? "neutral"
+                        : proposalStatus === ProposalStatus.ACTIVE
+                          ? "primary"
+                          : "neutral"
                 }
                 label={
-                  proposalStatus === ProposalStatus.VETOED ? "Vetoed" :
-                  proposalStatus === ProposalStatus.ACCEPTED ? "Passed" :
-                  proposalStatus === ProposalStatus.EXECUTED ? "Executed" :
-                  proposalStatus === ProposalStatus.ACTIVE ? "Active" : "Pending"
+                  proposalStatus === ProposalStatus.VETOED
+                    ? "Vetoed"
+                    : proposalStatus === ProposalStatus.ACCEPTED
+                      ? "Passed"
+                      : proposalStatus === ProposalStatus.EXECUTED
+                        ? "Executed"
+                        : proposalStatus === ProposalStatus.ACTIVE
+                          ? "Active"
+                          : "Pending"
                 }
               />
             </div>
@@ -145,23 +156,19 @@ export default function EnhancedProposalCard(props: ProposalInputs) {
           <div className="flex flex-col gap-3">
             {/* Title and summary */}
             <div>
-              <h3 className="text-lg font-semibold text-neutral-900 line-clamp-1 mb-2">
-                {proposal.title}
-              </h3>
-              <p className="text-sm text-neutral-600 line-clamp-2">
-                {proposal.summary}
-              </p>
+              <h3 className="mb-2 line-clamp-1 text-lg font-semibold text-neutral-900">{proposal.title}</h3>
+              <p className="line-clamp-2 text-sm text-neutral-600">{proposal.summary}</p>
             </div>
 
             {/* Two-stage indicator */}
-            <div className="flex gap-2 mt-2">
+            <div className="mt-2 flex gap-2">
               {/* Stage 1: Security Council */}
-              <div className="flex-1 bg-neutral-50 rounded-lg p-3 border border-neutral-100">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-neutral-700">Security Council</span>
+              <div className="flex-1 rounded-lg border border-neutral-100 bg-neutral-50 p-3">
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="font-medium text-xs text-neutral-700">Security Council</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {securityCouncilStatus === 'approved' ? (
+                  {securityCouncilStatus === "approved" ? (
                     <>
                       <Icon icon={IconType.CHECKMARK} size="sm" className="text-success-600" />
                       <span className="text-xs text-success-700">Approved</span>
@@ -176,35 +183,35 @@ export default function EnhancedProposalCard(props: ProposalInputs) {
               </div>
 
               {/* Stage 2: Community Veto */}
-              <div className={`flex-1 rounded-lg p-3 border ${
-                proposalStatus === ProposalStatus.EXECUTED 
-                  ? 'bg-blue-50 border-blue-100' 
-                  : 'bg-critical-50 border-critical-100'
-              }`}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-neutral-700">
+              <div
+                className={`flex-1 rounded-lg border p-3 ${
+                  proposalStatus === ProposalStatus.EXECUTED
+                    ? "bg-blue-50 border-blue-100"
+                    : "bg-critical-50 border-critical-100"
+                }`}
+              >
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="font-medium text-xs text-neutral-700">
                     {proposalStatus === ProposalStatus.EXECUTED ? "Execution" : "Community Veto"}
                   </span>
                 </div>
                 {proposalStatus === ProposalStatus.ACTIVE && (
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                       <span className="text-xs text-neutral-600">Progress</span>
-                      <span className="text-xs font-medium text-neutral-800">
+                      <span className="font-medium text-xs text-neutral-800">
                         {actualVetoPercentage.toFixed(1)}% / {thresholdPercentage}%
                       </span>
                     </div>
-                    <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-                      <div 
+                    <div className="h-1.5 overflow-hidden rounded-full bg-neutral-100">
+                      <div
                         className={`h-full transition-all duration-300 ${
-                          progressPercentage >= 100 ? 'bg-critical-500' : 'bg-primary-500'
+                          progressPercentage >= 100 ? "bg-critical-500" : "bg-primary-500"
                         }`}
                         style={{ width: `${progressPercentage}%` }}
                       />
                     </div>
-                    {timeRemaining && (
-                      <span className="text-xs text-neutral-600">{timeRemaining} left</span>
-                    )}
+                    {timeRemaining && <span className="text-xs text-neutral-600">{timeRemaining} left</span>}
                   </div>
                 )}
                 {proposalStatus === ProposalStatus.VETOED && (
@@ -222,12 +229,11 @@ export default function EnhancedProposalCard(props: ProposalInputs) {
                 {proposalStatus === ProposalStatus.EXECUTED && (
                   <div className="flex items-center gap-2">
                     <Icon icon={IconType.CHECKMARK} size="sm" className="text-blue-600" />
-                    <span className="text-xs text-blue-700">Executed</span>
+                    <span className="text-blue-700 text-xs">Executed</span>
                   </div>
                 )}
               </div>
             </div>
-
           </div>
         </div>
       </Card>
