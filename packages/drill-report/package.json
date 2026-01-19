@@ -41,8 +41,12 @@
 		]
 	},
 	"dependencies": {
+		"@reown/appkit": "^1.8.7",
+		"@reown/appkit-adapter-wagmi": "^1.8.7",
 		"@sveltejs/adapter-static": "^3.0.9",
+		"@wagmi/core": "^2.16.3",
 		"classnames": "^2.5.1",
-		"viem": "^2.34.0"
+		"viem": "^2.34.0",
+		"wagmi": "^2.14.9"
 	}
 }

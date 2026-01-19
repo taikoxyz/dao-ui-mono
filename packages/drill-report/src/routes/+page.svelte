@@ -1,10 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createPublicClient, http, type PublicClient, parseAbiItem, type Log } from 'viem';
+	import {
+		createPublicClient,
+		http,
+		type PublicClient,
+		parseAbiItem,
+		type Log,
+		isAddressEqual,
+		getAddress
+	} from 'viem';
 	import { mainnet } from 'viem/chains';
 	import { ABIs } from '../abi';
 	import config from '../config/mainnet.config.json';
 	import securityCouncilProfiles from '../../../ui/src/data/security-council-profiles.json';
+	import PingButton from '../components/PingButton.svelte';
+	import { getAccount } from '@wagmi/core';
+	import { config as wagmiConfig } from '../lib/wagmi';
 
 	let maxDrillNonce: bigint | null = null;
 	let currentDrillNonce: bigint = 1n;
@@ -21,11 +32,19 @@
 	let drillStartBlock: bigint | null = null;
 	let drillStartTimestamp: bigint | null = null;
 	let targetAccounts: Record<string, string | null> = {}; // Maps delegated address to main account
+	let connectedWallet: string | null = null;
 
 	// Create a map of addresses to names from the profiles
 	const profileMap: Record<string, string> = {};
 	securityCouncilProfiles.forEach((profile: { address: string; name: string }) => {
-		profileMap[profile.address.toLowerCase()] = profile.name;
+		try {
+			// Use getAddress to normalize the address to checksummed format
+			const normalizedAddress = getAddress(profile.address);
+			profileMap[normalizedAddress] = profile.name;
+		} catch {
+			// Fallback if address is invalid
+			profileMap[profile.address.toLowerCase()] = profile.name;
+		}
 	});
 
 	async function fetchMaxDrillNonce() {
@@ -107,7 +126,10 @@
 
 					if (
 						owner &&
-						(owner as unknown as string) !== '0x0000000000000000000000000000000000000000'
+						!isAddressEqual(
+							owner as unknown as `0x${string}`,
+							'0x0000000000000000000000000000000000000000'
+						)
 					) {
 						targetAccounts[target] = owner as unknown as string;
 					}
@@ -388,6 +410,17 @@
 
 	onMount(() => {
 		fetchMaxDrillNonce();
+
+		// Check connected wallet periodically
+		const checkWallet = () => {
+			const account = getAccount(wagmiConfig);
+			connectedWallet = account.address || null;
+		};
+
+		checkWallet();
+		const interval = setInterval(checkWallet, 2000);
+
+		return () => clearInterval(interval);
 	});
 </script>
 
@@ -485,6 +518,17 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Ping Button for Targets -->
+		{#if targets.length > 0}
+			<div class="mb-6">
+				<PingButton
+					drillNonce={currentDrillNonce}
+					{targets}
+					onPingSuccess={() => fetchDrillData()}
+				/>
+			</div>
+		{/if}
 
 		<!-- Drill Data -->
 		<div class="card bg-base-200 shadow-xl">
@@ -590,8 +634,20 @@
 										return targets.indexOf(a) - targets.indexOf(b);
 									}
 								}) as target, index (target)}
-									<tr class="hover:opacity-80">
-										<td class="px-4 py-3 text-sm">{index + 1}</td>
+									{@const isConnectedWallet =
+										connectedWallet &&
+										isAddressEqual(target as `0x${string}`, connectedWallet as `0x${string}`)}
+									<tr
+										class="hover:opacity-80 {isConnectedWallet
+											? 'bg-primary/10 border-primary border-l-4'
+											: ''}"
+									>
+										<td class="px-4 py-3 text-sm">
+											{index + 1}
+											{#if isConnectedWallet}
+												<span class="badge badge-primary badge-xs ml-2">You</span>
+											{/if}
+										</td>
 										<td class="px-4 py-3">
 											{#if targetAccounts[target] && profileMap[targetAccounts[target].toLowerCase()]}
 												{#if pingDetails[target] && pingDetails[target].transactionHash}
