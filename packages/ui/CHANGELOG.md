@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.2.2...dao-ui-v0.2.3) (2026-01-19)
+
+
+### Bug Fixes
+
+* correct proposal creation date and approvals display in Security Council ([5e72019](https://github.com/taikoxyz/dao-ui-mono/commit/5e72019098f66a0f9945a3be706804cac67f4c72))
+* **dao-ui:** correct proposal creation date and approvals display in Security Council ([9db8ee9](https://github.com/taikoxyz/dao-ui-mono/commit/9db8ee923ca198bf9dc6c1d1c42543af6b63de0a))
+
 ## [0.2.2](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.2.1...dao-ui-v0.2.2) (2025-11-07)
 
 
