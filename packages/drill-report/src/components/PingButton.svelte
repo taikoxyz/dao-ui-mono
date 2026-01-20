@@ -5,6 +5,7 @@
 	import { isTargetInDrill, hasPinged, pingDrill } from '../services/drill-admin';
 	import type { Address } from 'viem';
 	import { isAddressEqual } from 'viem';
+	import { untrack } from 'svelte';
 
 	interface Props {
 		drillNonce: bigint;
@@ -14,7 +15,7 @@
 
 	let { drillNonce, targets, onPingSuccess }: Props = $props();
 
-	let connectedAddress = $state<Address | undefined>($adminStore.address);
+	let connectedAddress = $state<Address | undefined>(undefined);
 	let isTarget = $state(false);
 	let alreadyPinged = $state(false);
 	let isLoading = $state(true);
@@ -22,16 +23,14 @@
 	let error = $state<string | null>(null);
 	let txHash = $state<string | null>(null);
 
-	async function checkStatus() {
+	async function checkStatus(address: Address | undefined) {
 		isLoading = true;
 		error = null;
 
 		try {
-			// Get connected wallet
-			const account = getAccount(config);
-			connectedAddress = account.address;
+			connectedAddress = address;
 
-			if (!connectedAddress) {
+			if (!address) {
 				isTarget = false;
 				alreadyPinged = false;
 				isLoading = false;
@@ -40,16 +39,16 @@
 
 			// Check if connected wallet is a target
 			const targetCheck = targets.some((target) =>
-				isAddressEqual(target as Address, connectedAddress)
+				isAddressEqual(target as Address, address)
 			);
 
 			// Double check with contract
 			if (targetCheck) {
-				isTarget = await isTargetInDrill(drillNonce, connectedAddress);
+				isTarget = await isTargetInDrill(drillNonce, address);
 
 				if (isTarget) {
 					// Check if already pinged
-					alreadyPinged = await hasPinged(drillNonce, connectedAddress);
+					alreadyPinged = await hasPinged(drillNonce, address);
 				}
 			} else {
 				isTarget = false;
@@ -94,11 +93,13 @@
 	}
 
 	// Watch for admin store changes (which handles wallet connection)
+	// Use untrack to prevent the effect from re-running when checkStatus modifies state
 	$effect(() => {
-		connectedAddress = $adminStore.address;
-		if (connectedAddress || drillNonce) {
-			checkStatus();
-		}
+		const address = $adminStore.address;
+		const nonce = drillNonce;
+		untrack(() => {
+			checkStatus(address);
+		});
 	});
 </script>
 
