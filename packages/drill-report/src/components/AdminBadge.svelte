@@ -1,24 +1,14 @@
 <script lang="ts">
-	import { adminStore, isAdmin, isCheckingAdmin } from '../stores/admin';
-
-	let admin = $state($isAdmin);
-	let checking = $state($isCheckingAdmin);
-	let adminStatus = $state($adminStore);
-
-	$effect(() => {
-		admin = $isAdmin;
-		checking = $isCheckingAdmin;
-		adminStatus = $adminStore;
-	});
+	import { adminStore } from '../stores/admin';
 </script>
 
-{#if adminStatus.address}
-	{#if checking}
+{#if $adminStore.address}
+	{#if $adminStore.isLoading}
 		<div class="badge badge-ghost gap-2">
 			<span class="loading loading-spinner loading-xs"></span>
 			Checking role...
 		</div>
-	{:else if admin}
+	{:else if $adminStore.isAdmin}
 		<div class="badge badge-success gap-2">
 			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="h-4 w-4">
 				<path
@@ -31,7 +21,7 @@
 			</svg>
 			Admin
 		</div>
-	{:else if adminStatus.error}
-		<div class="badge badge-error" title={adminStatus.error}>Error</div>
+	{:else if $adminStore.error}
+		<div class="badge badge-error" title={$adminStore.error}>Error</div>
 	{/if}
 {/if}

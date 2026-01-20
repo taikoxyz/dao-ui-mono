@@ -157,12 +157,6 @@
 				// Search in chunks of 40,000 blocks to stay under the 50,000 limit
 				const chunkSize = 40000n;
 
-				console.log('[DEBUG] DrillStarted search (backwards):', {
-					currentDrillNonce: currentDrillNonce.toString(),
-					maxDrillNonce: maxDrillNonce.toString(),
-					latestBlock: latestBlock.toString()
-				});
-
 				let attempts = 0;
 				const maxAttempts = 200;
 				let searchToBlock = latestBlock;
@@ -193,31 +187,21 @@
 
 						if (logs.length > 0) {
 							drillStartedLogs = logs;
-							console.log('[DEBUG] Found DrillStarted event at attempt', attempts, 'block:', logs[0].blockNumber.toString());
 							break;
 						}
 					} catch (chunkErr) {
-						console.log('[DEBUG] Chunk error at attempt', attempts, ':', chunkErr);
+						// Chunk error, continue searching
 					}
 
 					searchToBlock = searchFromBlock - 1n;
 					attempts++;
 				}
 
-				console.log('[DEBUG] DrillStarted search completed:', {
-					attempts,
-					found: drillStartedLogs.length > 0,
-					drillStartedLogs: drillStartedLogs.length
-				});
-
 				if (drillStartedLogs.length > 0) {
 					drillStartBlock = drillStartedLogs[0].blockNumber;
 					// Get the timestamp of the start block
 					const startBlock = await client.getBlock({ blockNumber: drillStartBlock! });
 					drillStartTimestamp = startBlock.timestamp;
-					console.log('[DEBUG] drillStartTimestamp set to:', drillStartTimestamp.toString());
-				} else {
-					console.log('[DEBUG] No DrillStarted event found after', attempts, 'attempts');
 				}
 			} catch (err) {
 				console.error('Error fetching drill start event:', err);
@@ -235,7 +219,6 @@
 					});
 
 					pingStatuses[target] = Boolean(hasPinged);
-					console.log('[DEBUG] hasPinged for', target.slice(0, 10), ':', hasPinged);
 
 					// If pinged, fetch the event details
 					if (hasPinged) {
@@ -246,8 +229,6 @@
 							// If we have drillStartBlock, search forward from there (efficient)
 							// Otherwise, search backwards from latest (fallback)
 							if (drillStartBlock) {
-								console.log('[DEBUG] Searching DrillPinged for', target.slice(0, 10), 'forward from drillStartBlock:', drillStartBlock.toString());
-
 								const chunkSize = 40000n;
 								let searchFromBlock = drillStartBlock;
 								let attempts = 0;
@@ -279,11 +260,10 @@
 
 										if (logs.length > 0) {
 											pingLogs = logs;
-											console.log('[DEBUG] Found DrillPinged for', target.slice(0, 10), 'at block:', logs[0].blockNumber.toString());
 											break;
 										}
 									} catch (chunkErr) {
-										console.log('[DEBUG] DrillPinged chunk error for', target.slice(0, 10), ':', chunkErr);
+										// Chunk error, continue searching
 									}
 
 									searchFromBlock = searchToBlock + 1n;
@@ -291,7 +271,6 @@
 								}
 							} else {
 								// Fallback: search backwards from latest block
-								console.log('[DEBUG] Searching DrillPinged for', target.slice(0, 10), 'backwards (no drillStartBlock)');
 
 								const chunkSize = 40000n;
 								const contractDeployBlock = 20000000n;
@@ -325,11 +304,10 @@
 
 										if (logs.length > 0) {
 											pingLogs = logs;
-											console.log('[DEBUG] Found DrillPinged for', target.slice(0, 10), 'at block:', logs[0].blockNumber.toString());
 											break;
 										}
 									} catch (chunkErr) {
-										console.log('[DEBUG] DrillPinged chunk error for', target.slice(0, 10), ':', chunkErr);
+										// Chunk error, continue searching
 									}
 
 									searchToBlock = searchFromBlock - 1n;
@@ -344,9 +322,6 @@
 									timestamp: pingBlock.timestamp,
 									transactionHash: pingLogs[0].transactionHash
 								};
-								console.log('[DEBUG] pingDetails set for', target.slice(0, 10), ':', pingDetails[target]);
-							} else {
-								console.log('[DEBUG] No DrillPinged found for', target.slice(0, 10));
 							}
 						} catch (err) {
 							console.error(`Error fetching ping event for ${target}:`, err);
@@ -366,7 +341,6 @@
 
 			// Wait for all ping status fetches to complete
 			await Promise.all(pingPromises);
-			console.log('[DEBUG] All ping fetches complete. drillStartTimestamp:', drillStartTimestamp?.toString() || 'null', 'pingDetails:', Object.keys(pingDetails).length);
 		} catch (err) {
 			console.error('Error fetching drill data:', err);
 			error = err instanceof Error ? err.message : 'Unknown error occurred fetching drill data';
