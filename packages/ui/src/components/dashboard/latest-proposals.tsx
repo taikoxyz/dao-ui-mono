@@ -3,8 +3,9 @@ import { Else, If, Then } from "../if";
 import { useBlockNumber, useReadContract } from "wagmi";
 import { PUB_CHAIN, PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS } from "@/constants";
 import { OptimisticTokenVotingPluginAbi } from "@/plugins/optimistic-proposals/artifacts/OptimisticTokenVotingPlugin.sol";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import EnhancedProposalCard from "@/plugins/optimistic-proposals/components/proposal/proposal-card-enhanced";
+import { getDescendingIndices } from "@/utils/pagination";
 
 export const LatestProposals = () => {
   const { data: blockNumber } = useBlockNumber({ watch: true });
@@ -14,8 +15,9 @@ export const LatestProposals = () => {
     functionName: "proposalCount",
     chainId: PUB_CHAIN.id,
   });
-  const proposalCount = Number(proposalCountResponse);
+  const proposalCount = Number(proposalCountResponse ?? 0);
   const entityLabel = proposalCount === 1 ? "Proposal" : "Proposals";
+  const latestProposalIndices = useMemo(() => getDescendingIndices(proposalCount, 3), [proposalCount]);
 
   useEffect(() => {
     refetch();
@@ -30,16 +32,13 @@ export const LatestProposals = () => {
         <Then>
           <DataList.Root entityLabel={entityLabel} pageSize={3}>
             <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
-              {Array.from(Array(proposalCount || 0)?.keys())
-                .slice(-3)
-                .reverse()
-                ?.map((proposalIndex) => (
-                  <EnhancedProposalCard
-                    linkPrefix="/plugins/community-proposals/"
-                    key={proposalIndex}
-                    proposalIndex={proposalIndex}
-                  />
-                ))}
+              {latestProposalIndices.map((proposalIndex) => (
+                <EnhancedProposalCard
+                  linkPrefix="/plugins/community-proposals/"
+                  key={proposalIndex}
+                  proposalIndex={proposalIndex}
+                />
+              ))}
             </DataList.Container>
           </DataList.Root>
         </Then>

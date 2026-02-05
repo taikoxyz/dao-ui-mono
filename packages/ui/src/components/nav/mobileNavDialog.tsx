@@ -15,14 +15,15 @@ export const MobileNavDialog: React.FC<IMobileNavDialogProps> = (props) => {
   const { data: listedSigners } = useSignerList();
   const { data: listedOrAppointedSigners } = useApproverWalletList();
   // If the address is a listed signer (by being an owner or by being appointed by an owner)
-  const showAllLinks = address && (listedSigners?.includes(address) ?? listedOrAppointedSigners?.includes(address));
+  const showAllLinks =
+    !!address && (listedSigners?.includes(address) || listedOrAppointedSigners?.includes(address));
 
   return (
     <Dialog.Root {...dialogRootProps}>
       <Dialog.Content className="flex flex-col gap-y-6 px-3 py-7">
         <ul className="flex w-full flex-col gap-y-1">
           {navLinks
-            .filter((link) => showAllLinks ?? !link.hiddenIfNotSigner ?? !link.hideFromMenu)
+            .filter((link) => (showAllLinks || !link.hiddenIfNotSigner) && !link.hideFromMenu)
             .map((navLink) => (
               <NavLink {...navLink} key={navLink.id} onClick={() => dialogRootProps.onOpenChange?.(false)} />
             ))}

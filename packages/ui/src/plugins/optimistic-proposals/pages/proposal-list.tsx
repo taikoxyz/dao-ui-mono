@@ -1,5 +1,5 @@
 import { useAccount, useBlockNumber, useReadContract } from "wagmi";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import EnhancedProposalCard from "@/plugins/optimistic-proposals/components/proposal/proposal-card-enhanced";
 import {
   AlertCard,
@@ -20,6 +20,7 @@ import { useTokenVotes } from "@/hooks/useTokenVotes";
 import { AddressText } from "@/components/text/address";
 import { Address } from "viem";
 import { useGqlProposalMultiple } from "@/utils/gql/hooks/useGetGqlProposalMultiple";
+import { getDescendingIndices } from "@/utils/pagination";
 const DEFAULT_PAGE_SIZE = 6;
 
 export function PublicProposals() {
@@ -39,7 +40,13 @@ export function PublicProposals() {
     functionName: "proposalCount",
     chainId: PUB_CHAIN.id,
   });
-  const proposalCount = Number(proposalCountResponse);
+  const proposalCount = Number(proposalCountResponse ?? 0);
+  const [pagesLoaded, setPagesLoaded] = useState(1);
+  const renderedCount = Math.min(proposalCount, pagesLoaded * DEFAULT_PAGE_SIZE);
+  const proposalIndices = useMemo(
+    () => getDescendingIndices(proposalCount, renderedCount),
+    [proposalCount, renderedCount]
+  );
 
   useEffect(() => {
     refetch();
@@ -82,20 +89,16 @@ export function PublicProposals() {
             itemsCount={proposalCount}
             pageSize={DEFAULT_PAGE_SIZE}
             state={dataListState}
-            onLoadMore={() => {
-              //console.log("load more");
-            }}
+            onLoadMore={() => setPagesLoaded((current) => current + 1)}
           >
             <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
-              {Array.from(Array(proposalCount || 0)?.keys())
-                .reverse()
-                ?.map((proposalIndex) => (
-                  <EnhancedProposalCard
-                    gqlProposal={gqlProposals?.[proposalIndex]}
-                    key={proposalIndex}
-                    proposalIndex={proposalIndex}
-                  />
-                ))}
+              {proposalIndices.map((proposalIndex) => (
+                <EnhancedProposalCard
+                  gqlProposal={gqlProposals?.[proposalIndex]}
+                  key={proposalIndex}
+                  proposalIndex={proposalIndex}
+                />
+              ))}
             </DataList.Container>
             <DataList.Pagination />
           </DataList.Root>

@@ -27,12 +27,16 @@ export const useDebouncedValue = <TValue>(
 
     const [debouncedValue, setDebouncedValue] = useState(value);
 
-    const timeoutRef = useRef<NodeJS.Timeout>();
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         timeoutRef.current = setTimeout(() => setDebouncedValue(value), delay);
 
-        return () => clearTimeout(timeoutRef.current);
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
     }, [value, delay]);
 
     return [debouncedValue, setDebouncedValue];

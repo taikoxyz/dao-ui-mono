@@ -1,4 +1,4 @@
-import { Progress, VetoProgress } from '../../../../../core';
+import { VetoProgress } from '../../../../../core';
 import { useOdsModulesContext } from '../../../odsModulesProvider';
 import { type IMajorityVotingResult } from '../proposalDataListItemStructure';
 

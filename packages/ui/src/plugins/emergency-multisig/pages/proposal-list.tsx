@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useBlockNumber, useReadContract } from "wagmi";
 import ProposalCard from "@/plugins/emergency-multisig/components/proposal";
 import { EmergencyMultisigPluginAbi } from "@/plugins/emergency-multisig/artifacts/EmergencyMultisigPlugin";
@@ -8,6 +8,7 @@ import { Else, If, Then } from "@/components/if";
 import { PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS, PUB_CHAIN } from "@/constants";
 import { EncryptionPlaceholderOrChildren } from "../components/encryption-check-or-children";
 import { useRouter } from "next/router";
+import { getDescendingIndices } from "@/utils/pagination";
 
 const DEFAULT_PAGE_SIZE = 6;
 
@@ -27,7 +28,13 @@ export default function Proposals() {
     functionName: "proposalCount",
     chainId: PUB_CHAIN.id,
   });
-  const proposalCount = proposalCountResponse ? Number(proposalCountResponse) : 0;
+  const proposalCount = Number(proposalCountResponse ?? 0);
+  const [pagesLoaded, setPagesLoaded] = useState(1);
+  const renderedCount = Math.min(proposalCount, pagesLoaded * DEFAULT_PAGE_SIZE);
+  const proposalIndices = useMemo(
+    () => getDescendingIndices(proposalCount, renderedCount),
+    [proposalCount, renderedCount]
+  );
 
   useEffect(() => {
     refetch();
@@ -80,16 +87,13 @@ export default function Proposals() {
               itemsCount={proposalCount}
               pageSize={DEFAULT_PAGE_SIZE}
               state={dataListState}
-              //onLoadMore={fetchNextPage}
+              onLoadMore={() => setPagesLoaded((current) => current + 1)}
             >
               <DataList.Container SkeletonElement={ProposalDataListItemSkeleton}>
-                {proposalCount &&
-                  Array.from(Array(proposalCount || 0)?.keys())
-                    .reverse()
-                    ?.map((proposalIndex) => (
-                      // TODO: update with router agnostic ODS DataListItem
-                      <ProposalCard key={proposalIndex} proposalId={BigInt(proposalIndex)} />
-                    ))}
+                {proposalIndices.map((proposalIndex) => (
+                  // TODO: update with router agnostic ODS DataListItem
+                  <ProposalCard key={proposalIndex} proposalId={BigInt(proposalIndex)} />
+                ))}
               </DataList.Container>
               <DataList.Pagination />
             </DataList.Root>

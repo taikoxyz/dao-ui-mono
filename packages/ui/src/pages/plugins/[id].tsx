@@ -9,25 +9,34 @@ import { MainSection } from "@/components/layout/main-section";
 
 const PluginLoader: FC = () => {
   const { query, isReady } = useRouter();
-  const pluginId = isReady && resolveQueryParam(query.id);
+  const pluginId = isReady ? resolveQueryParam(query.id) : "";
   const [PageComponent, setPageComponent] = useState<FC | null>(null);
   const [componentLoading, setComponentLoading] = useState(true);
 
   useEffect(() => {
     if (!isReady) return;
-    if (!pluginId) return;
+    if (!pluginId) {
+      setComponentLoading(false);
+      setPageComponent(null);
+      return;
+    }
 
     const plugin = plugins.find((p) => p.id === pluginId);
-    if (!plugin) return;
+    if (!plugin) {
+      setComponentLoading(false);
+      setPageComponent(null);
+      return;
+    }
 
+    setComponentLoading(true);
+    setPageComponent(null);
     import(`@/plugins/${plugin.folderName}`)
       .then((mod) => {
-        setComponentLoading(true);
         setPageComponent(() => mod.default);
+        setComponentLoading(false);
       })
       .catch((err) => {
         logger.error("Failed to load the page component", err);
-
         setComponentLoading(false);
       });
   }, [pluginId, isReady]);

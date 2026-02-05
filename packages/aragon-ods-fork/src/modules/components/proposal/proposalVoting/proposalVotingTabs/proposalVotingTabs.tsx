@@ -12,7 +12,7 @@ export interface IProposalVotingTabsProps extends ITabsRootProps {
     /**
      * Reference object of the parent accordion component (on multi-stage proposals) to update its height on tab change.
      */
-    accordionRef?: RefObject<HTMLDivElement>;
+    accordionRef?: RefObject<HTMLDivElement | null>;
 }
 
 export const ProposalVotingTabs: React.FC<IProposalVotingTabsProps> = (props) => {
@@ -20,7 +20,7 @@ export const ProposalVotingTabs: React.FC<IProposalVotingTabsProps> = (props) =>
 
     const { copy } = useOdsModulesContext();
 
-    const contentRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement | null>(null);
 
     const handleTabClick = () => {
         if (accordionRef?.current == null || contentRef?.current == null) {

@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import React, { Children, type ComponentProps } from 'react';
 import { Accordion, Card, Heading } from '../../../../../core';
+import type { IProposalVotingStageProps } from '../proposalVotingStage';
 
 export interface IProposalVotingContainerProps extends ComponentProps<'div'> {
     /**
@@ -31,11 +32,13 @@ export const ProposalVotingContainer: React.FC<IProposalVotingContainerProps> = 
             </div>
             {isMultiStage && (
                 <Accordion.Container isMulti={false} defaultValue={activeStage}>
-                    {processedChildren.map((child, index) =>
-                        React.isValidElement(child)
-                            ? React.cloneElement(child, { ...child.props, index, isMultiStage })
-                            : child,
-                    )}
+                    {processedChildren.map((child, index) => {
+                        if (!React.isValidElement<IProposalVotingStageProps>(child)) {
+                            return child;
+                        }
+
+                        return React.cloneElement(child, { index, isMultiStage });
+                    })}
                 </Accordion.Container>
             )}
             {!isMultiStage && <div className="px-4 pb-6 pt-1 md:px-6">{children}</div>}

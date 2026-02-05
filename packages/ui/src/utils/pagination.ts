@@ -27,3 +27,10 @@ export function digestPagination(proposalCount: number, page: number) {
     showNext,
   };
 }
+
+export function getDescendingIndices(total: number, count: number): number[] {
+  if (total <= 0 || count <= 0) return [];
+
+  const safeCount = Math.min(total, count);
+  return Array.from({ length: safeCount }, (_value, index) => total - 1 - index);
+}

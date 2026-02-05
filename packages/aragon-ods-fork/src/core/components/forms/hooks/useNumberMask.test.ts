@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react';
-import type { InputMask } from 'imask/esm/index';
+import type { InputMask } from 'imask';
 import * as ReactIMask from 'react-imask';
 import { formatterUtils } from '../../../utils';
 import { useNumberMask, type IUseNumberMaskResult } from './useNumberMask';

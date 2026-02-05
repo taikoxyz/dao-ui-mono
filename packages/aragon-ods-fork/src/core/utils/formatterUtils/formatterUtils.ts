@@ -85,6 +85,7 @@ class FormatterUtils {
                 currency: isCurrency ? this.currencyLocale : undefined,
                 maximumFractionDigits: maxDigits,
                 minimumFractionDigits: minDigits,
+                useGrouping: true,
             });
         }
 
