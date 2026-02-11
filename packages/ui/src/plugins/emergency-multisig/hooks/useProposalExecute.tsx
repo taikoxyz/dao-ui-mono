@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { AlertContextProps, useAlerts } from "@/context/Alerts";
 import { useRouter } from "next/router";
 import { PUB_CHAIN, PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
@@ -7,10 +7,16 @@ import { EmergencyMultisigPluginAbi } from "../artifacts/EmergencyMultisigPlugin
 import { toHex } from "viem";
 import { useProposal } from "./useProposal";
 import { getContentCid, uploadToPinata } from "@/utils/ipfs";
+import {
+  CONNECT_WALLET_EXECUTE_ALERT_DESCRIPTION,
+  CONNECT_WALLET_EXECUTE_ALERT_MESSAGE,
+  isWalletDisconnectedError,
+} from "@/utils/wallet-errors";
 
 export function useProposalExecute(proposalId: string) {
   const { push } = useRouter();
   const { addAlert } = useAlerts() as AlertContextProps;
+  const { isConnected } = useAccount();
   const [isExecuting, setIsExecuting] = useState(false);
   const {
     rawPrivateData: { privateRawMetadata },
@@ -39,7 +45,13 @@ export function useProposalExecute(proposalId: string) {
   const executeProposal = () => {
     let actualMetadataUri: string;
 
-    if (!canExecute) return;
+    if (!isConnected) {
+      addAlert(CONNECT_WALLET_EXECUTE_ALERT_MESSAGE, {
+        type: "error",
+        description: CONNECT_WALLET_EXECUTE_ALERT_DESCRIPTION,
+      });
+      return;
+    } else if (!canExecute) return;
     else if (!privateRawMetadata || !proposal?.actions) return;
 
     setIsExecuting(true);
@@ -78,6 +90,11 @@ export function useProposalExecute(proposalId: string) {
           description: "Nothing will be sent to the network",
           timeout: 4 * 1000,
         });
+      } else if (isWalletDisconnectedError(executingError) || (!executingError?.message && !isConnected)) {
+        addAlert(CONNECT_WALLET_EXECUTE_ALERT_MESSAGE, {
+          type: "error",
+          description: CONNECT_WALLET_EXECUTE_ALERT_DESCRIPTION,
+        });
       } else {
         console.error(executingError);
         addAlert("Could not execute the proposal", {
@@ -110,18 +127,19 @@ export function useProposalExecute(proposalId: string) {
       push("/");
       window.scroll(0, 0);
     }, 1000 * 2);
-  }, [executingStatus, executeTxHash, isConfirming, isConfirmed, addAlert, executingError, push]);
+  }, [executingStatus, executeTxHash, isConfirming, isConfirmed, addAlert, executingError, isConnected, push]);
 
   return {
     executeProposal,
     canExecute:
+      isConnected &&
       !isCanVoteError &&
       !isCanVoteLoading &&
       !isConfirmed &&
       !!canExecute &&
       !!privateRawMetadata &&
       !!proposal?.actions,
-    isConfirming: isExecuting ?? isConfirming,
+    isConfirming: isExecuting || isConfirming,
     isConfirmed,
   };
 }
