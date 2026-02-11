@@ -25,7 +25,6 @@ jobs:
         with:
             environment: "preview"
             flags: ""
-            allow_missing_project: true
         secrets:
             vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID_DAO_HEKLA }}
             vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
