@@ -15,6 +15,7 @@ import EmergencyProposalList from "../../emergency-multisig/pages/proposal-list"
 
 import RegularProposalList from "../../multisig/pages/proposal-list";
 import { useCanCreateProposal } from "@/plugins/emergency-multisig/hooks/useCanCreateProposal";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
 
 export default function EncryptionPage() {
   const [toggleValue, setToggleValue] = useState<"members" | "community-proposals" | "emergency-proposals">("members");
@@ -165,12 +166,20 @@ function AccountStatus() {
   let description = "";
   let actions: React.ReactNode[] = [];
   const { address, isConnected } = useAccount();
+  const { open } = useWeb3Modal();
   const { status, owner, appointedAgent, publicKey } = useAccountEncryptionStatus();
   const { registerPublicKey, isConfirming } = useEncryptionRegistry();
   const [showAppointModal, setShowAppointModal] = useState(false);
 
   if (!isConnected) {
-    return <p>Connect your wallet to display the status</p>;
+    return (
+      <div className="flex flex-col items-start gap-y-2">
+        <p>Connect your wallet to display the status</p>
+        <Button size="md" onClick={() => open()}>
+          Connect wallet
+        </Button>
+      </div>
+    );
   } else if (status === AccountEncryptionStatus.LOADING_ENCRYPTION_STATUS) {
     return <PleaseWaitSpinner />;
   } else if (status === AccountEncryptionStatus.ERR_COULD_NOT_LOAD) {

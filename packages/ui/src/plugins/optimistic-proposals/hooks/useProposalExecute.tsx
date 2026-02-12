@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
-import { useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { OptimisticTokenVotingPluginAbi } from "../artifacts/OptimisticTokenVotingPlugin.sol";
 import { AlertContextProps, useAlerts } from "@/context/Alerts";
 import { useRouter } from "next/router";
 import { PUB_CHAIN, PUB_DUAL_GOVERNANCE_PLUGIN_ADDRESS } from "@/constants";
 import { useProposalId } from "./useProposalId";
+import {
+  CONNECT_WALLET_EXECUTE_ALERT_DESCRIPTION,
+  CONNECT_WALLET_EXECUTE_ALERT_MESSAGE,
+  isWalletDisconnectedError,
+} from "@/utils/wallet-errors";
 
 export function useProposalExecute(index: number) {
   const { reload } = useRouter();
   const { addAlert } = useAlerts() as AlertContextProps;
+  const { isConnected } = useAccount();
   const { proposalId } = useProposalId(index);
   const [isExecuting, setIsExecuting] = useState(false);
 
@@ -33,7 +39,7 @@ export function useProposalExecute(index: number) {
 
   const executeProposal = () => {
     if (!canExecute) return;
-    else if (typeof proposalId === "undefined") return;
+    if (typeof proposalId === "undefined") return;
 
     setIsExecuting(true);
 
@@ -53,6 +59,11 @@ export function useProposalExecute(index: number) {
         addAlert("The transaction signature was declined", {
           description: "Nothing will be sent to the network",
           timeout: 4 * 1000,
+        });
+      } else if (isWalletDisconnectedError(executingError) || (!executingError?.message && !isConnected)) {
+        addAlert(CONNECT_WALLET_EXECUTE_ALERT_MESSAGE, {
+          type: "error",
+          description: CONNECT_WALLET_EXECUTE_ALERT_DESCRIPTION,
         });
       } else {
         console.error(executingError);
@@ -83,12 +94,12 @@ export function useProposalExecute(index: number) {
     });
 
     setTimeout(() => reload(), 1000 * 2);
-  }, [executingStatus, executeTxHash, isConfirming, isConfirmed, addAlert, executingError, reload]);
+  }, [executingStatus, executeTxHash, isConfirming, isConfirmed, addAlert, executingError, isConnected, reload]);
 
   return {
     executeProposal,
-    canExecute: !isCanVoteError && !isCanVoteLoading && !isConfirmed && !!canExecute,
-    isConfirming: isExecuting ?? isConfirming,
+    canExecute: isConnected && !isCanVoteError && !isCanVoteLoading && !isConfirmed && !!canExecute,
+    isConfirming: isExecuting || isConfirming,
     isConfirmed,
   };
 }

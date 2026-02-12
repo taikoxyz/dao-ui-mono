@@ -24,11 +24,13 @@ import { useGetGqlRelatedProposal } from "@/utils/gql/hooks/useGetGqlRelatedProp
 import { SecurityCouncilStage } from "../components/vote/security-council-stage";
 import { CommunityVetoStage } from "../components/vote/community-veto-stage";
 import { useRouter } from "next/router";
+import { useWeb3Modal } from "@web3modal/wagmi/react";
 
 const ZERO = BigInt(0);
 
 export default function ProposalDetail({ index: proposalIdx }: { index: number }) {
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const { open } = useWeb3Modal();
   const router = useRouter();
 
   // Check if we're on a security-council route to hide Stage 2
@@ -92,6 +94,10 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
   const hasBalance = balance !== undefined && balance > ZERO;
   const delegatingToSomeoneElse = !!delegatesTo && delegatesTo !== address && delegatesTo !== ADDRESS_ZERO;
   const delegatedToZero = !!delegatesTo && delegatesTo === ADDRESS_ZERO;
+  const hasActionsToExecute = !!proposal?.actions.length;
+  const executeButtonLabel = !hasActionsToExecute ? "No actions to execute" : isConnected ? "Execute proposal" : "Connect wallet";
+  const executeButtonDisabled = !hasActionsToExecute || (isConnected && !canExecute);
+  const onExecuteClick = isConnected ? executeProposal : () => open();
 
   if (!proposal || showProposalLoading) {
     return (
@@ -196,12 +202,12 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
                       <Button
                         size="lg"
                         variant="primary"
-                        disabled={!canExecute || !proposal?.actions.length}
-                        isLoading={isConfirmingExecution}
-                        onClick={executeProposal}
+                        disabled={executeButtonDisabled}
+                        isLoading={isConnected ? isConfirmingExecution : false}
+                        onClick={onExecuteClick}
                         className="w-full"
                       >
-                        {proposal?.actions.length ? "Execute proposal" : "No actions to execute"}
+                        {executeButtonLabel}
                       </Button>
                     </div>
                   )}

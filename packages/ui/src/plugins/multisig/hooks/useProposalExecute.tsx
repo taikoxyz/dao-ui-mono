@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
-import { useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { AlertContextProps, useAlerts } from "@/context/Alerts";
 import { useRouter } from "next/router";
 import { PUB_CHAIN, PUB_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
 import { MultisigPluginAbi } from "../artifacts/MultisigPlugin";
+import {
+  CONNECT_WALLET_EXECUTE_ALERT_DESCRIPTION,
+  CONNECT_WALLET_EXECUTE_ALERT_MESSAGE,
+  isWalletDisconnectedError,
+} from "@/utils/wallet-errors";
 
 export function useProposalExecute(proposalId: string) {
   const { push } = useRouter();
   const [isExecuting, setIsExecuting] = useState(false);
   const { addAlert } = useAlerts() as AlertContextProps;
+  const { isConnected } = useAccount();
 
   const {
     data: canExecute,
@@ -51,6 +57,11 @@ export function useProposalExecute(proposalId: string) {
           description: "Nothing will be sent to the network",
           timeout: 4 * 1000,
         });
+      } else if (isWalletDisconnectedError(executingError) || (!executingError?.message && !isConnected)) {
+        addAlert(CONNECT_WALLET_EXECUTE_ALERT_MESSAGE, {
+          type: "error",
+          description: CONNECT_WALLET_EXECUTE_ALERT_DESCRIPTION,
+        });
       } else {
         console.error(executingError);
         addAlert("Could not execute the proposal", {
@@ -83,12 +94,12 @@ export function useProposalExecute(proposalId: string) {
       push("/");
       window.scroll(0, 0);
     }, 1000 * 2);
-  }, [executingStatus, executeTxHash, isConfirming, isConfirmed, addAlert, executingError, push]);
+  }, [executingStatus, executeTxHash, isConfirming, isConfirmed, addAlert, executingError, isConnected, push]);
 
   return {
     executeProposal,
-    canExecute: !isCanVoteError && !isCanVoteLoading && !isConfirmed && !!canExecute,
-    isConfirming: isExecuting ?? isConfirming,
+    canExecute: isConnected && !isCanVoteError && !isCanVoteLoading && !isConfirmed && !!canExecute,
+    isConfirming: isExecuting || isConfirming,
     isConfirmed,
   };
 }
