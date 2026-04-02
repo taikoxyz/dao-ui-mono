@@ -5,11 +5,13 @@ import {
   PUB_APP_NAME,
   PUB_CHAIN_NAME,
   PUB_PROJECT_URL,
+  PUB_TAIKO_L2_RPC_URL,
   PUB_WALLET_CONNECT_PROJECT_ID,
   PUB_WALLET_ICON,
   PUB_WEB3_ENDPOINT,
 } from "@/constants";
 import { holesky, mainnet } from "viem/chains";
+import { taiko } from "@/utils/chains";
 
 // wagmi config
 const metadata = {
@@ -20,11 +22,12 @@ const metadata = {
 };
 
 export const config = createConfig({
-  chains: PUB_CHAIN_NAME === "holesky" ? [holesky, mainnet] : [mainnet],
+  chains: PUB_CHAIN_NAME === "holesky" ? [holesky, mainnet, taiko] : [mainnet, taiko],
   ssr: true,
   transports: {
     [holesky.id]: http(PUB_WEB3_ENDPOINT, { batch: true }),
     [mainnet.id]: http(PUB_WEB3_ENDPOINT, { batch: true }),
+    [taiko.id]: http(PUB_TAIKO_L2_RPC_URL || undefined),
   } as any,
   connectors: [
     walletConnect({

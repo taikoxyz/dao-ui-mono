@@ -18,6 +18,17 @@ export const PUB_DELEGATION_WALL_CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_DEL
   "") as Address;
 
 export const PUB_TAIKO_BRIDGE_ADDRESS = (process.env.NEXT_PUBLIC_TAIKO_BRIDGE_ADDRESS ?? "") as Address;
+
+// Taiko L2 configuration
+export const PUB_TAIKO_L2_RPC_URL = process.env.NEXT_PUBLIC_TAIKO_L2_RPC_URL ?? "";
+export const PUB_L1_SIGNAL_SERVICE_ADDRESS = (process.env.NEXT_PUBLIC_L1_SIGNAL_SERVICE_ADDRESS ?? "") as Address;
+
+// Taiko L2 precompile addresses (deterministic across all Taiko networks)
+export const TAIKO_L2_ANCHOR_ADDRESS = "0x1670000000000000000000000000000000010001" as Address;
+export const TAIKO_L2_BRIDGE_ADDRESS = "0x1670000000000000000000000000000000000001" as Address;
+export const TAIKO_L2_SIGNAL_SERVICE_ADDRESS = "0x1670000000000000000000000000000000000005" as Address;
+export const TAIKO_L2_CHAIN_ID = 167000;
+
 export const PUB_SUBGRAPH_URL = (process.env.NEXT_PUBLIC_SUBGRAPH_URL ?? "") as string;
 
 // Target chain
