@@ -17,7 +17,7 @@ import { TaikoBridgeL1EventsAbi } from "@/artifacts/TaikoBridgeL1Events";
 import { TaikoBridgeL2Abi } from "@/artifacts/TaikoBridgeL2";
 import {
   PUB_CHAIN,
-  PUB_L1_SIGNAL_SERVICE_ADDRESS,
+  L1_SIGNAL_SERVICE_ADDRESS,
   PUB_TAIKO_BRIDGE_ADDRESS,
   TAIKO_L2_BRIDGE_ADDRESS,
   TAIKO_L2_CHAIN_ID,
@@ -154,7 +154,7 @@ export function useL2LegExecution(
 
       // Get storage proof from L1
       const proof = await l1Client.getProof({
-        address: PUB_L1_SIGNAL_SERVICE_ADDRESS,
+        address: L1_SIGNAL_SERVICE_ADDRESS,
         storageKeys: [signalSlot],
         blockNumber: anchorBlockNumber,
       });

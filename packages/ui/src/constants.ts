@@ -21,7 +21,9 @@ export const PUB_TAIKO_BRIDGE_ADDRESS = (process.env.NEXT_PUBLIC_TAIKO_BRIDGE_AD
 
 // Taiko L2 configuration
 export const PUB_TAIKO_L2_RPC_URL = process.env.NEXT_PUBLIC_TAIKO_L2_RPC_URL ?? "";
-export const PUB_L1_SIGNAL_SERVICE_ADDRESS = (process.env.NEXT_PUBLIC_L1_SIGNAL_SERVICE_ADDRESS ?? "") as Address;
+
+// Taiko L1 protocol contracts (deployed on Ethereum mainnet)
+export const L1_SIGNAL_SERVICE_ADDRESS = "0x9e0a24964e5397B566c1ed39258e21aB5E35C77C" as Address;
 
 // Taiko L2 precompile addresses (deterministic across all Taiko networks)
 export const TAIKO_L2_ANCHOR_ADDRESS = "0x1670000000000000000000000000000000010001" as Address;
