@@ -164,10 +164,10 @@ export function useL2LegExecution(
         blockNumber: anchorBlockNumber,
       });
 
-      // Encode HopProof
+      // Encode HopProof — chainId is the destination chain (L2), not the source
       const hopProofs = [
         {
-          chainId: BigInt(PUB_CHAIN.id),
+          chainId: BigInt(TAIKO_L2_CHAIN_ID),
           blockId: anchorBlockNumber,
           rootHash: block.stateRoot,
           cacheOption: 0,
