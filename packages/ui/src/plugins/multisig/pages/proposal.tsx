@@ -19,6 +19,7 @@ import {
   AccountEncryptionStatus,
   useAccountEncryptionStatus,
 } from "@/plugins/security-council/hooks/useAccountEncryptionStatus";
+import { ProposalL2Execution } from "@/components/l2Execution/ProposalL2Execution";
 
 export default function ProposalDetail({ id: proposalId }: { id: string }) {
   const { isConnected, address } = useAccount();
@@ -162,6 +163,12 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
                 snapshotBlock={Number(proposal?.parameters.snapshotBlock)}
               />
             </div>
+            <ProposalL2Execution
+              actions={proposal.actions}
+              executed={proposal.executed}
+              executorTxHash={gqlProposal?.executor?.txHash}
+              executionBlockNumber={gqlProposal?.executionBlockNumber}
+            />
             <ProposalActions actions={proposal.actions} />
           </div>
           <div className="flex flex-col gap-y-6 md:w-[33%]">
