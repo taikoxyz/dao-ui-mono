@@ -14,10 +14,17 @@ interface ProposalL2ExecutionProps {
   executionBlockNumber?: number;
 }
 
-function hasL2Leg(actions: RawAction[]): boolean {
-  return actions.some(
-    (action) => action.to.toLowerCase() === PUB_TAIKO_BRIDGE_ADDRESS.toLowerCase()
-  );
+function hasL2LegFromActions(actions: RawAction[]): boolean {
+  if (!PUB_TAIKO_BRIDGE_ADDRESS || !actions.length) return false;
+  const bridgeAddrLower = PUB_TAIKO_BRIDGE_ADDRESS.toLowerCase().replace("0x", "");
+  return actions.some((action) => {
+    // Direct target: action calls the bridge
+    if (action.to.toLowerCase() === PUB_TAIKO_BRIDGE_ADDRESS.toLowerCase()) return true;
+    // Nested target: bridge address encoded inside the action data
+    // (e.g. DAO.execute wrapping inner actions that include a bridge call)
+    if (action.data.toLowerCase().includes(bridgeAddrLower)) return true;
+    return false;
+  });
 }
 
 export function ProposalL2Execution({
@@ -33,29 +40,39 @@ export function ProposalL2Execution({
   const l1BlockNumber = executionBlockNumber ? BigInt(executionBlockNumber) : undefined;
   const l1TxHash = executorTxHash as Hex | undefined;
 
-  const { isSynced, anchorBlockNumber } =
-    useL2AnchorSync(executed ? l1BlockNumber : undefined);
+  // Pre-execution detection: check action data for bridge address
+  const detectedFromActions = hasL2LegFromActions(actions);
+
+  // For executed proposals, always try anchor sync + message extraction
+  // (actions may be cleared from the contract after execution)
+  const shouldCheckL2 = detectedFromActions || (executed && !!l1TxHash);
+
+  const { isSynced, anchorBlockNumber } = useL2AnchorSync(
+    shouldCheckL2 && executed ? l1BlockNumber : undefined
+  );
 
   const {
+    message,
     isExtracting,
     extractError,
-    isAlreadyProcessed,
     executeL2,
     isL2Confirming,
     isL2Confirmed,
   } = useL2LegExecution(
-    executed && isSynced ? l1TxHash : undefined,
+    shouldCheckL2 && executed && isSynced ? l1TxHash : undefined,
     anchorBlockNumber,
     isSynced
   );
 
-  // Don't render anything if no L2 leg
-  if (!hasL2Leg(actions)) return null;
+  // Post-execution detection: a MessageSent event was found in the L1 tx
+  const detectedFromTx = !!message;
 
-  // Don't render if bridge address is not configured
-  if (!PUB_TAIKO_BRIDGE_ADDRESS) return null;
+  const hasL2Leg = detectedFromActions || detectedFromTx;
 
-  // L1 not yet executed — show informational message
+  // Don't render if no L2 leg detected (and not still checking)
+  if (!hasL2Leg && !isExtracting) return null;
+
+  // Pre-execution: show informational message
   if (!executed) {
     return (
       <div className="mt-4">
@@ -76,7 +93,7 @@ export function ProposalL2Execution({
     );
   }
 
-  // Waiting for subgraph data (executed but no block number yet)
+  // Waiting for subgraph data
   if (!l1BlockNumber || !l1TxHash) {
     return (
       <div className="mt-4 flex items-center gap-2">
@@ -118,6 +135,9 @@ export function ProposalL2Execution({
       </div>
     );
   }
+
+  // No MessageSent found after extraction — not an L2 proposal
+  if (!message && !detectedFromActions) return null;
 
   // Extract error
   if (extractError) {
