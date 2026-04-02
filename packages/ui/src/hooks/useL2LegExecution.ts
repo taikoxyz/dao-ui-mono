@@ -79,6 +79,7 @@ export function useL2LegExecution(
       .getTransactionReceipt({ hash: l1TxHash })
       .then((receipt) => {
         if (cancelled) return;
+        let found = false;
         for (const log of receipt.logs) {
           try {
             const decoded = decodeEventLog({
@@ -89,17 +90,21 @@ export function useL2LegExecution(
             if (decoded.eventName === "MessageSent") {
               setMessage(decoded.args.message as unknown as BridgeMessage);
               setMsgHash(decoded.args.msgHash as Hex);
+              found = true;
               break;
             }
           } catch {
             // Not a MessageSent event, skip
           }
         }
+        if (!found) {
+          setExtractError("No bridge message found in this transaction");
+        }
         setIsExtracting(false);
       })
       .catch((err) => {
         if (cancelled) return;
-        setExtractError(err.message);
+        setExtractError("Failed to read L1 transaction");
         setIsExtracting(false);
       });
 
