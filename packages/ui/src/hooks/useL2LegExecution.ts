@@ -80,7 +80,9 @@ export function useL2LegExecution(
       .then((receipt) => {
         if (cancelled) return;
         let found = false;
+        const bridgeAddr = PUB_TAIKO_BRIDGE_ADDRESS.toLowerCase();
         for (const log of receipt.logs) {
+          if (log.address.toLowerCase() !== bridgeAddr) continue;
           try {
             const decoded = decodeEventLog({
               abi: TaikoBridgeL1EventsAbi,
@@ -113,19 +115,7 @@ export function useL2LegExecution(
     };
   }, [l1TxHash, l1Client, message]);
 
-  // Step 2: Check if already processed on L2
-  const { data: messageStatusResult } = useReadContract({
-    address: TAIKO_L2_BRIDGE_ADDRESS,
-    abi: TaikoBridgeL2Abi,
-    chainId: TAIKO_L2_CHAIN_ID,
-    functionName: "messageStatus",
-    args: msgHash ? [msgHash] : undefined,
-    query: { enabled: !!msgHash },
-  });
-
-  const isAlreadyProcessed = messageStatusResult === MESSAGE_STATUS_DONE;
-
-  // Step 3: Write contract for processMessage
+  // Step 2: Write contract setup (declared early so l2TxHash is available for status polling)
   const {
     writeContract,
     data: l2TxHash,
@@ -136,6 +126,24 @@ export function useL2LegExecution(
 
   const { isLoading: isL2Confirming, isSuccess: isL2Confirmed } =
     useWaitForTransactionReceipt({ hash: l2TxHash });
+
+  // Step 3: Check message status on L2 (re-polls after processMessage tx until DONE)
+  const { data: messageStatusResult } = useReadContract({
+    address: TAIKO_L2_BRIDGE_ADDRESS,
+    abi: TaikoBridgeL2Abi,
+    chainId: TAIKO_L2_CHAIN_ID,
+    functionName: "messageStatus",
+    args: msgHash ? [msgHash] : undefined,
+    query: {
+      enabled: !!msgHash,
+      refetchInterval: (query) => {
+        if (l2TxHash && query.state.data !== MESSAGE_STATUS_DONE) return 5_000;
+        return false;
+      },
+    },
+  });
+
+  const isMessageDone = messageStatusResult === MESSAGE_STATUS_DONE;
 
   // Step 4: Build proof and execute
   const executeL2 = useCallback(async () => {
@@ -238,21 +246,27 @@ export function useL2LegExecution(
       return;
     }
     if (isL2Confirmed) {
-      addAlert("L2 leg executed successfully", {
-        description: "The cross-chain proposal actions have been executed on L2",
-        type: "success",
-      });
+      if (isMessageDone) {
+        addAlert("L2 leg executed successfully", {
+          description: "The cross-chain proposal actions have been executed on L2",
+          type: "success",
+        });
+      } else {
+        addAlert("L2 transaction confirmed but message not yet processed", {
+          description: "The inner L2 execution may have failed. Check the transaction and retry if needed.",
+          type: "error",
+        });
+      }
     }
-  }, [writeStatus, writeError, l2TxHash, isL2Confirming, isL2Confirmed, addAlert, resetWrite]);
+  }, [writeStatus, writeError, l2TxHash, isL2Confirming, isL2Confirmed, isMessageDone, addAlert, resetWrite]);
 
   return {
     message,
     msgHash,
     isExtracting,
     extractError,
-    isAlreadyProcessed,
     executeL2,
     isL2Confirming: writeStatus === "pending" || isL2Confirming,
-    isL2Confirmed: isL2Confirmed || isAlreadyProcessed,
+    isL2Confirmed: isMessageDone,
   };
 }
