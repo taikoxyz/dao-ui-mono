@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { AlertInline, Button, Spinner } from "@aragon/ods";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { type Hex } from "viem";
 import { useAccount, useSwitchChain } from "wagmi";
 import { PUB_TAIKO_BRIDGE_ADDRESS, TAIKO_L2_CHAIN_ID } from "@/constants";
+import { useWalletChainPolicy } from "@/context/WalletChainPolicy";
 import { useL2AnchorSync } from "@/hooks/useL2AnchorSync";
 import { useL2LegExecution } from "@/hooks/useL2LegExecution";
 import { shouldRenderL2ExecutionCard } from "@/utils/l2-execution";
@@ -37,6 +39,7 @@ export function ProposalL2Execution({
   const { isConnected, chain } = useAccount();
   const { open } = useWeb3Modal();
   const { switchChain } = useSwitchChain();
+  const { setAllowedSecondaryChainIds } = useWalletChainPolicy();
 
   const l1BlockNumber = executionBlockNumber ? BigInt(executionBlockNumber) : undefined;
   const l1TxHash = executorTxHash as Hex | undefined;
@@ -69,6 +72,15 @@ export function ProposalL2Execution({
   const detectedFromTx = !!message;
 
   const hasL2Leg = detectedFromActions || detectedFromTx;
+  const shouldAllowTaikoL2 = executed && shouldCheckL2 && !isL2Confirmed;
+
+  useEffect(() => {
+    setAllowedSecondaryChainIds(shouldAllowTaikoL2 ? [TAIKO_L2_CHAIN_ID] : []);
+
+    return () => {
+      setAllowedSecondaryChainIds([]);
+    };
+  }, [setAllowedSecondaryChainIds, shouldAllowTaikoL2]);
 
   // Don't render if no L2 leg detected (and not still checking)
   if (!shouldRenderL2ExecutionCard({ hasL2Leg, isExtracting, shouldCheckExecutedProposal: shouldCheckL2 })) {
