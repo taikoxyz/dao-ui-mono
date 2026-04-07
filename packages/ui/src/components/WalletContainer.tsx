@@ -1,4 +1,4 @@
-import { PUB_CHAIN, PUB_CHAIN_NAME } from "@/constants";
+import { PUB_CHAIN, PUB_CHAIN_NAME, TAIKO_L2_CHAIN_ID } from "@/constants";
 import { config } from "@/context/Web3Modal";
 import { formatHexString } from "@/utils/evm";
 import { MemberAvatar } from "@aragon/ods";
@@ -33,7 +33,7 @@ const WalletContainer = () => {
 
   useEffect(() => {
     if (!chainId) return;
-    else if (chainId === PUB_CHAIN.id) return;
+    else if (chainId === PUB_CHAIN.id || chainId === TAIKO_L2_CHAIN_ID ) return;
 
     switchChain({ chainId: PUB_CHAIN.id });
   }, [chainId, switchChain]);

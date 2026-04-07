@@ -5,6 +5,7 @@ import { useAccount, useSwitchChain } from "wagmi";
 import { PUB_TAIKO_BRIDGE_ADDRESS, TAIKO_L2_CHAIN_ID } from "@/constants";
 import { useL2AnchorSync } from "@/hooks/useL2AnchorSync";
 import { useL2LegExecution } from "@/hooks/useL2LegExecution";
+import { shouldRenderL2ExecutionCard } from "@/utils/l2-execution";
 import { type RawAction } from "@/utils/types";
 
 interface ProposalL2ExecutionProps {
@@ -70,7 +71,9 @@ export function ProposalL2Execution({
   const hasL2Leg = detectedFromActions || detectedFromTx;
 
   // Don't render if no L2 leg detected (and not still checking)
-  if (!hasL2Leg && !isExtracting) return null;
+  if (!shouldRenderL2ExecutionCard({ hasL2Leg, isExtracting, shouldCheckExecutedProposal: shouldCheckL2 })) {
+    return null;
+  }
 
   // Pre-execution: show informational message
   if (!executed) {

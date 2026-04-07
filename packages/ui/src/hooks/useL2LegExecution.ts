@@ -23,6 +23,7 @@ import {
   TAIKO_L2_CHAIN_ID,
 } from "@/constants";
 import { AlertContextProps, useAlerts } from "@/context/Alerts";
+import { getConfirmedL2MessageOutcome } from "@/utils/l2-execution";
 
 // Bridge message status: 0 = NEW, 1 = RETRIABLE, 2 = DONE, 3 = FAILED, 4 = PROVEN
 const MESSAGE_STATUS_DONE = 2;
@@ -104,7 +105,7 @@ export function useL2LegExecution(
         }
         setIsExtracting(false);
       })
-      .catch((err) => {
+      .catch(() => {
         if (cancelled) return;
         setExtractError("Failed to read L1 transaction");
         setIsExtracting(false);
@@ -246,19 +247,39 @@ export function useL2LegExecution(
       return;
     }
     if (isL2Confirmed) {
-      if (isMessageDone) {
+      const messageOutcome = getConfirmedL2MessageOutcome(messageStatusResult);
+
+      if (messageOutcome === "success") {
         addAlert("L2 leg executed successfully", {
           description: "The cross-chain proposal actions have been executed on L2",
           type: "success",
         });
-      } else {
-        addAlert("L2 transaction confirmed but message not yet processed", {
-          description: "The inner L2 execution may have failed. Check the transaction and retry if needed.",
+        return;
+      }
+
+      if (messageOutcome === "failed") {
+        addAlert("L2 transaction confirmed but message processing failed", {
+          description: "The bridge message failed on L2. Check the transaction and retry if needed.",
           type: "error",
         });
+        return;
       }
+
+      addAlert("L2 transaction confirmed; waiting for message processing", {
+        description: "The transaction was confirmed on Taiko L2 and the bridge message is still being finalized.",
+        type: "info",
+      });
     }
-  }, [writeStatus, writeError, l2TxHash, isL2Confirming, isL2Confirmed, isMessageDone, addAlert, resetWrite]);
+  }, [
+    writeStatus,
+    writeError,
+    l2TxHash,
+    isL2Confirming,
+    isL2Confirmed,
+    messageStatusResult,
+    addAlert,
+    resetWrite,
+  ]);
 
   return {
     message,
