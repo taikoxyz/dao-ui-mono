@@ -16,6 +16,7 @@ import { Else, ElseIf, If, Then } from "@/components/if";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { CardEmptyState } from "@aragon/ods";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
+import { ProposalL2Execution } from "@/components/l2Execution/ProposalL2Execution";
 
 export default function ProposalDetail({ id: proposalId }: { id: string }) {
   const { isConnected, address } = useAccount();
@@ -144,6 +145,12 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
                     snapshotBlock={Number(proposal?.parameters.snapshotBlock)}
                   />
                 </div>
+                <ProposalL2Execution
+                  actions={proposal.actions}
+                  executed={proposal.executed}
+                  executorTxHash={gqlProposal?.executor?.txHash}
+                  executionBlockNumber={gqlProposal?.executionBlockNumber}
+                />
                 <ProposalActions
                   actions={proposal.actions}
                   emptyListDescription="Either the proposal has no actions or they cannot be decrypted by your account"

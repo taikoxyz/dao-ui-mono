@@ -25,6 +25,7 @@ import { SecurityCouncilStage } from "../components/vote/security-council-stage"
 import { CommunityVetoStage } from "../components/vote/community-veto-stage";
 import { useRouter } from "next/router";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
+import { ProposalL2Execution } from "@/components/l2Execution/ProposalL2Execution";
 
 const ZERO = BigInt(0);
 
@@ -211,6 +212,14 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
                       </Button>
                     </div>
                   )}
+
+                  {/* L2 Leg Execution */}
+                  <ProposalL2Execution
+                    actions={proposal.actions}
+                    executed={proposal.executed}
+                    executorTxHash={gqlProposal?.executor?.txHash}
+                    executionBlockNumber={gqlProposal?.executionBlockNumber}
+                  />
                 </div>
               </>
             )}
