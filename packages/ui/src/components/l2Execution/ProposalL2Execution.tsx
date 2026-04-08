@@ -72,7 +72,9 @@ export function ProposalL2Execution({
   const detectedFromTx = !!message;
 
   const hasL2Leg = detectedFromActions || detectedFromTx;
-  const shouldAllowTaikoL2 = executed && shouldCheckL2 && !isL2Confirmed;
+  // Allow Taiko L2 only while still determining L2 leg status or when a confirmed L2 leg exists.
+  // Without this guard, executed proposals with no L2 leg keep the secondary chain allowed indefinitely.
+  const shouldAllowTaikoL2 = executed && shouldCheckL2 && !isL2Confirmed && (!isSynced || isExtracting || hasL2Leg);
 
   useEffect(() => {
     setAllowedSecondaryChainIds(shouldAllowTaikoL2 ? [TAIKO_L2_CHAIN_ID] : []);
