@@ -11,6 +11,7 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { UseDerivedWalletProvider } from "../hooks/useDerivedWallet";
 import { OdsModulesProvider } from "@aragon/ods";
 import { customModulesCopy, odsCoreProviderValues } from "@/components/ods-customizations";
+import { WalletChainPolicyProvider } from "./WalletChainPolicy";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,7 +54,9 @@ export function RootContextProvider({ children }: { children: ReactNode }) {
       >
         <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
           <AlertProvider>
-            <UseDerivedWalletProvider>{children}</UseDerivedWalletProvider>
+            <WalletChainPolicyProvider>
+              <UseDerivedWalletProvider>{children}</UseDerivedWalletProvider>
+            </WalletChainPolicyProvider>
           </AlertProvider>
         </PersistQueryClientProvider>
       </OdsModulesProvider>

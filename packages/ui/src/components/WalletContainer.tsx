@@ -1,6 +1,8 @@
 import { PUB_CHAIN, PUB_CHAIN_NAME } from "@/constants";
+import { useWalletChainPolicy } from "@/context/WalletChainPolicy";
 import { config } from "@/context/Web3Modal";
 import { formatHexString } from "@/utils/evm";
+import { shouldForcePrimaryChainSwitch } from "@/utils/wallet-chain-policy";
 import { MemberAvatar } from "@aragon/ods";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import classNames from "classnames";
@@ -16,6 +18,7 @@ const WalletContainer = () => {
   const { open } = useWeb3Modal();
   const { address, isConnected, chainId } = useAccount();
   const { switchChain } = useSwitchChain();
+  const { allowedSecondaryChainIds } = useWalletChainPolicy();
 
   const { data: ensName } = useEnsName({
     config,
@@ -32,11 +35,10 @@ const WalletContainer = () => {
   });
 
   useEffect(() => {
-    if (!chainId) return;
-    else if (chainId === PUB_CHAIN.id) return;
+    if (!shouldForcePrimaryChainSwitch(chainId, PUB_CHAIN.id, allowedSecondaryChainIds)) return;
 
     switchChain({ chainId: PUB_CHAIN.id });
-  }, [chainId, switchChain]);
+  }, [allowedSecondaryChainIds, chainId, switchChain]);
 
   return (
     <button
