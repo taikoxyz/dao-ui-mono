@@ -69,6 +69,13 @@ export function useL2LegExecution(
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
 
+  // Reset extraction state when the tx hash changes (e.g. navigating between proposals)
+  useEffect(() => {
+    setMessage(null);
+    setMsgHash(null);
+    setExtractError(null);
+  }, [l1TxHash]);
+
   // Step 1: Extract message from L1 tx receipt
   useEffect(() => {
     if (!l1TxHash || !l1Client || message) return;
