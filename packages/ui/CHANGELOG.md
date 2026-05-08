@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.1](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.3.0...dao-ui-v0.3.1) (2026-05-08)
+
+
+### Chores
+
+* **deps:** bump next to ^15.5.18 for security advisories ([94944bf](https://github.com/taikoxyz/dao-ui-mono/commit/94944bf8dfd3f2ef5dff32cb5e6d8297fecac49b))
+* **deps:** bump next to ^15.5.18 for security advisories ([94f6925](https://github.com/taikoxyz/dao-ui-mono/commit/94f692587b06305559fbbc4afa2e15396985e943))
+* **main:** release dao-ui 0.3.0 ([01b4733](https://github.com/taikoxyz/dao-ui-mono/commit/01b47330864ebed93b7b1217a488e22eae31b9df))
+* **main:** release dao-ui 0.3.0 ([a56995b](https://github.com/taikoxyz/dao-ui-mono/commit/a56995b8c4775f7ebc48132561deb2cfdac703ee))
+
 ## [0.3.0](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.2.3...dao-ui-v0.3.0) (2026-05-08)
 
 
