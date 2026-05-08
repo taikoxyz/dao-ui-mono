@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.3.0](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.2.3...dao-ui-v0.3.0) (2026-05-08)
+
+
+### Features
+
+* **dao-ui:** added gattaca as a SC member ([086e00c](https://github.com/taikoxyz/dao-ui-mono/commit/086e00c9e1411577d41090ff732155776492da53))
+* **dao-ui:** l2 leg execution for cross-chain proposals ([#181](https://github.com/taikoxyz/dao-ui-mono/issues/181)) ([93c8d7f](https://github.com/taikoxyz/dao-ui-mono/commit/93c8d7ff27e7806d730ef8ba711b21c43a1990da))
+
+
+### Bug Fixes
+
+* **dao-ui:** handle disconnected wallet state in proposal execution ([8ddfe2a](https://github.com/taikoxyz/dao-ui-mono/commit/8ddfe2af94f001d542fc4a8fbda54666b6eb64db))
+* **dao-ui:** handle disconnected wallets during proposal execution ([62496e5](https://github.com/taikoxyz/dao-ui-mono/commit/62496e5baa0e6720a27f9bd8e147ccfb0c16af33))
+
+
+### Chores
+
+* **deps:** bump next to ^15.5.18 for security advisories ([94944bf](https://github.com/taikoxyz/dao-ui-mono/commit/94944bf8dfd3f2ef5dff32cb5e6d8297fecac49b))
+* **deps:** bump next to ^15.5.18 for security advisories ([94f6925](https://github.com/taikoxyz/dao-ui-mono/commit/94f692587b06305559fbbc4afa2e15396985e943))
+* **main:** release dao-ui 0.2.3 ([bc07bac](https://github.com/taikoxyz/dao-ui-mono/commit/bc07bac5e72931d57e5a81fd2ace823a6c103f02))
+* **main:** release dao-ui 0.2.3 ([9c5c54d](https://github.com/taikoxyz/dao-ui-mono/commit/9c5c54d687eac1704defd72aabb2d39c1fb9dd6e))
+
+
+### Code Refactoring
+
+* **dao-ui:** simplify wallet-disconnect handling in execute hooks ([eb92c36](https://github.com/taikoxyz/dao-ui-mono/commit/eb92c36d5ef9ffce26439e4ba0493ba41fcacb40))
+
 ## [0.2.3](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.2.2...dao-ui-v0.2.3) (2026-01-19)
 
 
