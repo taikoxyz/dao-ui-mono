@@ -47,7 +47,8 @@ export const PUB_ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY ?
 export const PUB_WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ?? "";
 
 export const PUB_IPFS_ENDPOINTS = process.env.NEXT_PUBLIC_IPFS_ENDPOINTS ?? "";
-export const PUB_PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT ?? "";
+// NOTE: The Pinata credential is intentionally NOT exposed here. It is a
+// server-only secret (process.env.PINATA_JWT) read by src/pages/api/pin.ts.
 
 // Private multisig
 export const DETERMINISTIC_EMERGENCY_PAYLOAD =
@@ -55,6 +56,10 @@ export const DETERMINISTIC_EMERGENCY_PAYLOAD =
 
 // General
 export const PUB_APP_NAME = "Taiko";
+// Filename used for proposal metadata pinned to IPFS. Kept here (no heavy
+// deps) so the server-only /api/pin route can import it without pulling in
+// the viem/multiformats-heavy utils/ipfs module.
+export const UPLOAD_FILE_NAME = PUB_APP_NAME.toLowerCase().trim().replaceAll(" ", "-") + ".json";
 export const PUB_APP_DESCRIPTION = "Taiko's official UI to interact with the DAO smart contract";
 export const PUB_TOKEN_SYMBOL = "TAIKO";
 export const PUB_TOKEN_DECIMALS = 18;

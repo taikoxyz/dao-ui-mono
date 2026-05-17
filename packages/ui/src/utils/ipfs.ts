@@ -1,11 +1,10 @@
-import { PUB_IPFS_ENDPOINTS, PUB_PINATA_JWT, PUB_APP_NAME } from "@/constants";
+import { PUB_IPFS_ENDPOINTS } from "@/constants";
 import { Hex, fromHex, toBytes } from "viem";
 import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
 
 const IPFS_FETCH_TIMEOUT = 1000; // 1 second
-const UPLOAD_FILE_NAME = PUB_APP_NAME.toLowerCase().trim().replaceAll(" ", "-") + ".json";
 
 export function fetchIpfsAsJson(ipfsUri: string) {
   return fetchRawIpfs(ipfsUri).then((res) => res.json());
@@ -20,24 +19,20 @@ export function fetchIpfsAsBlob(ipfsUri: string) {
 }
 
 export async function uploadToPinata(strBody: string) {
-  const blob = new Blob([strBody], { type: "text/plain" });
-  const file = new File([blob], UPLOAD_FILE_NAME);
-  const data = new FormData();
-  data.append("file", file);
-  data.append("pinataMetadata", JSON.stringify({ name: UPLOAD_FILE_NAME }));
-  data.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
-
-  const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+  // The Pinata credential is server-only. The browser talks to our own
+  // same-origin proxy (/api/pin), which attaches the secret and forwards
+  // the pin request to Pinata. See src/pages/api/pin.ts.
+  const res = await fetch("/api/pin", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${PUB_PINATA_JWT}`,
+      "Content-Type": "application/json",
     },
-    body: data,
+    body: JSON.stringify({ body: strBody }),
   });
 
   const resData = await res.json();
 
-  if (resData.error) throw new Error("Request failed: " + resData.error);
+  if (resData.error || !res.ok) throw new Error(`Pinata upload failed (${res.status}): ${formatPinataError(resData)}`);
   else if (!resData.IpfsHash) throw new Error("Could not pin the metadata");
   return "ipfs://" + resData.IpfsHash;
 }
@@ -84,4 +79,17 @@ async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
 function resolvePath(uri: string) {
   const path = uri.includes("ipfs://") ? uri.substring(7) : uri;
   return path;
+}
+
+function formatPinataError(resData: unknown) {
+  if (!resData || typeof resData !== "object") return "Unknown error";
+
+  const error = "error" in resData ? resData.error : resData;
+  if (typeof error === "string") return error;
+  if (!error || typeof error !== "object") return "Unknown error";
+
+  const reason = "reason" in error && typeof error.reason === "string" ? error.reason : "";
+  const details = "details" in error && typeof error.details === "string" ? error.details : "";
+  const message = "message" in error && typeof error.message === "string" ? error.message : "";
+  return [reason, details || message].filter(Boolean).join(" - ") || "Unknown error";
 }
