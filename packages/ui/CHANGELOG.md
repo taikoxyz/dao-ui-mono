@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.2](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.3.1...dao-ui-v0.3.2) (2026-05-18)
+
+
+### Bug Fixes
+
+* **dao-ui:** guard proposal execution when wallet is disconnected ([d13084b](https://github.com/taikoxyz/dao-ui-mono/commit/d13084b2e64060129d33609e3ca1ac9855ef629d))
+* **dao-ui:** guard proposal execution when wallet is disconnected ([6bb8eb4](https://github.com/taikoxyz/dao-ui-mono/commit/6bb8eb4a0809d92e624a6bf1133440ed5a2544aa))
+* **dao-ui:** proxy pinata uploads ([4c95ec2](https://github.com/taikoxyz/dao-ui-mono/commit/4c95ec2c2955790e396b593825fdefba67832e66))
+* **dao-ui:** proxy pinata uploads ([af41280](https://github.com/taikoxyz/dao-ui-mono/commit/af41280d6dce8744dbdc21d86a23a900391df520))
+
 ## [0.3.1](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.3.0...dao-ui-v0.3.1) (2026-05-08)
 
 
