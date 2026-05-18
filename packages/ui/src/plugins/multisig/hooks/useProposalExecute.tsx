@@ -36,6 +36,13 @@ export function useProposalExecute(proposalId: string) {
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: executeTxHash });
 
   const executeProposal = () => {
+    if (!isConnected) {
+      addAlert(CONNECT_WALLET_EXECUTE_ALERT_MESSAGE, {
+        type: "error",
+        description: CONNECT_WALLET_EXECUTE_ALERT_DESCRIPTION,
+      });
+      return;
+    }
     if (!canExecute) return;
 
     setIsExecuting(true);

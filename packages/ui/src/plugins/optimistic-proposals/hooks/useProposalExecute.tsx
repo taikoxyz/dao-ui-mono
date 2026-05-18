@@ -38,6 +38,13 @@ export function useProposalExecute(index: number) {
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: executeTxHash });
 
   const executeProposal = () => {
+    if (!isConnected) {
+      addAlert(CONNECT_WALLET_EXECUTE_ALERT_MESSAGE, {
+        type: "error",
+        description: CONNECT_WALLET_EXECUTE_ALERT_DESCRIPTION,
+      });
+      return;
+    }
     if (!canExecute) return;
     if (typeof proposalId === "undefined") return;
 
