@@ -45,6 +45,13 @@ export function useProposalExecute(proposalId: string) {
   const executeProposal = () => {
     let actualMetadataUri: string;
 
+    if (!isConnected) {
+      addAlert(CONNECT_WALLET_EXECUTE_ALERT_MESSAGE, {
+        type: "error",
+        description: CONNECT_WALLET_EXECUTE_ALERT_DESCRIPTION,
+      });
+      return;
+    }
     if (!canExecute) return;
     if (!privateRawMetadata || !proposal?.actions) return;
 
