@@ -16,18 +16,38 @@ function paramDisplay(value: unknown): string {
   return String(value);
 }
 
-// Group runs of identical children (same to + selector) for readable batches.
-function groupChildren(children: DecodedNode[]): Array<{ node: DecodedNode; count: number }> {
-  const out: Array<{ node: DecodedNode; count: number }> = [];
+// Group consecutive children sharing the same target + selector into an expandable
+// fold. Every call is still rendered individually so distinct args are never hidden;
+// only byte-identical calls (same `data` + `to`) collapse to a single "×N identical" item.
+type GroupItem = { node: DecodedNode; count: number };
+type ChildGroup = {
+  to: string;
+  selector: string | null;
+  functionName: string | null;
+  total: number;
+  items: GroupItem[];
+};
+
+function groupChildren(children: DecodedNode[]): ChildGroup[] {
+  const groups: ChildGroup[] = [];
   for (const child of children) {
-    const last = out[out.length - 1];
-    if (last && last.node.to === child.to && last.node.selector === child.selector && child.children.length === 0) {
-      last.count += 1;
+    const last = groups[groups.length - 1];
+    if (last && last.to === child.to && last.selector === child.selector) {
+      last.total += 1;
+      const lastItem = last.items[last.items.length - 1];
+      if (lastItem && lastItem.node.data === child.data) lastItem.count += 1;
+      else last.items.push({ node: child, count: 1 });
     } else {
-      out.push({ node: child, count: 1 });
+      groups.push({
+        to: child.to,
+        selector: child.selector,
+        functionName: child.functionName,
+        total: 1,
+        items: [{ node: child, count: 1 }],
+      });
     }
   }
-  return out;
+  return groups;
 }
 
 export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ node, depth = 0 }) => {
@@ -59,8 +79,23 @@ export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ no
         <div className="flex flex-col gap-y-2">
           {node.signature && <InputText label="Contract function" className="w-full" value={node.signature} disabled />}
           {node.params.map((p, i) => {
-            const v = p.formatted ?? paramDisplay(p.value);
             const label = decodeCamelCase(p.name || `Parameter ${i + 1}`);
+            if (p.type === "address") {
+              const addr = String(p.value);
+              return (
+                <div key={i} className="flex flex-col gap-y-1">
+                  <span className="text-sm text-neutral-500">{label}</span>
+                  <Link
+                    href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${addr}`}
+                    target="_blank"
+                    className="text-sm text-primary-500 underline"
+                  >
+                    {addr}
+                  </Link>
+                </div>
+              );
+            }
+            const v = p.formatted ?? paramDisplay(p.value);
             return v.length > 42 ? (
               <TextArea key={i} label={label} className="h-full w-full" value={v} disabled />
             ) : (
@@ -75,6 +110,10 @@ export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ no
               disabled
             />
           )}
+          <details className="mt-1">
+            <summary className="cursor-pointer text-sm text-neutral-500">Raw calldata</summary>
+            <pre className="mt-1 overflow-x-auto rounded-md bg-neutral-50 p-2 text-xs text-neutral-700">{node.data}</pre>
+          </details>
         </div>
       )}
 
@@ -85,12 +124,36 @@ export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ no
       {/* Children */}
       {node.children.length > 0 && (
         <div className="flex flex-col gap-y-4">
-          {groupChildren(node.children).map(({ node: child, count }, i) => (
-            <div key={i} className="flex flex-col gap-y-1">
-              {count > 1 && <span className="text-sm text-neutral-500">{count}× repeated call</span>}
-              <ActionNode node={child} depth={depth + 1} />
-            </div>
-          ))}
+          {groupChildren(node.children).map((group, i) => {
+            // A single call renders inline with no group chrome.
+            if (group.total === 1) {
+              return <ActionNode key={i} node={group.items[0].node} depth={depth + 1} />;
+            }
+            // A run of ≥2 calls renders an expandable fold with every call inside.
+            const groupExplorerUrl = `${PUB_CHAIN.blockExplorers?.default.url}/address/${group.to}`;
+            return (
+              <details key={i} open className="flex flex-col gap-y-2">
+                <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 text-neutral-700">
+                  <span className="text-base text-neutral-800">{decodeCamelCase(group.functionName ?? "(call)")}</span>
+                  <span className="text-sm text-neutral-500">— {group.total} calls</span>
+                  <Link href={groupExplorerUrl} target="_blank" className="text-sm text-neutral-500">
+                    {formatHexString(group.to)}
+                  </Link>
+                  <TrustBadge trust={group.items[0].node.trust} />
+                </summary>
+                <div className="mt-2 flex flex-col gap-y-4">
+                  {group.items.map((item, j) => (
+                    <div key={j} className="flex flex-col gap-y-1">
+                      {item.count > 1 && (
+                        <span className="text-sm text-neutral-500">×{item.count} identical</span>
+                      )}
+                      <ActionNode node={item.node} depth={depth + 1} />
+                    </div>
+                  ))}
+                </div>
+              </details>
+            );
+          })}
         </div>
       )}
     </div>
