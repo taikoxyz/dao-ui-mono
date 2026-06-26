@@ -15,6 +15,7 @@ import { useActionTree } from "@/hooks/useActionTree";
 import { decodeCamelCase } from "@/utils/case";
 import { ActionNodeBody } from "./actionNode";
 import { TrustBadge } from "./trustBadge";
+import { displaySummary } from "@/utils/decoding/format";
 
 const DEFAULT_DESCRIPTION =
   "When the proposal passes the community vote, the following actions will be executable by the DAO.";
@@ -103,7 +104,9 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
               </Link>
               {node && <TrustBadge trust={node.trust} />}
             </div>
-            {node?.summary && <p className="text-left text-sm text-neutral-600 md:text-base">{node.summary}</p>}
+            {node && displaySummary(node) && (
+              <p className="text-left text-sm text-neutral-600 md:text-base">{displaySummary(node)}</p>
+            )}
           </div>
           <div className="hidden w-24 shrink-0 text-right text-sm text-neutral-500 sm:block md:text-base">{title}</div>
         </div>

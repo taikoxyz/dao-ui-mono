@@ -4,7 +4,7 @@ import { decodeCamelCase } from "@/utils/case";
 import Link from "next/link";
 import { formatEther } from "viem";
 import type { DecodedNode, DecodedParam } from "@/utils/decoding/types";
-import { shortHex } from "@/utils/decoding/format";
+import { shortHex, displaySummary } from "@/utils/decoding/format";
 import { EncodedView } from "./encodedView";
 import { TrustBadge } from "./trustBadge";
 import { CopyButton } from "@/components/copy/copyButton";
@@ -29,7 +29,8 @@ type Lead = { text: string; hex?: string };
 
 /** Structured lead so the embedded identifier (a key/hash, not an address) can be made copyable. */
 function leadParts(node: DecodedNode): Lead {
-  if (node.summary) return { text: node.summary };
+  const summary = displaySummary(node);
+  if (summary) return { text: summary };
   const fn = node.functionName;
   if (!fn) return { text: node.selector ? "Unrecognized call" : `Transfer ${PUB_CHAIN.nativeCurrency.symbol}` };
 

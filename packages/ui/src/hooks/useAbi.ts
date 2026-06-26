@@ -4,14 +4,14 @@ import { AbiFunction } from "abitype";
 import { useQuery } from "@tanstack/react-query";
 import { PUB_CHAIN } from "@/constants";
 import { useAlerts } from "@/context/Alerts";
-import { loadAbiWith } from "@/utils/decoding/abiResolver";
+import { loadAbiWith, abiQueryKey } from "@/utils/decoding/abiResolver";
 
 export const useAbi = (contractAddress: Address) => {
   const { addAlert } = useAlerts();
   const publicClient = usePublicClient({ chainId: PUB_CHAIN.id });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["abi", contractAddress ?? "", publicClient?.chain.id],
+    queryKey: abiQueryKey(publicClient?.chain.id, contractAddress),
     queryFn: async () => {
       if (!contractAddress || !publicClient) return { abi: [], trust: "unknown", isProxy: false, implementation: null };
       const res = await loadAbiWith(publicClient, contractAddress);

@@ -7,6 +7,16 @@ import type { AbiResolution } from "./types";
 
 export { loadSignature } from "./signatureLookup";
 
+/**
+ * Canonical react-query key for a resolved ABI. Shared by `useAbi` and
+ * `useActionTree` so the same contract's ABI (whatsabi autoload + Etherscan +
+ * proxy RPC reads) is cached once. Address is lowercased so a checksummed and a
+ * lowercase reference to the same contract collapse to one cache entry.
+ */
+export function abiQueryKey(chainId: number | undefined, address: Address | undefined) {
+  return ["abi", chainId, (address ?? "").toLowerCase()] as const;
+}
+
 function etherscanLoader() {
   return new whatsabi.loaders.EtherscanABILoader({
     apiKey: PUB_ETHERSCAN_API_KEY,
