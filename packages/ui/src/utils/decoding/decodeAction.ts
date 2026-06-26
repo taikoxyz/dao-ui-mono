@@ -1,5 +1,6 @@
 import { slice, toFunctionSelector, toFunctionSignature, decodeFunctionData, formatEther, type AbiFunction } from "viem";
 import type { DecodeCtx, DecodedNode, RawCall } from "./types";
+import { matchUnwrapper } from "./unwrappers";
 
 function baseNode(call: RawCall): DecodedNode {
   return {
@@ -66,6 +67,27 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
     }
   } else {
     node.error = "no-abi";
+  }
+
+  const unwrapper = matchUnwrapper(node);
+  if (unwrapper) {
+    const { summary, children } = await unwrapper.apply(node, ctx);
+    node.summary = summary;
+    if (children.length) {
+      if (ctx.depth >= ctx.maxDepth) {
+        node.truncated = "depth";
+      } else {
+        for (const child of children) {
+          const key = `${child.to}:${child.data}`.toLowerCase();
+          if (ctx.seen.has(key)) {
+            node.truncated = "cycle";
+            continue;
+          }
+          const childCtx = { ...ctx, depth: ctx.depth + 1, seen: new Set(ctx.seen).add(key) };
+          node.children.push(await decodeAction(child, childCtx));
+        }
+      }
+    }
   }
 
   return node;
