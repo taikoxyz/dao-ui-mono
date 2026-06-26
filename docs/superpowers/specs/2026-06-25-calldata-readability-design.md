@@ -144,3 +144,17 @@ Unwrappers are selector-driven, so they summarize even when the ABI is missing; 
 1. **ERC-7730 enrichment** — fetch/author descriptors (EF registry + Sourcify TS SDK) to replace the hand-written summary catalog with standard JSON + formatted fields + attestation trust signal. No contract changes required.
 2. **Security flags** — a pass over the node tree tagging sensitive operations (upgrades, ownership/admin changes, unlimited approvals, calls to unverified contracts).
 3. **Simulation/trace** — actual execution call-tree and state/balance changes.
+
+---
+
+## Revision A (2026-06-26) — grouping & per-call inspectability
+
+User review of the rendered tree changed the child-grouping requirement (the original "group consecutive by to+selector, show first only" was found to *hide distinct arguments* — e.g. proposal #31's 12 `setProgramTrusted` calls each carry a different program hash). Revised design:
+
+1. **Grouping is a fold, never a data loss.** Consecutive children sharing the same `to` + selector render under an expandable group header (`{functionName} — N calls` + target link + trust badge). Inside, **every call is rendered individually and stays fully inspectable** — its own decoded args, contract link, and raw calldata. A group of size 1 renders as a normal inline node (no group chrome).
+2. **Byte-identical folding only.** Within a group, a run of calls with identical `data` (selector + all args identical) collapses to a single item badged `×K identical` — the only case where folding hides nothing real.
+3. **Per-call raw calldata.** Every decoded call (grouped or not) exposes its exact `data` bytes via a collapsible "raw" view, so a reviewer can verify byte-for-byte against chain. (Undecoded/error nodes keep the existing `EncodedView` fallback.)
+4. **Per-arg address links.** A decoded param whose `type === "address"` renders as a block-explorer address link; non-address args (e.g. `bytes32` hashes) stay as copyable text.
+5. **Execution-transaction link (new Task 12).** When a proposal has been executed, surface a proposal-level "View execution transaction ↗" link to the on-chain tx that ran all actions. Requires plumbing `executionTxHash` (available in the subgraph `proposalMixin`, not currently fetched) into `ProposalActions` via a new optional prop; pages without it simply omit the link.
+
+Tasks: Task 10 (revised) covers items 1–4 (self-contained in `proposalActions/` components, no new props). Task 12 covers item 5 (gql + proposal-page plumbing).
