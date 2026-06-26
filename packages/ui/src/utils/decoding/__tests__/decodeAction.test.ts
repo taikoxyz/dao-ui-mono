@@ -74,4 +74,30 @@ describe("decodeAction (one level)", () => {
     expect(node.error).toBeTruthy();
     expect(node.trust).toBe("unknown");
   });
+
+  it("copies contract name and proxyName from the resolution onto the node", async () => {
+    const data = encodeFunctionData({ abi: [transferAbi], functionName: "transfer", args: [ADDR, 1n] });
+    const node = await decodeAction(
+      { to: ADDR, value: 0n, data },
+      ctx({
+        loadAbi: async (): Promise<AbiResolution> => ({
+          abi: [transferAbi],
+          trust: "verified",
+          isProxy: true,
+          implementation: ADDR,
+          name: "OptimisticTokenVotingPlugin",
+          proxyName: "ERC1967Proxy",
+        }),
+      }),
+    );
+    expect(node.name).toBe("OptimisticTokenVotingPlugin");
+    expect(node.proxyName).toBe("ERC1967Proxy");
+  });
+
+  it("leaves name undefined when the resolution has none", async () => {
+    const data = encodeFunctionData({ abi: [transferAbi], functionName: "transfer", args: [ADDR, 1n] });
+    const node = await decodeAction({ to: ADDR, value: 0n, data }, ctx());
+    expect(node.name).toBeUndefined();
+    expect(node.proxyName).toBeUndefined();
+  });
 });

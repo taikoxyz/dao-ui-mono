@@ -48,6 +48,8 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
   node.trust = resolution.trust;
   node.isProxy = resolution.isProxy;
   node.implementation = resolution.implementation;
+  node.name = resolution.name;
+  node.proxyName = resolution.proxyName;
 
   let fnAbi: AbiFunction | undefined = resolution.abi.find(
     (f) => f.type === "function" && node.selector === toFunctionSelector(f),

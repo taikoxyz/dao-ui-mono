@@ -21,6 +21,10 @@ export type DecodedNode = {
   trust: TrustLevel;
   isProxy: boolean;
   implementation: Address | null;
+  /** Verified contract name of the call target (implementation, for proxies). Verified sources only. */
+  name?: string;
+  /** Verified name of the proxy contract itself, when the target is a proxy. */
+  proxyName?: string;
   summary: string | null;
   children: DecodedNode[];
   error?: string;
@@ -32,6 +36,10 @@ export type AbiResolution = {
   trust: TrustLevel; // "verified" | "bytecode" | "unknown"
   isProxy: boolean;
   implementation: Address | null;
+  /** Verified contract name of the resolved target (implementation, for proxies). */
+  name?: string;
+  /** Verified name of the proxy contract itself, when `isProxy`. */
+  proxyName?: string;
 };
 
 export type RawCall = { to: Address; value: bigint; data: Hex };
