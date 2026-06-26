@@ -103,14 +103,15 @@ export const AddressLink: React.FC<{ address: string; className?: string }> = ({
 );
 
 const ParamRow: React.FC<{ p: DecodedParam; idx: number }> = ({ p, idx }) => {
-  const label = decodeCamelCase(p.name || `Parameter ${idx + 1}`);
+  // raw ABI parameter name, verbatim (preserve camelCase / underscores / casing)
+  const label = p.name || `Parameter ${idx + 1}`;
   return (
-    <div className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-1 py-1 text-sm">
-      <span className="text-neutral-500">{label}</span>
+    <div className="grid grid-cols-[auto_1fr] items-start gap-x-3 gap-y-1 py-1 text-sm">
+      <span className="whitespace-nowrap text-neutral-500">{label}</span>
       {p.type === "address" ? (
         <AddressLink address={String(p.value)} />
       ) : (
-        <span className="flex items-start gap-x-1">
+        <span className="flex min-w-0 items-start gap-x-1">
           <span className="break-all font-mono text-xs text-neutral-700">{p.formatted ?? paramDisplay(p.value)}</span>
           {String(p.value).length > 18 && <CopyButton value={String(p.value)} />}
         </span>
@@ -174,7 +175,7 @@ const LeafItem: React.FC<{
   const flag = node.params.find((p) => p.type === "bool");
   const isDisable = flag != null && !flag.value;
   const accent = isDisable ? "border-l-warning-500" : "border-l-primary-400";
-  const flagName = flag ? decodeCamelCase(flag.name || "flag") : "";
+  const flagName = flag ? flag.name || "flag" : "";
   const lead = leadParts(node);
 
   return (
