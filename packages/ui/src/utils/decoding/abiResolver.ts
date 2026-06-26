@@ -83,7 +83,7 @@ export async function loadAbiWith(publicClient: PublicClient, address: Address):
     // otherwise whatsabi guessed the selectors from bytecode.
     const trust = loaded.abiLoadedFrom ? "verified" : "bytecode";
     // Name only from a verified source; never surface a guessed name.
-    const name = trust === "verified" && loaded.contractResult?.ok ? (loaded.contractResult.name ?? undefined) : undefined;
+    const name = trust === "verified" && loaded.contractResult?.ok ? (loaded.contractResult.name || undefined) : undefined;
     // For a proxy, also resolve the proxy contract's own verified name (one extra call).
     const proxyName = isProxy ? ((await verifiedName(address)) ?? undefined) : undefined;
     return { abi, trust, isProxy, implementation, name, proxyName };

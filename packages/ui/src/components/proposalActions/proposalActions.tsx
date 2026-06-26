@@ -14,6 +14,7 @@ import { If } from "../if";
 import { useActionTree } from "@/hooks/useActionTree";
 import { decodeCamelCase } from "@/utils/case";
 import { ActionNodeBody } from "./actionNode";
+import { contractLabel } from "./actionNode.helpers";
 import { TrustBadge } from "./trustBadge";
 import { displaySummary } from "@/utils/decoding/format";
 
@@ -78,6 +79,7 @@ export const ProposalActions: React.FC<IProposalActionsProps> = (props) => {
 const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: RawAction; onRemove?: () => any }) => {
   const { node, isLoading } = useActionTree(rawAction);
   const title = `Action ${index + 1}`;
+  const label = node ? contractLabel(node) : null;
   const isEthTransfer = !rawAction.data || rawAction.data === "0x";
   const headline = node?.functionName
     ? node.functionName
@@ -94,6 +96,7 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
               {decodeCamelCase(headline)}
             </span>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              {label && <span className="font-semibold text-neutral-700">{label}</span>}
               <Link
                 href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${rawAction.to}`}
                 target="_blank"

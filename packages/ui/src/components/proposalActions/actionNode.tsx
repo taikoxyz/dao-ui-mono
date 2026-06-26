@@ -158,6 +158,7 @@ export const ChildrenTree: React.FC<{ node: DecodedNode; depth?: number }> = ({ 
           return <LeafItem key={gi} node={group.items[0].node} index={idx} total={total} count={1} depth={depth} />;
         }
         const groupExplorer = `${PUB_CHAIN.blockExplorers?.default.url}/address/${group.to}`;
+        const groupLabel = contractLabel(group.items[0].node);
         let ip = pos;
         pos += group.total;
         return (
@@ -166,9 +167,7 @@ export const ChildrenTree: React.FC<{ node: DecodedNode; depth?: number }> = ({ 
               <span className="font-semibold text-neutral-800">{decodeCamelCase(group.functionName ?? "(call)")}</span>
               <span className="rounded-full bg-neutral-100 px-2 text-xs text-neutral-500">{group.total} calls</span>
               <span className="ml-auto flex items-center gap-x-2">
-                {contractLabel(group.items[0].node) && (
-                  <span className="font-semibold text-neutral-700">{contractLabel(group.items[0].node)}</span>
-                )}
+                {groupLabel && <span className="font-semibold text-neutral-700">{groupLabel}</span>}
                 <Link
                   href={groupExplorer}
                   target="_blank"
