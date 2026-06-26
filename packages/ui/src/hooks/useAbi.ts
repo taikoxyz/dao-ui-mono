@@ -1,86 +1,27 @@
-import { Address, isAddressEqual } from "viem";
-import { whatsabi } from "@shazow/whatsabi";
+import { Address } from "viem";
 import { usePublicClient } from "wagmi";
 import { AbiFunction } from "abitype";
 import { useQuery } from "@tanstack/react-query";
-import { ADDRESS_ZERO, isAddress, isContract } from "@/utils/evm";
-import { PUB_CHAIN, PUB_ETHERSCAN_API_KEY } from "@/constants";
+import { PUB_CHAIN } from "@/constants";
 import { useAlerts } from "@/context/Alerts";
-import { getImplementation } from "@/utils/proxies";
+import { loadAbiWith } from "@/utils/decoding/abiResolver";
 
 export const useAbi = (contractAddress: Address) => {
   const { addAlert } = useAlerts();
   const publicClient = usePublicClient({ chainId: PUB_CHAIN.id });
 
-  const { data: implementationAddress, isLoading: isLoadingImpl } = useQuery<Address | null>({
-    queryKey: ["proxy-check", contractAddress, publicClient?.chain.id],
-    queryFn: () => {
-      if (!contractAddress || !publicClient) return null;
-      else if (!isAddress(contractAddress) || !publicClient) {
-        return null;
-      }
-
-      return getImplementation(publicClient, contractAddress)
-        .then((address) => {
-          if (!address || isAddressEqual(address, ADDRESS_ZERO)) return null;
-          return address;
-        })
-        .catch(() => null);
-    },
-    retry: 6,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    retryOnMount: true,
-    staleTime: 1000 * 60 * 60 * 24 * 7,
-  });
-
-  const resolvedAddress = isAddress(implementationAddress) ? (implementationAddress as Address) : contractAddress;
-
-  const {
-    data: abi,
-    isLoading,
-    error,
-  } = useQuery<AbiFunction[], Error>({
-    queryKey: ["abi", resolvedAddress ?? "", publicClient?.chain.id],
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["abi", contractAddress ?? "", publicClient?.chain.id],
     queryFn: async () => {
-      if (!resolvedAddress || !isAddress(resolvedAddress) || !publicClient) {
-        return [];
-      } else if (!(await isContract(resolvedAddress, publicClient))) {
-        return [];
-      }
-
-      return whatsabi
-        .autoload(resolvedAddress, {
-          provider: publicClient,
-          abiLoader: getEtherscanAbiLoader(),
-          followProxies: false,
-          enableExperimentalMetadata: true,
-        })
-        .then(({ abi }) => {
-          const functionItems: AbiFunction[] = [];
-          for (const item of abi) {
-            // "event", "error", "constructor", "receive", "fallback"
-            if (item.type !== "function") continue;
-
-            functionItems.push({
-              name: ((item as any).name as string) ?? "(unknown function)",
-              inputs: item?.inputs ?? [],
-              outputs: item?.outputs ?? [],
-              stateMutability: item?.stateMutability ?? "payable",
-              type: item?.type,
-            });
-          }
-          functionItems.sort(abiSortCallback);
-          return functionItems;
-        })
-        .catch((err) => {
-          console.error(err);
-          addAlert("Cannot fetch", {
-            description: "The details of the contract cannot be fetched or are not publicly available",
-            type: "error",
-          });
-          throw err;
+      if (!contractAddress || !publicClient) return { abi: [], trust: "unknown", isProxy: false, implementation: null };
+      const res = await loadAbiWith(publicClient, contractAddress);
+      if (!res.abi.length && res.trust === "unknown") {
+        addAlert("Cannot fetch", {
+          description: "The details of the contract cannot be fetched or are not publicly available",
+          type: "error",
         });
+      }
+      return res;
     },
     retry: 6,
     refetchOnMount: false,
@@ -89,28 +30,12 @@ export const useAbi = (contractAddress: Address) => {
     staleTime: 1000 * 60 * 60 * 24 * 30,
   });
 
+  const abi: AbiFunction[] = data?.abi ?? [];
   return {
-    abi: abi ?? [],
-    isLoading: isLoading ?? isLoadingImpl,
+    abi,
+    isLoading,
     error,
-    isProxy: !!implementationAddress,
-    implementation: implementationAddress,
+    isProxy: data?.isProxy ?? false,
+    implementation: data?.implementation ?? null,
   };
 };
-
-function getEtherscanAbiLoader() {
-  return new whatsabi.loaders.EtherscanABILoader({
-    apiKey: PUB_ETHERSCAN_API_KEY,
-    baseURL: `https://api.etherscan.io/v2/api?chainid=${PUB_CHAIN.id}`,
-  });
-}
-
-function abiSortCallback(a: AbiFunction, b: AbiFunction) {
-  const a_RO = ["pure", "view"].includes(a.stateMutability);
-  const b_RO = ["pure", "view"].includes(b.stateMutability);
-
-  if (a_RO === b_RO) return 0;
-  else if (a_RO) return 1;
-  else if (b_RO) return -1;
-  return 0;
-}
