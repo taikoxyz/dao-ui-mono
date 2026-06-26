@@ -27,6 +27,13 @@ const persister = createAsyncStoragePersister({
   deserialize,
 });
 
+// Bump when the cached shape of decoded data changes so persisted entries are
+// discarded instead of served stale. The action decoder caches results for
+// days (7d tree / 30d ABI); without a buster, a decoding change (e.g. adding
+// contract names to actions) stays invisible to anyone who already cached a
+// proposal until those windows expire.
+const PERSIST_CACHE_BUSTER = "2026-06-26-action-contract-names";
+
 // Create modal
 createWeb3Modal({
   wagmiConfig: config as any,
@@ -52,7 +59,7 @@ export function RootContextProvider({ children }: { children: ReactNode }) {
         coreProviderValues={odsCoreProviderValues}
         values={{ copy: customModulesCopy }}
       >
-        <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+        <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, buster: PERSIST_CACHE_BUSTER }}>
           <AlertProvider>
             <WalletChainPolicyProvider>
               <UseDerivedWalletProvider>{children}</UseDerivedWalletProvider>
