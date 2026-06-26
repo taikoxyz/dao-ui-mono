@@ -29,4 +29,22 @@ describe("access-control unwrapper", () => {
     const { summary } = await accessControl.apply(n, ctx);
     expect(summary).toContain("Accepts ownership");
   });
+
+  it("summarizes grantRole as 'Grants a role'", async () => {
+    const n = node({ selector: "0x2f2ff15d", functionName: "grantRole", signature: "grantRole(bytes32,address)", params: [] });
+    expect(accessControl.match(n)).toBe(true);
+    const { summary } = await accessControl.apply(n, ctx);
+    expect(summary).toBe("Grants a role on 0x6f21…ef1f");
+  });
+
+  it("summarizes revokeRole as 'Revokes a role'", async () => {
+    const n = node({ selector: "0xd547741f", functionName: "revokeRole", signature: "revokeRole(bytes32,address)", params: [] });
+    const { summary } = await accessControl.apply(n, ctx);
+    expect(summary).toBe("Revokes a role on 0x6f21…ef1f");
+  });
+
+  it("does NOT match a selector collision with a different signature", () => {
+    expect(accessControl.match(node({ signature: "transferOwnershipNow(address)" }))).toBe(false);
+    expect(accessControl.match(node({ signature: null }))).toBe(false);
+  });
 });

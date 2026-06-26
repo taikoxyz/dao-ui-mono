@@ -39,4 +39,9 @@ describe("uups-upgrade unwrapper", () => {
     expect(children[0].to.toLowerCase()).toBe(NEW_IMPL.toLowerCase());
     expect(children[0].data).toBe("0x8456cb59");
   });
+
+  it("does NOT match a selector collision with a different signature", () => {
+    expect(uupsUpgrade.match(node({ signature: "upgradeToken(address)" }))).toBe(false);
+    expect(uupsUpgrade.match(node({ signature: null }))).toBe(false);
+  });
 });
