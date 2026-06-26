@@ -4,15 +4,12 @@ import { decodeCamelCase } from "@/utils/case";
 import Link from "next/link";
 import { formatEther } from "viem";
 import type { DecodedNode, DecodedParam } from "@/utils/decoding/types";
+import { shortHex } from "@/utils/decoding/format";
 import { EncodedView } from "./encodedView";
 import { TrustBadge } from "./trustBadge";
 import { CopyButton } from "@/components/copy/copyButton";
 
 // ---------- helpers ----------
-
-function shortHex(v: string): string {
-  return v.startsWith("0x") && v.length > 14 ? `${v.slice(0, 6)}…${v.slice(-4)}` : v;
-}
 
 function paramDisplay(value: unknown): string {
   if (typeof value === "bigint") return value.toString();
@@ -46,10 +43,6 @@ function leadParts(node: DecodedNode): Lead {
   return { text: decodeCamelCase(fn) };
 }
 
-export function leadText(node: DecodedNode): string {
-  const l = leadParts(node);
-  return l.hex ? `${l.text} ${shortHex(l.hex)}` : l.text;
-}
 
 /** Precise call identifier pinned to the right of each item, e.g. "setX · 3/9". */
 function callTag(node: DecodedNode, index: number, total: number, count: number): string {
@@ -232,7 +225,7 @@ export const ChildrenTree: React.FC<{ node: DecodedNode; depth?: number }> = ({ 
         let ip = pos;
         pos += group.total;
         return (
-          <details key={gi} open>
+          <details key={gi} open={true}>
             <summary className="flex cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 py-1">
               <span className="font-semibold text-neutral-800">{decodeCamelCase(group.functionName ?? "(call)")}</span>
               <span className="rounded-full bg-neutral-100 px-2 text-xs text-neutral-500">{group.total} calls</span>
@@ -281,17 +274,3 @@ export const ActionNodeBody: React.FC<{ node: DecodedNode }> = ({ node }) => {
   if (node.children.length > 0) return <ChildrenTree node={node} depth={1} />;
   return <CallDetails node={node} />;
 };
-
-// Backwards-compatible default: a self-contained node (header + body).
-export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ node }) => (
-  <div className="flex flex-col gap-y-2">
-    <div className="flex flex-col gap-y-1">
-      <span className="text-lg font-semibold leading-tight text-neutral-800 md:text-xl">{leadText(node)}</span>
-      <div className="flex items-center gap-x-3 text-sm">
-        <AddressLink address={node.to} />
-        <TrustBadge trust={node.trust} />
-      </div>
-    </div>
-    <ActionNodeBody node={node} />
-  </div>
-);

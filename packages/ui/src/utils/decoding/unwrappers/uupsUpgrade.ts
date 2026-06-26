@@ -1,21 +1,21 @@
 import { getAddress, type Address, type Hex } from "viem";
 import type { RawCall, Unwrapper } from "../types";
+import { shortHex } from "../format";
 
-const UPGRADE_TO = "0x3659cfe6";
 const UPGRADE_TO_AND_CALL = "0x4f1ef286";
 
-function short(a: string): string {
-  return `${a.slice(0, 6)}…${a.slice(-4)}`;
-}
+// Gate on the resolved signature, not the bare selector, to avoid mislabeling a
+// colliding function on an unrelated contract as a proxy upgrade.
+const SIGNATURES = new Set(["upgradeTo(address)", "upgradeToAndCall(address,bytes)"]);
 
 export const uupsUpgrade: Unwrapper = {
   id: "uups-upgrade",
-  match: (node) => node.selector === UPGRADE_TO || node.selector === UPGRADE_TO_AND_CALL,
+  match: (node) => node.signature != null && SIGNATURES.has(node.signature),
   apply: async (node) => {
     const newImpl = node.params[0]?.value as Address | undefined;
     const summary = newImpl
-      ? `Upgrades proxy ${short(node.to)} → implementation ${short(newImpl)}`
-      : `Upgrades proxy ${short(node.to)}`;
+      ? `Upgrades proxy ${shortHex(node.to)} → implementation ${shortHex(newImpl)}`
+      : `Upgrades proxy ${shortHex(node.to)}`;
 
     const children: RawCall[] = [];
     if (node.selector === UPGRADE_TO_AND_CALL && newImpl) {

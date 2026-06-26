@@ -58,10 +58,12 @@ export async function loadAbiWith(publicClient: PublicClient, address: Address):
       enableExperimentalMetadata: true,
     });
     const abi = toFunctionItems(loaded.abi as any[]);
-    // whatsabi sets hasCode/verified metadata; treat presence of named, typed inputs as "verified".
+    // A loaded ABI source (e.g. Etherscan verified source) means "verified";
+    // otherwise whatsabi guessed the selectors from bytecode.
     const trust = loaded.abiLoadedFrom ? "verified" : "bytecode";
     return { abi, trust, isProxy, implementation };
-  } catch {
+  } catch (err) {
+    console.warn(`abiResolver: whatsabi autoload failed for ${target}`, err);
     return { ...empty, isProxy, implementation };
   }
 }

@@ -18,7 +18,7 @@ function candidateBlobs(node: DecodedNode): Hex[] {
   return [];
 }
 
-export function extractActionArray(node: DecodedNode): RawCall[] | null {
+function decodeActionArray(node: DecodedNode): RawCall[] | null {
   for (const blob of candidateBlobs(node)) {
     if (!blob || blob === "0x" || size(blob) < 64) continue;
     try {
@@ -31,6 +31,17 @@ export function extractActionArray(node: DecodedNode): RawCall[] | null {
     }
   }
   return null;
+}
+
+// `match()` and `apply()` both need the decoded array; cache per node so the ABI
+// decode runs once rather than twice for every batch call.
+const cache = new WeakMap<DecodedNode, RawCall[] | null>();
+
+export function extractActionArray(node: DecodedNode): RawCall[] | null {
+  if (cache.has(node)) return cache.get(node) ?? null;
+  const result = decodeActionArray(node);
+  cache.set(node, result);
+  return result;
 }
 
 export const osxActionArray: Unwrapper = {

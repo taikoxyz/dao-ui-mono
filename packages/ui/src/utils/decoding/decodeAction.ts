@@ -2,6 +2,9 @@ import { slice, size, toFunctionSelector, toFunctionSignature, decodeFunctionDat
 import type { DecodeCtx, DecodedNode, RawCall } from "./types";
 import { matchUnwrapper } from "./unwrappers";
 
+// Default ceiling on the total number of decoded sub-nodes per tree.
+const DEFAULT_MAX_NODES = 256;
+
 function baseNode(call: RawCall): DecodedNode {
   return {
     to: call.to,
@@ -38,7 +41,8 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
   let resolution;
   try {
     resolution = await ctx.loadAbi(call.to);
-  } catch {
+  } catch (err) {
+    console.warn(`decodeAction: ABI resolution failed for ${call.to}`, err);
     resolution = { abi: [], trust: "unknown" as const, isProxy: false, implementation: null };
   }
   node.trust = resolution.trust;
@@ -76,19 +80,44 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
 
   const unwrapper = matchUnwrapper(node);
   if (unwrapper) {
-    const { summary, children } = await unwrapper.apply(node, ctx);
+    let summary: string | null = null;
+    let children: RawCall[] = [];
+    try {
+      ({ summary, children } = await unwrapper.apply(node, ctx));
+    } catch {
+      // A heuristic unwrapper threw on an unexpected param shape (selector-only
+      // matches can reach apply() with empty/typed-wrong params). Degrade to the
+      // raw decoded node instead of rejecting the whole query — otherwise the
+      // action would be stuck on "Decoding…". `error` makes the UI fall back to
+      // the raw calldata view.
+      if (!node.error) node.error = "unwrap-failed";
+      return node;
+    }
     node.summary = summary;
     if (children.length) {
       if (ctx.depth >= ctx.maxDepth) {
         node.truncated = "depth";
       } else {
+        const maxNodes = ctx.maxNodes ?? DEFAULT_MAX_NODES;
+        const nodeCount = ctx.nodeCount ?? { value: 0 };
         for (const child of children) {
+          if (nodeCount.value >= maxNodes) {
+            node.truncated = "budget";
+            break;
+          }
           const key = `${child.to}:${child.data}`.toLowerCase();
           if (ctx.seen.has(key)) {
             node.truncated = "cycle";
             continue;
           }
-          const childCtx = { ...ctx, depth: ctx.depth + 1, seen: new Set(ctx.seen).add(key) };
+          nodeCount.value += 1;
+          const childCtx = {
+            ...ctx,
+            depth: ctx.depth + 1,
+            seen: new Set(ctx.seen).add(key),
+            maxNodes,
+            nodeCount,
+          };
           node.children.push(await decodeAction(child, childCtx));
         }
       }

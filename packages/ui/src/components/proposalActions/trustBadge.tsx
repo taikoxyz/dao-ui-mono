@@ -1,9 +1,11 @@
 import { AvatarIcon, IconType } from "@aragon/ods";
 import type { TrustLevel } from "@/utils/decoding/types";
 
-const MAP: Record<TrustLevel, { label: string; variant: "primary" | "warning"; icon: IconType }> = {
+const MAP: Record<TrustLevel, { label: string; variant: "primary" | "info" | "warning"; icon: IconType }> = {
   verified: { label: "Verified", variant: "primary", icon: IconType.CHECKMARK },
-  bytecode: { label: "Decoded from bytecode", variant: "primary", icon: IconType.CHECKMARK },
+  // Bytecode-guessed ABI: real but unverified — keep it visually distinct from the
+  // "Verified" checkmark so voters don't read it as an endorsed source.
+  bytecode: { label: "Decoded from bytecode", variant: "info", icon: IconType.BLOCKCHAIN_SMARTCONTRACT },
   "signature-db": { label: "Unverified signature", variant: "warning", icon: IconType.WARNING },
   unknown: { label: "Could not decode", variant: "warning", icon: IconType.WARNING },
 };

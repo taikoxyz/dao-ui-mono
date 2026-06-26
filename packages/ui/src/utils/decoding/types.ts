@@ -24,7 +24,7 @@ export type DecodedNode = {
   summary: string | null;
   children: DecodedNode[];
   error?: string;
-  truncated?: "depth" | "cycle";
+  truncated?: "depth" | "cycle" | "budget";
 };
 
 export type AbiResolution = {
@@ -43,6 +43,11 @@ export type DecodeCtx = {
   depth: number;
   maxDepth: number;
   seen: Set<string>;
+  // Total decoded sub-nodes allowed across the whole tree (breadth guard against a
+  // hostile action array fanning out unbounded RPC calls). Shared by reference so
+  // siblings draw from one pool. Defaults applied in decodeAction when omitted.
+  maxNodes?: number;
+  nodeCount?: { value: number };
 };
 
 export type Unwrapper = {
