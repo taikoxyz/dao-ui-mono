@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { parseAbiItem, type AbiFunction } from "viem";
+import { encodeAbiParameters, encodeFunctionData, parseAbiItem, parseAbiParameters, type AbiFunction } from "viem";
 import { decodeAction } from "../decodeAction";
 import type { AbiResolution, DecodeCtx } from "../types";
 
 const executeAbi = parseAbiItem("function execute(bytes)") as AbiFunction;
 const upgradeToAbi = parseAbiItem("function upgradeTo(address newImplementation)") as AbiFunction;
+const storeAbi = parseAbiItem("function store(bytes)") as AbiFunction;
+const actionTuple = parseAbiParameters("(address,uint256,bytes)[]");
 
 const CONTROLLER = "0x75Ba76403b13b26AD1beC70D6eE937314eeaCD0a" as const;
 const PROXY = "0x6f21C543a4aF5189eBdb0723827577e1EF57ef1f" as const;
@@ -45,6 +47,26 @@ describe("osx-action-array unwrapper (real #33 calldata)", () => {
       "0000000000000000000000000000000000000000000000000000000000000004" +
       "deadbeef00000000000000000000000000000000000000000000000000000000";
     const node = await decodeAction({ to: CONTROLLER, value: 0n, data: data as `0x${string}` }, ctx());
+    expect(node.children).toHaveLength(0);
+  });
+
+  it("does not expand action-shaped bytes on non-executor functions", async () => {
+    const blob = encodeAbiParameters(actionTuple, [[[PROXY, 0n, "0x3659cfe6"]]]);
+    const data = encodeFunctionData({ abi: [storeAbi], functionName: "store", args: [blob] });
+    const decodeCtx: DecodeCtx = {
+      ...ctx(),
+      loadAbi: async (): Promise<AbiResolution> => ({
+        abi: [storeAbi],
+        trust: "verified",
+        isProxy: false,
+        implementation: null,
+      }),
+    };
+
+    const node = await decodeAction({ to: CONTROLLER, value: 0n, data }, decodeCtx);
+
+    expect(node.functionName).toBe("store");
+    expect(node.summary).toBeNull();
     expect(node.children).toHaveLength(0);
   });
 });

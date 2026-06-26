@@ -14,7 +14,9 @@ export const erc20: Unwrapper = {
   id: "erc20",
   match: (node) => node.signature != null && SIGNATURES.has(node.signature),
   apply: async (node, ctx) => {
-    const meta = (await ctx.loadToken(node.to)) ?? { decimals: 18, symbol: "tokens" };
+    const meta = await ctx.loadToken(node.to);
+    if (!meta) return { summary: null, children: [] };
+
     const amount = node.params[node.params.length - 1]?.value as bigint;
     const amt = `${formatUnits(amount ?? 0n, meta.decimals)} ${meta.symbol}`;
     if (node.selector === APPROVE) {

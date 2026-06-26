@@ -53,7 +53,7 @@ function callTag(node: DecodedNode, index: number, total: number, count: number)
 }
 
 // Group consecutive children sharing target + selector into a fold. Distinct calls are
-// always rendered individually; only byte-identical (`data` + `to`) calls collapse to ×N.
+// always rendered individually; only identical (`to` + `value` + `data`) calls collapse to ×N.
 type GroupItem = { node: DecodedNode; count: number };
 type ChildGroup = { to: string; selector: string | null; functionName: string | null; total: number; items: GroupItem[] };
 
@@ -64,7 +64,7 @@ function groupChildren(children: DecodedNode[]): ChildGroup[] {
     if (last && last.to === child.to && last.selector === child.selector) {
       last.total += 1;
       const lastItem = last.items[last.items.length - 1];
-      if (lastItem && lastItem.node.data === child.data) lastItem.count += 1;
+      if (lastItem && lastItem.node.value === child.value && lastItem.node.data === child.data) lastItem.count += 1;
       else last.items.push({ node: child, count: 1 });
     } else {
       groups.push({

@@ -49,6 +49,15 @@ describe("decodeAction (one level)", () => {
     expect(node.trust).toBe("signature-db");
   });
 
+  it("labels signature DB fallback as unverified even when another ABI source loaded", async () => {
+    const pause = parseAbiItem("function pause()") as AbiFunction;
+    const data = encodeFunctionData({ abi: [pause], functionName: "pause", args: [] });
+    const node = await decodeAction({ to: ADDR, value: 0n, data }, ctx({ loadSignature: async () => pause }));
+
+    expect(node.functionName).toBe("pause");
+    expect(node.trust).toBe("signature-db");
+  });
+
   it("returns an error node for calldata shorter than a selector", async () => {
     const node = await decodeAction({ to: ADDR, value: 0n, data: "0x1234" }, ctx());
     expect(node.error).toBeTruthy();

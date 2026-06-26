@@ -57,7 +57,7 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
     const frag = await ctx.loadSignature(node.selector);
     if (frag) {
       fnAbi = frag;
-      if (resolution.trust === "unknown") node.trust = "signature-db";
+      node.trust = "signature-db";
     }
   }
 

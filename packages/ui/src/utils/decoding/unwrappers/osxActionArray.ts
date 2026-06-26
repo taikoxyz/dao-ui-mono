@@ -3,8 +3,16 @@ import type { DecodedNode, RawCall, Unwrapper } from "../types";
 
 const ACTION_TUPLE = parseAbiParameters("(address,uint256,bytes)[]");
 const EXECUTE_BYTES = "0x09c5eabe";
+const EXECUTE_BYTES_SIGNATURE = "execute(bytes)";
+
+function isExecuteBytes(node: DecodedNode): boolean {
+  if (node.signature) return node.signature === EXECUTE_BYTES_SIGNATURE;
+  return node.selector === EXECUTE_BYTES;
+}
 
 function candidateBlobs(node: DecodedNode): Hex[] {
+  if (!isExecuteBytes(node)) return [];
+
   const fromParams = node.params.filter((p) => p.type === "bytes").map((p) => p.value as Hex);
   if (fromParams.length) return fromParams;
   // execute(bytes) whose ABI may not have decoded params: pull the single bytes arg directly.

@@ -22,4 +22,11 @@ describe("erc20 unwrapper", () => {
     const { summary } = await erc20.apply(n, ctx);
     expect(summary).toBe("Transfer 1.5 USDC → 0x0000…dEaD");
   });
+
+  it("does not summarize ERC-721-shaped calls without ERC-20 metadata", async () => {
+    const n = node();
+    const nftCtx = { loadToken: async () => null } as unknown as DecodeCtx;
+    const { summary } = await erc20.apply(n, nftCtx);
+    expect(summary).toBeNull();
+  });
 });
