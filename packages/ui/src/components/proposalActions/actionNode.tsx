@@ -5,15 +5,20 @@ import Link from "next/link";
 import { formatEther } from "viem";
 import type { DecodedNode, DecodedParam } from "@/utils/decoding/types";
 import { shortHex } from "@/utils/decoding/format";
-import { paramDisplay, leadParts, callTag, groupChildren } from "./actionNode.helpers";
+import { paramDisplay, leadParts, callTag, groupChildren, contractLabel } from "./actionNode.helpers";
 import { EncodedView } from "./encodedView";
 import { TrustBadge } from "./trustBadge";
 import { CopyButton } from "@/components/copy/copyButton";
 
 // ---------- small pieces ----------
 
-export const AddressLink: React.FC<{ address: string; className?: string }> = ({ address, className = "" }) => (
+export const AddressLink: React.FC<{ address: string; label?: string | null; className?: string }> = ({
+  address,
+  label,
+  className = "",
+}) => (
   <span className="inline-flex items-center gap-x-1">
+    {label && <span className="font-semibold text-neutral-700">{label}</span>}
     <Link
       href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${address}`}
       target="_blank"
@@ -121,7 +126,7 @@ const LeafItem: React.FC<{
       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         {showTarget && (
           <span className="inline-flex items-center gap-x-1 text-neutral-500">
-            on <AddressLink address={node.to} />
+            on <AddressLink address={node.to} label={contractLabel(node)} />
           </span>
         )}
         <TrustBadge trust={node.trust} />
@@ -161,6 +166,9 @@ export const ChildrenTree: React.FC<{ node: DecodedNode; depth?: number }> = ({ 
               <span className="font-semibold text-neutral-800">{decodeCamelCase(group.functionName ?? "(call)")}</span>
               <span className="rounded-full bg-neutral-100 px-2 text-xs text-neutral-500">{group.total} calls</span>
               <span className="ml-auto flex items-center gap-x-2">
+                {contractLabel(group.items[0].node) && (
+                  <span className="font-semibold text-neutral-700">{contractLabel(group.items[0].node)}</span>
+                )}
                 <Link
                   href={groupExplorer}
                   target="_blank"

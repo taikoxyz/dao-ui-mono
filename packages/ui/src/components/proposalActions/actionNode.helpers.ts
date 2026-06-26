@@ -83,3 +83,16 @@ export function groupChildren(children: DecodedNode[]): ChildGroup[] {
   }
   return groups;
 }
+
+/**
+ * Display label for a call target's verified contract name(s).
+ *  - proxy + impl (distinct) → "Proxy → Impl"
+ *  - just one name           → that name
+ *  - identical names         → the single name
+ *  - neither                 → null (caller renders hex only)
+ */
+export function contractLabel(node: Pick<DecodedNode, "name" | "proxyName">): string | null {
+  const { name, proxyName } = node;
+  if (name && proxyName && name !== proxyName) return `${proxyName} → ${name}`;
+  return name ?? proxyName ?? null;
+}
