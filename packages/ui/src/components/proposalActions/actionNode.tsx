@@ -28,21 +28,27 @@ function paramDisplay(value: unknown): string {
  *  2. a `set<Thing>Trusted(id, bool)` heuristic → "Trust/Untrust <thing> <id>"
  *  3. the friendly function name (never invented)
  */
-export function leadText(node: DecodedNode): string {
-  if (node.summary) return node.summary;
+type Lead = { text: string; hex?: string };
+
+/** Structured lead so the embedded identifier (a key/hash, not an address) can be made copyable. */
+function leadParts(node: DecodedNode): Lead {
+  if (node.summary) return { text: node.summary };
   const fn = node.functionName;
-  if (!fn) return node.selector ? "Unrecognized call" : `Transfer ${PUB_CHAIN.nativeCurrency.symbol}`;
+  if (!fn) return { text: node.selector ? "Unrecognized call" : `Transfer ${PUB_CHAIN.nativeCurrency.symbol}` };
 
   const boolParam = node.params.find((p) => p.type === "bool");
   if (/trusted$/i.test(fn) && boolParam) {
-    const subject = decodeCamelCase(fn.replace(/^set/i, "").replace(/trusted$/i, ""))
-      .toLowerCase()
-      .trim();
+    const subject = decodeCamelCase(fn.replace(/^set/i, "").replace(/trusted$/i, "")).toLowerCase().trim();
     const idParam = node.params.find((p) => p.type !== "bool");
     const verb = boolParam.value ? "Trust" : "Untrust";
-    return `${verb} ${subject}${idParam ? " " + shortHex(String(idParam.value)) : ""}`.trim();
+    return { text: `${verb} ${subject}`.trim(), hex: idParam ? String(idParam.value) : undefined };
   }
-  return decodeCamelCase(fn);
+  return { text: decodeCamelCase(fn) };
+}
+
+export function leadText(node: DecodedNode): string {
+  const l = leadParts(node);
+  return l.hex ? `${l.text} ${shortHex(l.hex)}` : l.text;
 }
 
 /** Precise call identifier pinned to the right of each item, e.g. "setX · 3/9". */
@@ -169,11 +175,20 @@ const LeafItem: React.FC<{
   const isDisable = flag != null && !flag.value;
   const accent = isDisable ? "border-l-warning-500" : "border-l-primary-400";
   const flagName = flag ? decodeCamelCase(flag.name || "flag") : "";
+  const lead = leadParts(node);
 
   return (
     <div className={`rounded-xl border border-neutral-100 border-l-[3px] bg-neutral-0 p-3 ${accent}`}>
       <div className="flex items-start gap-x-3">
-        <span className="font-semibold leading-tight text-neutral-800">{leadText(node)}</span>
+        <span className="flex flex-wrap items-baseline gap-x-1.5 font-semibold leading-tight text-neutral-800">
+          <span>{lead.text}</span>
+          {lead.hex && (
+            <span className="inline-flex items-center gap-x-1 font-mono">
+              {shortHex(lead.hex)}
+              <CopyButton value={lead.hex} />
+            </span>
+          )}
+        </span>
         <span className="ml-auto shrink-0 rounded-md border border-neutral-100 bg-neutral-50 px-2 py-0.5 font-mono text-xs text-neutral-500">
           {callTag(node, index, total, count)}
         </span>

@@ -108,7 +108,7 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
           <div className="hidden w-24 shrink-0 text-right text-sm text-neutral-500 sm:block md:text-base">{title}</div>
         </div>
       </AccordionItemHeader>
-      <AccordionItemContent className="!overflow-none">
+      <AccordionItemContent className="!h-auto !overflow-visible">
         <div className="flex flex-col gap-y-4">
           {isLoading || !node ? (
             <p className="text-neutral-500">Decoding…</p>
