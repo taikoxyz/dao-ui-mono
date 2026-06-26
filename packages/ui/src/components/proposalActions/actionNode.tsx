@@ -1,7 +1,7 @@
 import { PUB_CHAIN } from "@/constants";
 import { formatHexString } from "@/utils/evm";
 import { decodeCamelCase } from "@/utils/case";
-import { InputText, TextArea } from "@aragon/ods";
+import { InputText } from "@aragon/ods";
 import Link from "next/link";
 import { formatEther } from "viem";
 import type { DecodedNode } from "@/utils/decoding/types";
@@ -79,6 +79,9 @@ export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ no
         <div className="flex flex-col gap-y-2">
           {node.signature && <InputText label="Contract function" className="w-full" value={node.signature} disabled />}
           {node.params.map((p, i) => {
+            // A bytes payload that was unwrapped into child calls is already shown as those
+            // children (and via "Raw calldata"); don't also dump it as a giant hex field.
+            if (p.type === "bytes" && node.children.length > 0) return null;
             const label = decodeCamelCase(p.name || `Parameter ${i + 1}`);
             if (p.type === "address") {
               const addr = String(p.value);
@@ -88,7 +91,7 @@ export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ no
                   <Link
                     href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${addr}`}
                     target="_blank"
-                    className="text-sm text-primary-500 underline"
+                    className="break-all text-sm text-primary-500 underline"
                   >
                     {addr}
                   </Link>
@@ -96,11 +99,18 @@ export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ no
               );
             }
             const v = p.formatted ?? paramDisplay(p.value);
-            return v.length > 42 ? (
-              <TextArea key={i} label={label} className="h-full w-full" value={v} disabled />
-            ) : (
-              <InputText key={i} label={label} className="w-full" value={v} disabled />
-            );
+            if (v.length > 42) {
+              // Long values (hashes, byte strings) wrap and scroll instead of being clipped.
+              return (
+                <div key={i} className="flex flex-col gap-y-1">
+                  <span className="text-sm text-neutral-500">{label}</span>
+                  <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-md bg-neutral-50 p-2 text-xs text-neutral-700">
+                    {v}
+                  </pre>
+                </div>
+              );
+            }
+            return <InputText key={i} label={label} className="w-full" value={v} disabled />;
           })}
           {node.value > 0n && (
             <InputText
@@ -112,7 +122,9 @@ export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ no
           )}
           <details className="mt-1">
             <summary className="cursor-pointer text-sm text-neutral-500">Raw calldata</summary>
-            <pre className="mt-1 overflow-x-auto rounded-md bg-neutral-50 p-2 text-xs text-neutral-700">{node.data}</pre>
+            <pre className="mt-1 max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-md bg-neutral-50 p-2 text-xs text-neutral-700">
+              {node.data}
+            </pre>
           </details>
         </div>
       )}
