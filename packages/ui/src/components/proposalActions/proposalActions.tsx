@@ -13,7 +13,8 @@ import type { RawAction } from "@/utils/types";
 import { If } from "../if";
 import { useActionTree } from "@/hooks/useActionTree";
 import { decodeCamelCase } from "@/utils/case";
-import { ActionNode } from "./actionNode";
+import { ActionNodeBody } from "./actionNode";
+import { TrustBadge } from "./trustBadge";
 
 const DEFAULT_DESCRIPTION =
   "When the proposal passes the community vote, the following actions will be executable by the DAO.";
@@ -86,16 +87,25 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
   return (
     <AccordionItem className="border-t border-t-neutral-100 bg-neutral-0" value={title}>
       <AccordionItemHeader className="!items-start">
-        <div className="flex w-full justify-between">
-          <div className="flex w-full flex-1 flex-col items-start gap-y-2">
-            <span className="text-left text-lg leading-tight text-neutral-800 md:text-xl">
+        <div className="flex w-full justify-between gap-x-4">
+          <div className="flex w-full flex-1 flex-col items-start gap-y-1.5">
+            <span className="text-left text-lg font-semibold leading-tight text-neutral-800 md:text-xl">
               {decodeCamelCase(headline)}
             </span>
-            <Link href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${rawAction.to}`} target="_blank">
-              <span className="text-neutral-500">{formatHexString(rawAction.to)}</span>
-            </Link>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              <Link
+                href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${rawAction.to}`}
+                target="_blank"
+                onClick={(e) => e.stopPropagation()}
+                className="font-mono text-neutral-500 hover:underline"
+              >
+                {formatHexString(rawAction.to)}
+              </Link>
+              {node && <TrustBadge trust={node.trust} />}
+            </div>
+            {node?.summary && <p className="text-left text-sm text-neutral-600 md:text-base">{node.summary}</p>}
           </div>
-          <div className="hidden w-36 text-right text-sm text-neutral-500 sm:block md:text-base">{title}</div>
+          <div className="hidden w-24 shrink-0 text-right text-sm text-neutral-500 sm:block md:text-base">{title}</div>
         </div>
       </AccordionItemHeader>
       <AccordionItemContent className="!overflow-none">
@@ -103,7 +113,7 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
           {isLoading || !node ? (
             <p className="text-neutral-500">Decoding…</p>
           ) : (
-            <ActionNode node={node} />
+            <ActionNodeBody node={node} />
           )}
           <If condition={!!onRemove}>
             <div className="mt-2">

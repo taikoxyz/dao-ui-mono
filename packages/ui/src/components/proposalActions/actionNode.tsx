@@ -1,12 +1,18 @@
 import { PUB_CHAIN } from "@/constants";
 import { formatHexString } from "@/utils/evm";
 import { decodeCamelCase } from "@/utils/case";
-import { InputText } from "@aragon/ods";
 import Link from "next/link";
 import { formatEther } from "viem";
-import type { DecodedNode } from "@/utils/decoding/types";
+import type { DecodedNode, DecodedParam } from "@/utils/decoding/types";
 import { EncodedView } from "./encodedView";
 import { TrustBadge } from "./trustBadge";
+import { CopyButton } from "@/components/copy/copyButton";
+
+// ---------- helpers ----------
+
+function shortHex(v: string): string {
+  return v.startsWith("0x") && v.length > 14 ? `${v.slice(0, 6)}…${v.slice(-4)}` : v;
+}
 
 function paramDisplay(value: unknown): string {
   if (typeof value === "bigint") return value.toString();
@@ -16,17 +22,41 @@ function paramDisplay(value: unknown): string {
   return String(value);
 }
 
-// Group consecutive children sharing the same target + selector into an expandable
-// fold. Every call is still rendered individually so distinct args are never hidden;
-// only byte-identical calls (same `data` + `to`) collapse to a single "×N identical" item.
+/**
+ * Plain-English "impact" lead for a call. Priority:
+ *  1. a recognized-pattern summary (upgrade / transfer / ownership / batch)
+ *  2. a `set<Thing>Trusted(id, bool)` heuristic → "Trust/Untrust <thing> <id>"
+ *  3. the friendly function name (never invented)
+ */
+export function leadText(node: DecodedNode): string {
+  if (node.summary) return node.summary;
+  const fn = node.functionName;
+  if (!fn) return node.selector ? "Unrecognized call" : `Transfer ${PUB_CHAIN.nativeCurrency.symbol}`;
+
+  const boolParam = node.params.find((p) => p.type === "bool");
+  if (/trusted$/i.test(fn) && boolParam) {
+    const subject = decodeCamelCase(fn.replace(/^set/i, "").replace(/trusted$/i, ""))
+      .toLowerCase()
+      .trim();
+    const idParam = node.params.find((p) => p.type !== "bool");
+    const verb = boolParam.value ? "Trust" : "Untrust";
+    return `${verb} ${subject}${idParam ? " " + shortHex(String(idParam.value)) : ""}`.trim();
+  }
+  return decodeCamelCase(fn);
+}
+
+/** Precise call identifier pinned to the right of each item, e.g. "setX · 3/9". */
+function callTag(node: DecodedNode, index: number, total: number, count: number): string {
+  const fn = node.functionName ?? node.selector ?? "call";
+  if (total <= 1) return fn;
+  const range = count > 1 ? `${index}–${index + count - 1}` : `${index}`;
+  return `${fn} · ${range}/${total}`;
+}
+
+// Group consecutive children sharing target + selector into a fold. Distinct calls are
+// always rendered individually; only byte-identical (`data` + `to`) calls collapse to ×N.
 type GroupItem = { node: DecodedNode; count: number };
-type ChildGroup = {
-  to: string;
-  selector: string | null;
-  functionName: string | null;
-  total: number;
-  items: GroupItem[];
-};
+type ChildGroup = { to: string; selector: string | null; functionName: string | null; total: number; items: GroupItem[] };
 
 function groupChildren(children: DecodedNode[]): ChildGroup[] {
   const groups: ChildGroup[] = [];
@@ -50,124 +80,178 @@ function groupChildren(children: DecodedNode[]): ChildGroup[] {
   return groups;
 }
 
-export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ node, depth = 0 }) => {
-  const explorerUrl = `${PUB_CHAIN.blockExplorers?.default.url}/address/${node.to}`;
-  const title = node.functionName
-    ? decodeCamelCase(node.functionName)
-    : node.selector
-      ? "(unrecognized call)"
-      : `Transfer ${PUB_CHAIN.nativeCurrency.symbol}`;
-  const indent = depth > 0 ? "border-l border-neutral-100 pl-4 md:pl-6" : "";
+// ---------- small pieces ----------
 
+export const AddressLink: React.FC<{ address: string; className?: string }> = ({ address, className = "" }) => (
+  <span className="inline-flex items-center gap-x-1">
+    <Link
+      href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${address}`}
+      target="_blank"
+      onClick={(e) => e.stopPropagation()}
+      className={`font-mono text-neutral-500 hover:underline ${className}`}
+    >
+      {formatHexString(address)}
+    </Link>
+    <CopyButton value={address} />
+  </span>
+);
+
+const ParamRow: React.FC<{ p: DecodedParam; idx: number }> = ({ p, idx }) => {
+  const label = decodeCamelCase(p.name || `Parameter ${idx + 1}`);
   return (
-    <div className={`flex flex-col gap-y-3 ${indent}`}>
-      <div className="flex flex-col gap-y-1">
-        <span className="text-lg leading-tight text-neutral-800 md:text-xl">{title}</span>
-        <div className="flex items-center gap-x-3">
-          <Link href={explorerUrl} target="_blank" className="text-neutral-500">
-            {formatHexString(node.to)}
-          </Link>
-          <TrustBadge trust={node.trust} />
-        </div>
-        {node.summary && <p className="md:text-md text-base text-neutral-600">{node.summary}</p>}
-      </div>
-
-      {/* Body: decoded params, or raw fallback */}
-      {node.error || (!node.functionName && !node.summary) ? (
-        <EncodedView rawAction={{ to: node.to, value: node.value, data: node.data }} />
+    <div className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-1 py-1 text-sm">
+      <span className="text-neutral-500">{label}</span>
+      {p.type === "address" ? (
+        <AddressLink address={String(p.value)} />
       ) : (
-        <div className="flex flex-col gap-y-2">
-          {node.signature && <InputText label="Contract function" className="w-full" value={node.signature} disabled />}
-          {node.params.map((p, i) => {
-            // A bytes payload that was unwrapped into child calls is already shown as those
-            // children (and via "Raw calldata"); don't also dump it as a giant hex field.
-            if (p.type === "bytes" && node.children.length > 0) return null;
-            const label = decodeCamelCase(p.name || `Parameter ${i + 1}`);
-            if (p.type === "address") {
-              const addr = String(p.value);
-              return (
-                <div key={i} className="flex flex-col gap-y-1">
-                  <span className="text-sm text-neutral-500">{label}</span>
-                  <Link
-                    href={`${PUB_CHAIN.blockExplorers?.default.url}/address/${addr}`}
-                    target="_blank"
-                    className="break-all text-sm text-primary-500 underline"
-                  >
-                    {addr}
-                  </Link>
-                </div>
-              );
-            }
-            const v = p.formatted ?? paramDisplay(p.value);
-            if (v.length > 42) {
-              // Long values (hashes, byte strings) wrap and scroll instead of being clipped.
-              return (
-                <div key={i} className="flex flex-col gap-y-1">
-                  <span className="text-sm text-neutral-500">{label}</span>
-                  <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-md bg-neutral-50 p-2 text-xs text-neutral-700">
-                    {v}
-                  </pre>
-                </div>
-              );
-            }
-            return <InputText key={i} label={label} className="w-full" value={v} disabled />;
-          })}
-          {node.value > 0n && (
-            <InputText
-              label={`${PUB_CHAIN.nativeCurrency.symbol} value`}
-              className="w-full"
-              value={`${formatEther(node.value)} ${PUB_CHAIN.nativeCurrency.symbol}`}
-              disabled
-            />
-          )}
-          <details className="mt-1">
-            <summary className="cursor-pointer text-sm text-neutral-500">Raw calldata</summary>
-            <pre className="mt-1 max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-md bg-neutral-50 p-2 text-xs text-neutral-700">
-              {node.data}
-            </pre>
-          </details>
-        </div>
-      )}
-
-      {node.truncated && (
-        <p className="text-sm text-warning-500">Nested calls hidden ({node.truncated}). View raw data on the explorer.</p>
-      )}
-
-      {/* Children */}
-      {node.children.length > 0 && (
-        <div className="flex flex-col gap-y-4">
-          {groupChildren(node.children).map((group, i) => {
-            // A single call renders inline with no group chrome.
-            if (group.total === 1) {
-              return <ActionNode key={i} node={group.items[0].node} depth={depth + 1} />;
-            }
-            // A run of ≥2 calls renders an expandable fold with every call inside.
-            const groupExplorerUrl = `${PUB_CHAIN.blockExplorers?.default.url}/address/${group.to}`;
-            return (
-              <details key={i} open className="flex flex-col gap-y-2">
-                <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 text-neutral-700">
-                  <span className="text-base text-neutral-800">{decodeCamelCase(group.functionName ?? "(call)")}</span>
-                  <span className="text-sm text-neutral-500">— {group.total} calls</span>
-                  <Link href={groupExplorerUrl} target="_blank" className="text-sm text-neutral-500">
-                    {formatHexString(group.to)}
-                  </Link>
-                  <TrustBadge trust={group.items[0].node.trust} />
-                </summary>
-                <div className="mt-2 flex flex-col gap-y-4">
-                  {group.items.map((item, j) => (
-                    <div key={j} className="flex flex-col gap-y-1">
-                      {item.count > 1 && (
-                        <span className="text-sm text-neutral-500">×{item.count} identical</span>
-                      )}
-                      <ActionNode node={item.node} depth={depth + 1} />
-                    </div>
-                  ))}
-                </div>
-              </details>
-            );
-          })}
-        </div>
+        <span className="flex items-start gap-x-1">
+          <span className="break-all font-mono text-xs text-neutral-700">{p.formatted ?? paramDisplay(p.value)}</span>
+          {String(p.value).length > 18 && <CopyButton value={String(p.value)} />}
+        </span>
       )}
     </div>
   );
 };
+
+/** Collapsible "Call details": signature, decoded params, native value, raw calldata. */
+const CallDetails: React.FC<{ node: DecodedNode }> = ({ node }) => {
+  if (node.error || (!node.functionName && !node.summary)) {
+    return <EncodedView rawAction={{ to: node.to, value: node.value, data: node.data }} />;
+  }
+  // a bytes payload that became children is shown as those children, not a hex wall
+  const params = node.params.filter((p) => !(p.type === "bytes" && node.children.length > 0));
+  const symbol = PUB_CHAIN.nativeCurrency.symbol;
+
+  return (
+    <details className="mt-2">
+      <summary className="cursor-pointer text-sm text-primary-500">Call details</summary>
+      <div className="mt-2 flex flex-col gap-y-2">
+        {node.signature && <div className="font-mono text-xs text-neutral-500">{node.signature}</div>}
+        {params.length > 0 && (
+          <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-1">
+            {params.map((p, i) => (
+              <ParamRow key={i} p={p} idx={i} />
+            ))}
+          </div>
+        )}
+        {node.value > 0n && (
+          <div className="text-sm text-neutral-600">
+            {symbol} value: {formatEther(node.value)} {symbol}
+          </div>
+        )}
+        <details>
+          <summary className="cursor-pointer text-sm text-neutral-500">Raw calldata</summary>
+          <pre className="mt-1 max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-md bg-neutral-50 p-2 text-xs text-neutral-700">
+            {node.data}
+          </pre>
+        </details>
+      </div>
+    </details>
+  );
+};
+
+/** One call rendered summary-first: impact lead + precise call tag, with details + any nested calls. */
+const LeafItem: React.FC<{ node: DecodedNode; index: number; total: number; count: number; depth: number }> = ({
+  node,
+  index,
+  total,
+  count,
+  depth,
+}) => {
+  const flag = node.params.find((p) => p.type === "bool");
+  const isDisable = flag != null && !flag.value;
+  const accent = isDisable ? "border-l-warning-500" : "border-l-primary-400";
+
+  return (
+    <div className={`rounded-xl border border-neutral-100 border-l-[3px] bg-neutral-0 p-3 ${accent}`}>
+      <div className="flex items-start gap-x-3">
+        <span className="font-semibold leading-tight text-neutral-800">{leadText(node)}</span>
+        <span className="ml-auto shrink-0 rounded-md border border-neutral-100 bg-neutral-50 px-2 py-0.5 font-mono text-xs text-neutral-500">
+          {callTag(node, index, total, count)}
+        </span>
+      </div>
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <AddressLink address={node.to} />
+        <TrustBadge trust={node.trust} />
+        {count > 1 && <span className="text-success-600">×{count} identical</span>}
+        {isDisable && <span className="text-warning-700">flag: false</span>}
+      </div>
+      <CallDetails node={node} />
+      {node.children.length > 0 && <ChildrenTree node={node} depth={depth + 1} />}
+    </div>
+  );
+};
+
+/** The grouped, recursive tree of a node's sub-calls. */
+export const ChildrenTree: React.FC<{ node: DecodedNode; depth?: number }> = ({ node, depth = 0 }) => {
+  const groups = groupChildren(node.children);
+  const total = node.children.length;
+  let pos = 0; // running 0-based index across all sub-calls (for the N/total tag)
+
+  return (
+    <div className="mt-3 flex flex-col gap-y-2 border-l border-neutral-100 pl-3 md:pl-4">
+      {groups.map((group, gi) => {
+        if (group.total === 1) {
+          const idx = pos + 1;
+          pos += 1;
+          return <LeafItem key={gi} node={group.items[0].node} index={idx} total={total} count={1} depth={depth} />;
+        }
+        const groupExplorer = `${PUB_CHAIN.blockExplorers?.default.url}/address/${group.to}`;
+        let ip = pos;
+        pos += group.total;
+        return (
+          <details key={gi} open>
+            <summary className="flex cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 py-1">
+              <span className="font-semibold text-neutral-800">{decodeCamelCase(group.functionName ?? "(call)")}</span>
+              <span className="rounded-full bg-neutral-100 px-2 text-xs text-neutral-500">{group.total} calls</span>
+              <span className="ml-auto flex items-center gap-x-2">
+                <Link
+                  href={groupExplorer}
+                  target="_blank"
+                  onClick={(e) => e.stopPropagation()}
+                  className="font-mono text-sm text-neutral-500 hover:underline"
+                >
+                  {formatHexString(group.to)}
+                </Link>
+                <CopyButton value={group.to} />
+                <TrustBadge trust={group.items[0].node.trust} />
+              </span>
+            </summary>
+            <div className="mt-2 flex flex-col gap-y-2">
+              {group.items.map((item, j) => {
+                const idx = ip + 1;
+                ip += item.count;
+                return (
+                  <LeafItem key={j} node={item.node} index={idx} total={total} count={item.count} depth={depth} />
+                );
+              })}
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  );
+};
+
+/**
+ * Body of a top-level action (rendered under the accordion's rich header):
+ * a leaf action shows its details; a wrapper action shows its sub-call tree.
+ */
+export const ActionNodeBody: React.FC<{ node: DecodedNode }> = ({ node }) => {
+  if (node.children.length > 0) return <ChildrenTree node={node} depth={1} />;
+  return <CallDetails node={node} />;
+};
+
+// Backwards-compatible default: a self-contained node (header + body).
+export const ActionNode: React.FC<{ node: DecodedNode; depth?: number }> = ({ node }) => (
+  <div className="flex flex-col gap-y-2">
+    <div className="flex flex-col gap-y-1">
+      <span className="text-lg font-semibold leading-tight text-neutral-800 md:text-xl">{leadText(node)}</span>
+      <div className="flex items-center gap-x-3 text-sm">
+        <AddressLink address={node.to} />
+        <TrustBadge trust={node.trust} />
+      </div>
+    </div>
+    <ActionNodeBody node={node} />
+  </div>
+);
