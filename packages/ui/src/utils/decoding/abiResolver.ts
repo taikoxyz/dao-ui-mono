@@ -24,6 +24,16 @@ function etherscanLoader() {
   });
 }
 
+/** Verified contract name for an address via Etherscan, or null if unverified/unavailable. */
+async function verifiedName(address: Address): Promise<string | null> {
+  try {
+    const result = await etherscanLoader().getContract(address);
+    return result.ok && result.name ? result.name : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function resolveImplementation(publicClient: PublicClient, address: Address): Promise<Address | null> {
   try {
     const impl = await getImplementation(publicClient, address);
@@ -66,12 +76,17 @@ export async function loadAbiWith(publicClient: PublicClient, address: Address):
       abiLoader: etherscanLoader(),
       followProxies: false,
       enableExperimentalMetadata: true,
+      loadContractResult: true,
     });
     const abi = toFunctionItems(loaded.abi as any[]);
     // A loaded ABI source (e.g. Etherscan verified source) means "verified";
     // otherwise whatsabi guessed the selectors from bytecode.
     const trust = loaded.abiLoadedFrom ? "verified" : "bytecode";
-    return { abi, trust, isProxy, implementation };
+    // Name only from a verified source; never surface a guessed name.
+    const name = trust === "verified" && loaded.contractResult?.ok ? (loaded.contractResult.name ?? undefined) : undefined;
+    // For a proxy, also resolve the proxy contract's own verified name (one extra call).
+    const proxyName = isProxy ? ((await verifiedName(address)) ?? undefined) : undefined;
+    return { abi, trust, isProxy, implementation, name, proxyName };
   } catch (err) {
     console.warn(`abiResolver: whatsabi autoload failed for ${target}`, err);
     return { ...empty, isProxy, implementation };
