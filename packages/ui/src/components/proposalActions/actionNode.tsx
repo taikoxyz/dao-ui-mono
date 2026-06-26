@@ -124,15 +124,21 @@ const CallDetails: React.FC<{ node: DecodedNode }> = ({ node }) => {
 
   return (
     <details className="mt-2">
-      <summary className="cursor-pointer text-sm text-primary-500">Call details</summary>
+      <summary className="cursor-pointer text-sm text-primary-500">Inputs</summary>
       <div className="mt-2 flex flex-col gap-y-2">
-        {node.signature && <div className="font-mono text-xs text-neutral-500">{node.signature}</div>}
-        {params.length > 0 && (
+        {node.signature && (
+          <div className="font-mono text-xs text-neutral-500">
+            Function: <span className="text-neutral-700">{node.signature}</span>
+          </div>
+        )}
+        {params.length > 0 ? (
           <div className="rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-1">
             {params.map((p, i) => (
               <ParamRow key={i} p={p} idx={i} />
             ))}
           </div>
+        ) : (
+          <div className="text-sm text-neutral-500">No input parameters</div>
         )}
         {node.value > 0n && (
           <div className="text-sm text-neutral-600">
@@ -151,16 +157,18 @@ const CallDetails: React.FC<{ node: DecodedNode }> = ({ node }) => {
 };
 
 /** One call rendered summary-first: impact lead + precise call tag, with details + any nested calls. */
-const LeafItem: React.FC<{ node: DecodedNode; index: number; total: number; count: number; depth: number }> = ({
-  node,
-  index,
-  total,
-  count,
-  depth,
-}) => {
+const LeafItem: React.FC<{
+  node: DecodedNode;
+  index: number;
+  total: number;
+  count: number;
+  depth: number;
+  showTarget?: boolean;
+}> = ({ node, index, total, count, depth, showTarget = true }) => {
   const flag = node.params.find((p) => p.type === "bool");
   const isDisable = flag != null && !flag.value;
   const accent = isDisable ? "border-l-warning-500" : "border-l-primary-400";
+  const flagName = flag ? decodeCamelCase(flag.name || "flag") : "";
 
   return (
     <div className={`rounded-xl border border-neutral-100 border-l-[3px] bg-neutral-0 p-3 ${accent}`}>
@@ -171,10 +179,18 @@ const LeafItem: React.FC<{ node: DecodedNode; index: number; total: number; coun
         </span>
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        <AddressLink address={node.to} />
+        {showTarget && (
+          <span className="inline-flex items-center gap-x-1 text-neutral-500">
+            on <AddressLink address={node.to} />
+          </span>
+        )}
         <TrustBadge trust={node.trust} />
+        {flag != null && (
+          <span className={isDisable ? "text-warning-700" : "text-neutral-500"}>
+            {flagName}: {String(flag.value)}
+          </span>
+        )}
         {count > 1 && <span className="text-success-600">×{count} identical</span>}
-        {isDisable && <span className="text-warning-700">flag: false</span>}
       </div>
       <CallDetails node={node} />
       {node.children.length > 0 && <ChildrenTree node={node} depth={depth + 1} />}
@@ -222,7 +238,15 @@ export const ChildrenTree: React.FC<{ node: DecodedNode; depth?: number }> = ({ 
                 const idx = ip + 1;
                 ip += item.count;
                 return (
-                  <LeafItem key={j} node={item.node} index={idx} total={total} count={item.count} depth={depth} />
+                  <LeafItem
+                    key={j}
+                    node={item.node}
+                    index={idx}
+                    total={total}
+                    count={item.count}
+                    depth={depth}
+                    showTarget={false}
+                  />
                 );
               })}
             </div>
