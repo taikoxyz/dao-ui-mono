@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { parseAbiItem, toFunctionSelector, encodeFunctionData, type AbiFunction } from "viem";
 import { decodeAction } from "../decodeAction";
 import type { AbiResolution, DecodeCtx } from "../types";
@@ -47,6 +47,13 @@ describe("decodeAction (one level)", () => {
     );
     expect(node.functionName).toBe("pause");
     expect(node.trust).toBe("signature-db");
+  });
+
+  it("returns an error node for calldata shorter than a selector", async () => {
+    const node = await decodeAction({ to: ADDR, value: 0n, data: "0x1234" }, ctx());
+    expect(node.error).toBeTruthy();
+    expect(node.functionName).toBeNull();
+    expect(node.children).toEqual([]);
   });
 
   it("returns an error node when nothing can decode", async () => {

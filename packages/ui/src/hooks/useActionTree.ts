@@ -14,7 +14,13 @@ export function useActionTree(action: RawAction): { node: DecodedNode | null; is
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["actionTree", publicClient?.chain.id, action.to, keccak256(toHex(action.data ?? "0x"))],
+    queryKey: [
+      "actionTree",
+      publicClient?.chain.id,
+      action.to,
+      keccak256(toHex(action.data ?? "0x")),
+      action.value?.toString() ?? "0",
+    ],
     enabled: !!publicClient,
     staleTime: 1000 * 60 * 60 * 24 * 7,
     queryFn: async (): Promise<DecodedNode> => {

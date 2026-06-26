@@ -1,4 +1,4 @@
-import { slice, toFunctionSelector, toFunctionSignature, decodeFunctionData, formatEther, type AbiFunction } from "viem";
+import { slice, size, toFunctionSelector, toFunctionSignature, decodeFunctionData, formatEther, type AbiFunction } from "viem";
 import type { DecodeCtx, DecodedNode, RawCall } from "./types";
 import { matchUnwrapper } from "./unwrappers";
 
@@ -25,6 +25,11 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
   if (!call.data || call.data === "0x") {
     node.trust = "verified";
     node.summary = `Transfer ${formatEther(call.value)} to ${call.to}`;
+    return node;
+  }
+
+  if (size(call.data) < 4) {
+    node.error = "invalid-calldata";
     return node;
   }
 
