@@ -24,10 +24,11 @@ interface IProposalActionsProps {
   emptyListDescription?: string;
   actions?: RawAction[];
   onRemove?: (index: number) => any;
+  executionTxHash?: string;
 }
 
 export const ProposalActions: React.FC<IProposalActionsProps> = (props) => {
-  const { actions, description, emptyListDescription, onRemove } = props;
+  const { actions, description, emptyListDescription, onRemove, executionTxHash } = props;
 
   let message: string;
   if (actions?.length) {
@@ -44,6 +45,15 @@ export const ProposalActions: React.FC<IProposalActionsProps> = (props) => {
           <p className="text-xl leading-tight text-neutral-800 md:text-2xl">Actions</p>
         </div>
         <p className="md:text-md text-base leading-normal text-neutral-500">{message}</p>
+        {executionTxHash && (
+          <Link
+            href={`${PUB_CHAIN.blockExplorers?.default.url}/tx/${executionTxHash}`}
+            target="_blank"
+            className="text-sm text-primary-500 underline md:text-base"
+          >
+            View execution transaction ↗
+          </Link>
+        )}
       </div>
 
       {/* Content */}

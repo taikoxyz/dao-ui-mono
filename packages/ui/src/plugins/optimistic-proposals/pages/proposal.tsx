@@ -223,7 +223,10 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
                 </div>
               </>
             )}
-            <ProposalActions actions={proposal.actions} />
+            <ProposalActions
+              actions={proposal.actions}
+              executionTxHash={proposal.executed ? gqlProposal?.executor?.txHash : undefined}
+            />
           </div>
           <div className="flex flex-col gap-y-6 md:w-[33%]">
             <CardResources
