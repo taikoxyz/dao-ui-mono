@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import handler from "../pages/api/ipfs/[cid]";
+import handler from "../pages/api/ipfs/[...cid]";
 
 type MockRes = {
   statusCode: number;
@@ -50,7 +50,7 @@ const call = (req: ReturnType<typeof mockReq>, res: MockRes) =>
 const VALID_CID = "bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne";
 const IMMUTABLE = "public, s-maxage=31536000, max-age=31536000, immutable";
 
-describe("/api/ipfs/[cid]", () => {
+describe("/api/ipfs/[...cid]", () => {
   const originalFetch = globalThis.fetch;
   afterEach(() => {
     globalThis.fetch = originalFetch;
@@ -73,6 +73,21 @@ describe("/api/ipfs/[cid]", () => {
     expect(res.headers["content-type"]).toBe("application/json");
     expect(Buffer.isBuffer(res.body)).toBe(true);
     expect((res.body as Buffer).toString("utf8")).toBe(payload);
+  });
+
+  test("forwards a CID subpath (catch-all route) to the gateway", async () => {
+    let requestedUrl = "";
+    globalThis.fetch = (async (input: unknown) => {
+      requestedUrl = typeof input === "string" ? input : (input as Request).url;
+      return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
+    }) as unknown as typeof fetch;
+
+    const res = mockRes();
+    // Next gives a catch-all param as an array of path segments.
+    await call(mockReq({ cid: [VALID_CID, "metadata.json"] }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(requestedUrl).toContain(`/${VALID_CID}/metadata.json`);
   });
 
   test("relays opaque (encrypted, non-JSON) bytes unchanged", async () => {
