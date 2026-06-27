@@ -4,7 +4,10 @@ import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
 
-const IPFS_FETCH_TIMEOUT = 1000; // 1 second
+// Generous enough to let the /api/ipfs proxy's first (cold) gateway race
+// complete. The previous 1s abort killed cold proxy/gateway fetches before
+// they could return, which is what left cards stuck on "Loading metadata…".
+const IPFS_FETCH_TIMEOUT = 10000; // 10 seconds
 
 export function fetchIpfsAsJson(ipfsUri: string) {
   return fetchRawIpfs(ipfsUri).then((res) => res.json());
@@ -63,14 +66,19 @@ async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
   for (const uriPrefix of uriPrefixes) {
     const controller = new AbortController();
     const abortId = setTimeout(() => controller.abort(), IPFS_FETCH_TIMEOUT);
-    const response = await fetch(`${uriPrefix}/${cid}`, {
-      method: "GET",
-      signal: controller.signal,
-    });
-    clearTimeout(abortId);
-    if (!response.ok) continue;
-
-    return response; // .json(), .text(), .blob(), etc.
+    try {
+      const response = await fetch(`${uriPrefix}/${cid}`, {
+        method: "GET",
+        signal: controller.signal,
+      });
+      if (response.ok) return response; // .json(), .text(), .blob(), etc.
+    } catch {
+      // Timed out or network error: fall through to the next endpoint. The
+      // proxy (/api/ipfs) is listed first; a direct public gateway can be
+      // listed after it as a decentralized fallback if the proxy is down.
+    } finally {
+      clearTimeout(abortId);
+    }
   }
 
   throw new Error("Could not connect to any of the IPFS endpoints");
