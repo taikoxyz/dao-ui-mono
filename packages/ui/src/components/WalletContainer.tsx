@@ -30,7 +30,9 @@ const WalletContainer = () => {
     config,
     name: normalize(ensName!),
     chainId: activeChain.id,
-    gatewayUrls: ["https://cloudflare-ipfs.com"],
+    // cloudflare-ipfs.com is deprecated/dead; use a live gateway so IPFS-hosted
+    // ENS avatars resolve (falls back to the address blockie if this fails).
+    gatewayUrls: ["https://ipfs.io"],
     query: { enabled: !!ensName },
   });
 
