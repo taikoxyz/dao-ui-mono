@@ -68,3 +68,6 @@ Leave **no dead code** from the old rendering or earlier iterations:
 - Unit-test the decode-layer enrichment: a tuple param yields `components` with correct names/types/values; `internalType` captured; a flat param is unaffected; malformed → graceful flat fallback.
 - Keep/extend the pure-helper tests (`contractLabel`, `chainLabel`, and any new pure view-model helper such as action numbering).
 - Manual (controller): #28 (deep cross-chain) and #29 (single action) render matching the mockups; expand/collapse + raw calldata work; unverified/unknown actions degrade honestly.
+
+## Decision log (post-review)
+- **Bridge nesting:** the mockup collapsed the `onMessageInvocation` (DelegateController) envelope so the two L2 upgrades sat at `3.1`/`3.2`. We chose instead to **render every real decoded node** — `3` bridge → `3.1` onMessageInvocation → `3.1.1`/`3.1.2` upgrades — so no real verified call is hidden from the numbered list (consistent with the "never hide/guess" stance). The mockups remain a visual reference for layout, not the exact nesting depth.
