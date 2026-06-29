@@ -5,7 +5,7 @@ import { PUB_CHAIN } from "@/constants";
 import type { RawAction } from "@/utils/types";
 import type { AbiResolution, DecodedNode } from "@/utils/decoding/types";
 import { decodeAction } from "@/utils/decoding/decodeAction";
-import { loadAbiWith, loadTokenWith, loadSignature, abiQueryKey } from "@/utils/decoding/abiResolver";
+import { loadAbiWith, loadVerifiedAbiFrom, loadTokenWith, loadSignature, abiQueryKey } from "@/utils/decoding/abiResolver";
 
 const MAX_DEPTH = 4;
 
@@ -25,17 +25,19 @@ export function useActionTree(action: RawAction): { node: DecodedNode | null; is
     staleTime: 1000 * 60 * 60 * 24 * 7,
     queryFn: async (): Promise<DecodedNode> => {
       const client = publicClient as PublicClient;
+      const appChainId = client.chain?.id ?? PUB_CHAIN.id;
       const ctx = {
-        loadAbi: (addr: Address): Promise<AbiResolution> =>
+        chainId: appChainId,
+        loadAbi: (addr: Address, chainId: number): Promise<AbiResolution> =>
           queryClient.fetchQuery({
-            queryKey: abiQueryKey(client.chain?.id, addr),
-            queryFn: () => loadAbiWith(client, addr),
+            queryKey: abiQueryKey(chainId, addr),
+            queryFn: () => (chainId === appChainId ? loadAbiWith(client, addr) : loadVerifiedAbiFrom(chainId, addr)),
             staleTime: 1000 * 60 * 60 * 24 * 30,
           }),
         loadSignature,
         loadToken: (addr: Address) =>
           queryClient.fetchQuery({
-            queryKey: ["token", client.chain?.id, addr.toLowerCase()],
+            queryKey: ["token", appChainId, addr.toLowerCase()],
             queryFn: () => loadTokenWith(client, addr),
             staleTime: 1000 * 60 * 60 * 24 * 30,
           }),

@@ -17,11 +17,42 @@ export function abiQueryKey(chainId: number | undefined, address: Address | unde
   return ["abi", chainId, (address ?? "").toLowerCase()] as const;
 }
 
-function etherscanLoader() {
+function etherscanLoader(chainId: number = PUB_CHAIN.id) {
   return new whatsabi.loaders.EtherscanABILoader({
     apiKey: PUB_ETHERSCAN_API_KEY,
-    baseURL: `https://api.etherscan.io/v2/api?chainid=${PUB_CHAIN.id}`,
+    baseURL: `https://api.etherscan.io/v2/api?chainid=${chainId}`,
   });
+}
+
+// Chains we will attempt cross-chain VERIFIED resolution for via Etherscan v2.
+// Keep explicit: the app chain plus Taiko mainnet (the bridge destination).
+const VERIFIED_ABI_CHAINS = new Set<number>([PUB_CHAIN.id, 1, 167000]);
+
+export function isVerifiedAbiChainSupported(chainId: number): boolean {
+  return VERIFIED_ABI_CHAINS.has(chainId);
+}
+
+/**
+ * Verified ABI + name for an address on another chain, via Etherscan v2 (HTTP
+ * only — no RPC, so no proxy-slot resolution). Never guesses: a contract that
+ * isn't verified on that chain returns an `unknown` resolution. Never throws.
+ */
+export async function loadVerifiedAbiFrom(chainId: number, address: Address): Promise<AbiResolution> {
+  const empty: AbiResolution = { abi: [], trust: "unknown", isProxy: false, implementation: null };
+  if (!isAddress(address)) return empty;
+  try {
+    const result = await etherscanLoader(chainId).getContract(address);
+    if (!result.ok) return empty;
+    return {
+      abi: toFunctionItems(result.abi as any[]),
+      trust: "verified",
+      isProxy: false,
+      implementation: null,
+      name: result.name || undefined,
+    };
+  } catch {
+    return empty;
+  }
 }
 
 /** Verified contract name for an address via Etherscan, or null if unverified/unavailable. */
