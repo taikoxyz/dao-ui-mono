@@ -33,6 +33,18 @@ describe("findEmbeddedCandidates", () => {
     expect(findEmbeddedCandidates(params)).toEqual([]);
   });
 
+  it("ignores an address-shaped hex param whose head collides with a selector", () => {
+    // 20-byte value: (20 - 4) % 32 === 16 → not calldata-shaped.
+    const params: DecodedParam[] = [{ name: "target", type: "address", value: "0x7f07c947" + "11".repeat(16) }];
+    expect(findEmbeddedCandidates(params)).toEqual([]);
+  });
+
+  it("ignores a bytes32-shaped hex param whose head collides with a selector", () => {
+    // 32-byte value: (32 - 4) % 32 === 28 → not calldata-shaped.
+    const params: DecodedParam[] = [{ name: "salt", type: "bytes32", value: "0x7f07c947" + "22".repeat(28) }];
+    expect(findEmbeddedCandidates(params)).toEqual([]);
+  });
+
   it("caps the number of candidates at 8", () => {
     const params: DecodedParam[] = Array.from({ length: 20 }, (_, i) => ({ name: `b${i}`, type: "bytes", value: CALLDATA }));
     expect(findEmbeddedCandidates(params).length).toBe(8);

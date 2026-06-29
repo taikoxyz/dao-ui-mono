@@ -6,7 +6,9 @@ const MAX_CANDIDATES = 8;
 export type Candidate = { path: string; selector: Hex };
 
 function isCalldataBytes(value: unknown): value is Hex {
-  return typeof value === "string" && isHex(value) && size(value as Hex) >= 4;
+  if (typeof value !== "string" || !isHex(value)) return false;
+  const n = size(value as Hex);
+  return n >= 4 && (n - 4) % 32 === 0;
 }
 
 function walk(value: unknown, path: string, out: Candidate[]): void {

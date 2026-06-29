@@ -49,4 +49,13 @@ describe("taikoBridgeMessage", () => {
     const node = nodeFor("transfer", "transfer(address,uint256)", "address", TO_L2);
     expect(taikoBridgeMessage.match(node)).toBe(false);
   });
+
+  it("does not match sendMessage decoded only from the signature DB (untrusted) and emits no child", async () => {
+    const struct = { id:0n, fee:0n, gasLimit:0, from:TO_L2, srcChainId:0n, srcOwner:TO_L2, destChainId:167000n, destOwner:TO_L2, to:TO_L2, value:5n, data:INNER };
+    const node = nodeFor("sendMessage", "sendMessage(" + MESSAGE + ")", "tuple", struct);
+    node.trust = "signature-db";
+    expect(taikoBridgeMessage.match(node)).toBe(false);
+    const { children } = await taikoBridgeMessage.apply(node, {} as any);
+    expect(children).toHaveLength(0);
+  });
 });

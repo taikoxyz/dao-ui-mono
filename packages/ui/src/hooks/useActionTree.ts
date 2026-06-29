@@ -5,7 +5,14 @@ import { PUB_CHAIN } from "@/constants";
 import type { RawAction } from "@/utils/types";
 import type { AbiResolution, DecodedNode } from "@/utils/decoding/types";
 import { decodeAction } from "@/utils/decoding/decodeAction";
-import { loadAbiWith, loadVerifiedAbiFrom, loadTokenWith, loadSignature, abiQueryKey } from "@/utils/decoding/abiResolver";
+import {
+  loadAbiWith,
+  loadVerifiedAbiFrom,
+  loadTokenWith,
+  loadSignature,
+  abiQueryKey,
+  isVerifiedAbiChainSupported,
+} from "@/utils/decoding/abiResolver";
 
 const MAX_DEPTH = 4;
 
@@ -31,7 +38,13 @@ export function useActionTree(action: RawAction): { node: DecodedNode | null; is
         loadAbi: (addr: Address, chainId: number): Promise<AbiResolution> =>
           queryClient.fetchQuery({
             queryKey: abiQueryKey(chainId, addr),
-            queryFn: () => (chainId === appChainId ? loadAbiWith(client, addr) : loadVerifiedAbiFrom(chainId, addr)),
+            queryFn: () => {
+              if (chainId === appChainId) return loadAbiWith(client, addr);
+              if (!isVerifiedAbiChainSupported(chainId)) {
+                return Promise.resolve<AbiResolution>({ abi: [], trust: "unknown", isProxy: false, implementation: null });
+              }
+              return loadVerifiedAbiFrom(chainId, addr);
+            },
             staleTime: 1000 * 60 * 60 * 24 * 30,
           }),
         loadSignature,

@@ -27,7 +27,11 @@ function readMessage(value: unknown): MessageView | null {
 }
 
 function isSendMessage(node: DecodedNode): boolean {
-  return node.functionName === "sendMessage" && node.params[0]?.type?.startsWith("tuple") === true;
+  return (
+    node.trust === "verified" &&
+    node.functionName === "sendMessage" &&
+    node.params[0]?.type?.startsWith("tuple") === true
+  );
 }
 function isOnMessageInvocation(node: DecodedNode): boolean {
   return node.functionName === "onMessageInvocation" && node.params[0]?.type === "bytes";
