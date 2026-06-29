@@ -1,5 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { contractLabel } from "../actionNode.helpers";
+import { PUB_CHAIN } from "@/constants";
+import { chainLabel, contractLabel } from "../actionNode.helpers";
+
+describe("chainLabel", () => {
+  it("returns null for the app chain", () => {
+    // The app chain id is derived from PUB_CHAIN.id (env-dependent), so assert
+    // against it directly rather than a hardcoded id the env might not match.
+    expect(chainLabel(PUB_CHAIN.id)).toBeNull();
+  });
+
+  it("labels Taiko mainnet", () => {
+    expect(chainLabel(167000)).toMatch(/Taiko/i);
+  });
+
+  it("labels an unknown chain by id", () => {
+    expect(chainLabel(424242)).toMatch(/424242/);
+  });
+});
 
 describe("contractLabel", () => {
   it("returns the name when there is no proxy name", () => {

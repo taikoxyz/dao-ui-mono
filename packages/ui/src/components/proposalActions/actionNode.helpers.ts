@@ -96,3 +96,11 @@ export function contractLabel(node: Pick<DecodedNode, "name" | "proxyName">): st
   if (name && proxyName && name !== proxyName) return `${proxyName} → ${name}`;
   return name ?? proxyName ?? null;
 }
+
+const CHAIN_NAMES: Record<number, string> = { 1: "Ethereum", 167000: "Taiko", 167009: "Taiko Hekla" };
+
+/** Short label for a call's chain when it differs from the app chain; null for the app chain. */
+export function chainLabel(chainId: number): string | null {
+  if (chainId === PUB_CHAIN.id) return null;
+  return CHAIN_NAMES[chainId] ?? `chain ${chainId}`;
+}

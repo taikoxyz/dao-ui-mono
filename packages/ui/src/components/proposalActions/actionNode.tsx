@@ -5,7 +5,7 @@ import Link from "next/link";
 import { formatEther } from "viem";
 import type { DecodedNode, DecodedParam } from "@/utils/decoding/types";
 import { shortHex } from "@/utils/decoding/format";
-import { paramDisplay, leadParts, callTag, groupChildren, contractLabel } from "./actionNode.helpers";
+import { paramDisplay, leadParts, callTag, groupChildren, contractLabel, chainLabel } from "./actionNode.helpers";
 import { EncodedView } from "./encodedView";
 import { TrustBadge } from "./trustBadge";
 import { CopyButton } from "@/components/copy/copyButton";
@@ -130,6 +130,11 @@ const LeafItem: React.FC<{
           </span>
         )}
         <TrustBadge trust={node.trust} />
+        {chainLabel(node.chainId) && (
+          <span className="inline-flex items-center gap-x-1 rounded-md bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
+            ↗ {chainLabel(node.chainId)}
+          </span>
+        )}
         {flag != null && (
           <span className={isDisable ? "text-warning-700" : "text-neutral-500"}>
             {flagName}: {String(flag.value)}
