@@ -76,6 +76,19 @@ const CallDetails: React.FC<{ node: DecodedNode }> = ({ node }) => {
         ) : (
           <div className="text-sm text-neutral-500">No input parameters</div>
         )}
+        {node.embeddedCalls && node.embeddedCalls.length > 0 && (
+          <div className="flex flex-col gap-y-1 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2">
+            <span className="text-xs font-semibold text-warning-800">Encoded call(s) detected — Unverified</span>
+            {node.embeddedCalls.map((e, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-x-2 text-xs text-neutral-700">
+                <span className="font-mono text-neutral-500">{e.path}</span>
+                <span>→</span>
+                <span className="font-medium">{e.signature ?? "unknown function"}</span>
+                <span className="font-mono text-neutral-500">{shortHex(e.selector)}</span>
+              </div>
+            ))}
+          </div>
+        )}
         {node.value > 0n && (
           <div className="text-sm text-neutral-600">
             {symbol} value: {formatEther(node.value)} {symbol}
