@@ -1,10 +1,9 @@
 import { PUB_CHAIN } from "@/constants";
 import { formatHexString } from "@/utils/evm";
-import { decodeCamelCase } from "@/utils/case";
 import Link from "next/link";
 import { formatEther } from "viem";
 import type { DecodedNode, DecodedParam } from "@/utils/decoding/types";
-import { shortHex, displaySummary } from "@/utils/decoding/format";
+import { shortHex } from "@/utils/decoding/format";
 import { childNumber, friendlySignature, leadParts, contractLabel, chainLabel } from "./actionNode.helpers";
 import { EncodedView } from "./encodedView";
 import { TrustBadge } from "./trustBadge";
@@ -204,10 +203,10 @@ export const ActionNodeBody: React.FC<{ node: DecodedNode }> = ({ node }) => {
       </div>
     );
   }
-  // Single leaf action: show its decoded summary line (if any) + inputs.
+  // Single leaf action: show its title line + inputs.
   return (
     <div className="flex flex-col gap-y-2">
-      {displaySummary(node) && <p className="text-sm text-neutral-700">{decodeCamelCase(displaySummary(node) as string)}</p>}
+      <p className="text-sm text-neutral-700">{leadParts(node).text}</p>
       <InputsPanel node={node} />
     </div>
   );
