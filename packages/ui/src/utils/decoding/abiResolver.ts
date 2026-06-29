@@ -1,8 +1,9 @@
-import { Address, PublicClient, isAddressEqual, type AbiFunction } from "viem";
+import { Address, PublicClient, createPublicClient, http, isAddressEqual, type AbiFunction, type Chain } from "viem";
+import { taiko } from "viem/chains";
 import { whatsabi } from "@shazow/whatsabi";
 import { getImplementation } from "@/utils/proxies";
 import { ADDRESS_ZERO, isAddress, isContract } from "@/utils/evm";
-import { PUB_CHAIN, PUB_ETHERSCAN_API_KEY } from "@/constants";
+import { PUB_CHAIN, PUB_ETHERSCAN_API_KEY, PUB_TAIKO_RPC } from "@/constants";
 import type { AbiResolution } from "./types";
 
 export { loadSignature } from "./signatureLookup";
@@ -32,14 +33,68 @@ export function isVerifiedAbiChainSupported(chainId: number): boolean {
   return VERIFIED_ABI_CHAINS.has(chainId);
 }
 
+// Chains we resolve proxy-aware (RPC slot read + verified impl ABI). The app
+// chain is handled by loadAbiWith; this is for cross-chain targets only.
+const CHAIN_RESOLVERS: Record<number, { chain: Chain; rpcUrl: string }> = {
+  167000: { chain: taiko, rpcUrl: PUB_TAIKO_RPC },
+};
+
+const clientCache = new Map<number, PublicClient>();
+
+/** Memoized read-only viem client for a registry chain, or null if unsupported. */
+export function chainClient(chainId: number): PublicClient | null {
+  const entry = CHAIN_RESOLVERS[chainId];
+  if (!entry) return null;
+  const cached = clientCache.get(chainId);
+  if (cached) return cached;
+  const client = createPublicClient({ chain: entry.chain, transport: http(entry.rpcUrl) }) as PublicClient;
+  clientCache.set(chainId, client);
+  return client;
+}
+
 /**
- * Verified ABI + name for an address on another chain, via Etherscan v2 (HTTP
- * only — no RPC, so no proxy-slot resolution). Never guesses: a contract that
- * isn't verified on that chain returns an `unknown` resolution. Never throws.
+ * Proxy-aware verified resolution on another chain: read the EIP-1967
+ * implementation slot over that chain's RPC, then fetch the implementation's
+ * verified ABI + name from Etherscan v2. Verified-source only; never throws.
+ * Exported for testing (the client is injected).
+ */
+export async function loadVerifiedViaRpc(
+  chainId: number,
+  address: Address,
+  client: PublicClient,
+): Promise<AbiResolution> {
+  const empty: AbiResolution = { abi: [], trust: "unknown", isProxy: false, implementation: null };
+  if (!isAddress(address)) return empty;
+  try {
+    const implementation = await resolveImplementation(client, address);
+    const target = implementation ?? address;
+    const isProxy = !!implementation;
+    const result = await etherscanLoader(chainId).getContract(target);
+    if (!result.ok) return { ...empty, isProxy, implementation };
+    const proxyName = isProxy ? ((await verifiedName(address, chainId)) ?? undefined) : undefined;
+    return {
+      abi: toFunctionItems(result.abi as any[]),
+      trust: "verified",
+      isProxy,
+      implementation,
+      name: result.name || undefined,
+      proxyName,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/**
+ * Verified ABI + name for an address on another chain. For a chain in the
+ * resolver registry, resolves proxy-aware (RPC slot read + verified impl ABI);
+ * otherwise HTTP-only Etherscan v2. Never guesses; never throws.
  */
 export async function loadVerifiedAbiFrom(chainId: number, address: Address): Promise<AbiResolution> {
   const empty: AbiResolution = { abi: [], trust: "unknown", isProxy: false, implementation: null };
   if (!isAddress(address)) return empty;
+  const client = chainClient(chainId);
+  if (client) return loadVerifiedViaRpc(chainId, address, client);
   try {
     const result = await etherscanLoader(chainId).getContract(address);
     if (!result.ok) return empty;
@@ -56,9 +111,9 @@ export async function loadVerifiedAbiFrom(chainId: number, address: Address): Pr
 }
 
 /** Verified contract name for an address via Etherscan, or null if unverified/unavailable. */
-async function verifiedName(address: Address): Promise<string | null> {
+async function verifiedName(address: Address, chainId: number = PUB_CHAIN.id): Promise<string | null> {
   try {
-    const result = await etherscanLoader().getContract(address);
+    const result = await etherscanLoader(chainId).getContract(address);
     return result.ok && result.name ? result.name : null;
   } catch {
     return null;
