@@ -1,4 +1,4 @@
-import { Address } from "viem";
+import { Address, isAddress } from "viem";
 import { usePublicClient } from "wagmi";
 import { AbiFunction } from "abitype";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +13,11 @@ export const useAbi = (contractAddress: Address) => {
   const { data, isLoading, error } = useQuery({
     queryKey: abiQueryKey(publicClient?.chain.id, contractAddress),
     queryFn: async () => {
-      if (!contractAddress || !publicClient) return { abi: [], trust: "unknown", isProxy: false, implementation: null };
+      // Skip (and don't alert) for empty or still-being-typed / invalid addresses —
+      // only a complete, valid address should trigger a fetch and a "Cannot fetch" alert.
+      if (!contractAddress || !publicClient || !isAddress(contractAddress)) {
+        return { abi: [], trust: "unknown", isProxy: false, implementation: null };
+      }
       const res = await loadAbiWith(publicClient, contractAddress);
       if (!res.abi.length && res.trust === "unknown") {
         addAlert("Cannot fetch", {
