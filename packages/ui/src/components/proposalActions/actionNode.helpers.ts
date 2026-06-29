@@ -104,3 +104,30 @@ export function chainLabel(chainId: number): string | null {
   if (chainId === PUB_CHAIN.id) return null;
   return CHAIN_NAMES[chainId] ?? `chain ${chainId}`;
 }
+
+/** Hierarchical action number: childNumber("", 0)→"1", childNumber("3", 1)→"3.2". */
+export function childNumber(prefix: string, index: number): string {
+  return prefix ? `${prefix}.${index + 1}` : `${index + 1}`;
+}
+
+/** Short, human type for a param: the struct name from internalType, else the solidity type. */
+function shortType(p: DecodedNode["params"][number]): string {
+  const it = p.internalType;
+  if (it && it.startsWith("struct ")) return it.slice("struct ".length); // "IBridge.Message" / "IBridge.Message[]"
+  return p.type;
+}
+
+/**
+ * A readable signature for the inputs panel. `short` names each param with a
+ * friendly type (struct names instead of inlined tuples); `full` is the
+ * canonical signature for the "full signature" toggle. `short` is null when the
+ * function name is unknown.
+ */
+export function friendlySignature(
+  node: Pick<DecodedNode, "functionName" | "signature" | "params">,
+): { short: string | null; full: string | null } {
+  const fn = node.functionName;
+  if (!fn) return { short: null, full: node.signature };
+  const args = node.params.map((p) => `${shortType(p)} ${p.name}`.trim()).join(", ");
+  return { short: `${fn}(${args})`, full: node.signature };
+}

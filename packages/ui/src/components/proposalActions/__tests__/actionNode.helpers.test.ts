@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { PUB_CHAIN } from "@/constants";
-import { chainLabel, contractLabel } from "../actionNode.helpers";
+import { chainLabel, childNumber, contractLabel, friendlySignature } from "../actionNode.helpers";
 
 describe("chainLabel", () => {
   it("returns null for the app chain", () => {
@@ -39,5 +39,40 @@ describe("contractLabel", () => {
 
   it("returns null when no name is available", () => {
     expect(contractLabel({})).toBeNull();
+  });
+});
+
+describe("childNumber", () => {
+  it("numbers top-level rows from 1", () => {
+    expect(childNumber("", 0)).toBe("1");
+    expect(childNumber("", 2)).toBe("3");
+  });
+  it("nests under the parent number", () => {
+    expect(childNumber("3", 0)).toBe("3.1");
+    expect(childNumber("3.1", 1)).toBe("3.1.2");
+  });
+});
+
+describe("friendlySignature", () => {
+  it("uses the struct name from internalType for the short form", () => {
+    const node = {
+      functionName: "sendMessage",
+      signature: "sendMessage((uint64,address))",
+      params: [{ name: "message", type: "tuple", value: {}, internalType: "struct IBridge.Message" }],
+    };
+    const s = friendlySignature(node as any);
+    expect(s.short).toBe("sendMessage(IBridge.Message message)");
+    expect(s.full).toBe("sendMessage((uint64,address))");
+  });
+  it("falls back to the solidity type when no internalType", () => {
+    const node = {
+      functionName: "upgradeTo",
+      signature: "upgradeTo(address)",
+      params: [{ name: "newImplementation", type: "address", value: "0x" }],
+    };
+    expect(friendlySignature(node as any).short).toBe("upgradeTo(address newImplementation)");
+  });
+  it("returns null short when there is no function name", () => {
+    expect(friendlySignature({ functionName: null, signature: null, params: [] } as any).short).toBeNull();
   });
 });
