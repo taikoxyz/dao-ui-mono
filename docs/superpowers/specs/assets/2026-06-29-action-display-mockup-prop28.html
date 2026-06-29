@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Proposal #28 — F1 (pixel)</title>
+<style>
+  :root{
+    --pink:#e3007f;--ink:#1f2230;--muted:#6b7280;--line:#e8eaef;--line2:#f3f4f7;--bg:#f6f7f9;
+    --ok:#16a34a;--ok-bg:#eafaf0;--eth:#3556b5;--eth-bg:#eef2fe;--l2:#7c3aed;--l2-bg:#f3effe;--up:#2563eb;--type:#7a44b8;--type-bg:#f3effe;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+  .page{max-width:760px;margin:0 auto;padding:30px 22px 90px}
+  .ptitle{font-size:22px;font-weight:700;letter-spacing:-.2px;margin:0 0 6px}
+  .pmeta{display:flex;gap:8px;align-items:center;margin-bottom:22px}
+  .tag{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+  .tag.std{color:#475569;background:#eef1f5}.tag.exec{color:var(--ok);background:var(--ok-bg)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:8px 18px 16px;box-shadow:0 1px 2px rgba(20,20,40,.03)}
+  .head{display:flex;align-items:center;justify-content:space-between;padding:12px 2px 4px}.head h3{margin:0;font-size:18px}
+  .intro{color:var(--muted);font-size:13px;padding:0 2px 6px}
+  .exlink{display:block;color:var(--pink);font-size:13px;font-weight:600;padding:2px 2px 10px;border-bottom:1px solid var(--line2)}
+  .batch{color:var(--muted);font-size:12px;padding:10px 2px 8px}.batch b{color:var(--ink)}
+  code,.addr{font-family:var(--mono)}.addr{font-size:12.5px;color:var(--muted)}
+  .badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .b-ok{color:var(--ok);background:var(--ok-bg)}.b-eth{color:var(--eth);background:var(--eth-bg)}.b-l2{color:var(--l2);background:var(--l2-bg)}
+  .fn{font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--line2);padding:1px 6px;border-radius:6px}
+  .arrow{color:var(--muted)}
+  .num{min-width:30px;height:24px;padding:0 7px;border-radius:8px;background:#f1f2f5;color:#586074;font-family:var(--mono);font-size:12.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+  details.act{border-top:1px solid var(--line2)}
+  details.act:first-of-type{border-top:none}
+  details.act>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;padding:12px 4px;border-radius:10px}
+  details.act>summary::-webkit-details-marker{display:none}
+  details.act>summary:hover{background:#fafbfc}
+  .body{min-width:0}
+  .t{font-weight:650}.t.plain{font-weight:600}
+  .m{color:var(--muted);font-size:12.5px;margin-top:3px;display:flex;gap:6px 9px;flex-wrap:wrap;align-items:center}
+  .inputs-line{margin-top:7px;display:inline-flex;align-items:center;gap:5px;color:var(--pink);font-weight:600;font-size:12.5px}
+  .chev{transition:transform .15s;display:inline-block;font-size:11px} details.act[open] .chev{transform:rotate(90deg)}
+  .right{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;padding-top:2px}
+
+  .detail{margin:0 4px 12px 46px;background:#fafbfc;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  details.sig{margin-bottom:10px}
+  details.sig>summary{list-style:none;cursor:pointer;font-family:var(--mono);font-size:12px;display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+  details.sig>summary::-webkit-details-marker{display:none}
+  .sig-fn{font-weight:600}
+  .sig-toggle{color:var(--pink);font-size:11px;font-weight:600;font-family:var(--sans)}
+  .sig-full{margin-top:7px;font-family:var(--mono);font-size:11.5px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
+  .kv{display:grid;grid-template-columns:190px 1fr;gap:9px 14px;font-size:12.5px;align-items:start}
+  .kname{display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:4px 7px;min-width:0}
+  .kname .nm{font-weight:600}.kname .ty{font-family:var(--mono);font-size:10.5px;color:var(--type);background:var(--type-bg);padding:0 6px;border-radius:5px}
+  .v{font-family:var(--mono);font-size:12px;word-break:break-all}.v.lnk{color:var(--up)}.v.ref{font-family:var(--sans);color:var(--l2);font-style:italic}
+  .none{color:var(--muted);font-size:12.5px}
+  details.raw{margin-top:10px}
+  details.raw>summary{list-style:none;cursor:pointer;color:var(--muted);font-size:11.5px}
+  details.raw>summary::-webkit-details-marker{display:none}
+  details.raw pre{margin:7px 0 0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px;font-size:11px;line-height:1.5;white-space:pre-wrap;word-break:break-all;color:#4b5563;max-height:120px;overflow:auto}
+  .children{margin-left:15px;border-left:2px solid var(--l2-bg);padding-left:14px}
+  .children .num{background:#f3effe;color:#6b48c9}
+  .children .detail{margin-left:46px}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1 class="ptitle">Cleanup: Remove Shasta Fork Routers</h1>
+  <div class="pmeta"><span class="tag std">Standard Proposal</span><span class="tag exec">Executed</span></div>
+
+  <div class="card">
+    <div class="head"><h3>Actions</h3></div>
+    <div class="intro">When the proposal passes the community vote, these actions are executable by the DAO.</div>
+    <a class="exlink" href="#">View execution transaction ↗</a>
+    <div class="batch">Executes a batch of 3 via <b>TaikoDAOController</b> <span class="addr">0x75Ba…CD0a</span></div>
+
+    <!-- 1 -->
+    <details class="act">
+      <summary>
+        <span class="num">1</span>
+        <span class="body">
+          <span class="t plain">Accept ownership</span>
+          <span class="m">on <b>MainnetInbox</b> <span class="addr">0x6f21…ef1f</span><span class="fn">acceptOwnership</span></span>
+          <span class="inputs-line"><span class="chev">▸</span> Inputs</span>
+        </span>
+        <span class="right"><span class="badge b-ok">✓ Verified</span><span class="badge b-eth">Ethereum</span></span>
+      </summary>
+      <div class="detail">
+        <details class="sig"><summary><span><span class="sig-fn">acceptOwnership</span>()</span></summary></details>
+        <div class="none">No input parameters.</div>
+        <details class="raw"><summary>▸ Raw calldata</summary><pre>0x79ba5097</pre></details>
+      </div>
+    </details>
+
+    <!-- 2 -->
+    <details class="act">
+      <summary>
+        <span class="num">2</span>
+        <span class="body">
+          <span class="t">Upgrade SignalService <span class="arrow">→</span> <span class="addr">0xBC44…8752</span></span>
+          <span class="m">on <b>SignalService</b> <span class="addr">0x9e0a…C77C</span><span class="fn">upgradeTo</span></span>
+          <span class="inputs-line"><span class="chev">▸</span> Inputs</span>
+        </span>
+        <span class="right"><span class="badge b-ok">✓ Verified</span><span class="badge b-eth">Ethereum</span></span>
+      </summary>
+      <div class="detail">
+        <details class="sig"><summary><span><span class="sig-fn">upgradeTo</span>(address newImplementation)</span></summary></details>
+        <div class="kv"><span class="kname"><span class="nm">newImplementation</span><span class="ty">address</span></span><span class="v lnk">0xBC442f342fe247dc7981ac7fbe8293c8891f8752</span></div>
+        <details class="raw"><summary>▸ Raw calldata</summary><pre>0x3659cfe6000000000000000000000000bc442f342fe247dc7981ac7fbe8293c8891f8752</pre></details>
+      </div>
+    </details>
+
+    <!-- 3 bridge -->
+    <details class="act" open>
+      <summary>
+        <span class="num">3</span>
+        <span class="body">
+          <span class="t">Bridge message → Taiko (2 actions)</span>
+          <span class="m">on <b>MainnetBridge</b> <span class="addr">0xd602…d8EC</span><span class="fn">sendMessage</span></span>
+          <span class="inputs-line"><span class="chev">▸</span> Inputs</span>
+        </span>
+        <span class="right"><span class="badge b-ok">✓ Verified</span><span class="badge b-eth">Ethereum</span></span>
+      </summary>
+      <div class="detail">
+        <details class="sig"><summary><span><span class="sig-fn">sendMessage</span>(IBridge.Message message)</span><span class="sig-toggle">▸ full signature</span></summary>
+          <div class="sig-full">sendMessage((uint64 id, uint64 fee, uint32 gasLimit, address from, uint64 srcChainId, address srcOwner, uint64 destChainId, address destOwner, address to, uint256 value, bytes data))</div>
+        </details>
+        <div class="kv">
+          <span class="kname"><span class="nm">destChainId</span><span class="ty">uint64</span></span><span class="v">167000 (Taiko)</span>
+          <span class="kname"><span class="nm">to</span><span class="ty">address</span></span><span class="v lnk">0xfA06…8C7C (DelegateController)</span>
+          <span class="kname"><span class="nm">value</span><span class="ty">uint256</span></span><span class="v">0</span>
+          <span class="kname"><span class="nm">gasLimit</span><span class="ty">uint32</span></span><span class="v">5,000,000</span>
+          <span class="kname"><span class="nm">data</span><span class="ty">bytes</span></span><span class="v ref">↓ decoded as actions 3.1–3.2 below</span>
+        </div>
+        <details class="raw"><summary>▸ Raw calldata</summary><pre>0x1bdb00370000000000000000000000000000000000000000000000000000000000000020…</pre></details>
+      </div>
+    </details>
+
+    <div class="children">
+      <details class="act">
+        <summary>
+          <span class="num">3.1</span>
+          <span class="body">
+            <span class="t">Upgrade Anchor <span class="arrow">→</span> <span class="addr">0x7e83…E0BA</span></span>
+            <span class="m">on <b>Anchor</b> <span class="addr">0x1670…0001</span><span class="fn">upgradeTo</span></span>
+            <span class="inputs-line"><span class="chev">▸</span> Inputs</span>
+          </span>
+          <span class="right"><span class="badge b-ok">✓ Verified</span><span class="badge b-l2">↗ Taiko</span></span>
+        </summary>
+        <div class="detail">
+          <details class="sig"><summary><span><span class="sig-fn">upgradeTo</span>(address newImplementation)</span></summary></details>
+          <div class="kv"><span class="kname"><span class="nm">newImplementation</span><span class="ty">address</span></span><span class="v lnk">0x7e83Af941FDcf90EB44ED7dc8754a201B156E0BA</span></div>
+          <details class="raw"><summary>▸ Raw calldata</summary><pre>0x3659cfe60000000000000000000000007e83af941fdcf90eb44ed7dc8754a201b156e0ba</pre></details>
+        </div>
+      </details>
+      <details class="act">
+        <summary>
+          <span class="num">3.2</span>
+          <span class="body">
+            <span class="t">Upgrade SignalService <span class="arrow">→</span> <span class="addr">0x18B2…fE28</span></span>
+            <span class="m">on <b>SignalService</b> <span class="addr">0x1670…0005</span><span class="fn">upgradeTo</span></span>
+            <span class="inputs-line"><span class="chev">▸</span> Inputs</span>
+          </span>
+          <span class="right"><span class="badge b-ok">✓ Verified</span><span class="badge b-l2">↗ Taiko</span></span>
+        </summary>
+        <div class="detail">
+          <details class="sig"><summary><span><span class="sig-fn">upgradeTo</span>(address newImplementation)</span></summary></details>
+          <div class="kv"><span class="kname"><span class="nm">newImplementation</span><span class="ty">address</span></span><span class="v lnk">0x18B27428cce679DFf84D09D6b07DF1E9EBb6fE28</span></div>
+          <details class="raw"><summary>▸ Raw calldata</summary><pre>0x3659cfe600000000000000000000000018b27428cce679dff84d09d6b07df1e9ebb6fe28</pre></details>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+</body>
+</html>
