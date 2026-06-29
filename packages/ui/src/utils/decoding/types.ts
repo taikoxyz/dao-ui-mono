@@ -21,6 +21,8 @@ export type DecodedNode = {
   trust: TrustLevel;
   isProxy: boolean;
   implementation: Address | null;
+  /** Chain id where this call executes (app chain unless an envelope routed it cross-chain). */
+  chainId: number;
   /** Verified contract name of the call target (implementation, for proxies). Verified sources only. */
   name?: string;
   /** Verified name of the proxy contract itself, when the target is a proxy. */
@@ -42,12 +44,14 @@ export type AbiResolution = {
   proxyName?: string;
 };
 
-export type RawCall = { to: Address; value: bigint; data: Hex };
+export type RawCall = { to: Address; value: bigint; data: Hex; chainId?: number };
 
 export type DecodeCtx = {
-  loadAbi: (address: Address) => Promise<AbiResolution>;
+  loadAbi: (address: Address, chainId: number) => Promise<AbiResolution>;
   loadSignature: (selector: Hex) => Promise<AbiFunction | null>;
   loadToken: (address: Address) => Promise<{ decimals: number; symbol: string } | null>;
+  /** App/default chain id; a call without an explicit chainId resolves here. */
+  chainId: number;
   depth: number;
   maxDepth: number;
   seen: Set<string>;

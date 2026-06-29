@@ -11,7 +11,7 @@ function node(p: Partial<DecodedNode> = {}): DecodedNode {
     to: TOKEN as `0x${string}`, value: 0n, data: "0xa9059cbb" as `0x${string}`,
     selector: "0xa9059cbb", functionName: "transfer", signature: "transfer(address,uint256)",
     params: [{ name: "to", type: "address", value: DST }, { name: "amount", type: "uint256", value: 1500000n }],
-    trust: "verified", isProxy: false, implementation: null, summary: null, children: [], ...p,
+    chainId: 1, trust: "verified", isProxy: false, implementation: null, summary: null, children: [], ...p,
   };
 }
 const ctx = { loadToken: async () => ({ decimals: 6, symbol: "USDC" }) } as unknown as DecodeCtx;

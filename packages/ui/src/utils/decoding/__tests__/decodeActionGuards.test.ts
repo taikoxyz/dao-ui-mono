@@ -22,6 +22,7 @@ function ctx(overrides: Partial<DecodeCtx> = {}): DecodeCtx {
     },
     loadSignature: async () => null,
     loadToken: async () => null,
+    chainId: 1,
     depth: 0,
     maxDepth: 4,
     seen: new Set(),

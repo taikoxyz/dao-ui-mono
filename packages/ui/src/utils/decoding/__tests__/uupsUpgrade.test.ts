@@ -10,7 +10,7 @@ function node(partial: Partial<DecodedNode>): DecodedNode {
     to: PROXY as `0x${string}`, value: 0n, data: "0x3659cfe6" as `0x${string}`,
     selector: "0x3659cfe6", functionName: "upgradeTo", signature: "upgradeTo(address)",
     params: [{ name: "newImplementation", type: "address", value: NEW_IMPL }],
-    trust: "verified", isProxy: true, implementation: null, summary: null, children: [], ...partial,
+    chainId: 1, trust: "verified", isProxy: true, implementation: null, summary: null, children: [], ...partial,
   };
 }
 const ctx = { loadToken: async () => null } as unknown as DecodeCtx;

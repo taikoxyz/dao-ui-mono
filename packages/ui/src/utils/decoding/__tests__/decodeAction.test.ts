@@ -10,6 +10,7 @@ function ctx(overrides: Partial<DecodeCtx> = {}): DecodeCtx {
     loadAbi: async (): Promise<AbiResolution> => ({ abi: [transferAbi], trust: "verified", isProxy: false, implementation: null }),
     loadSignature: async () => null,
     loadToken: async () => null,
+    chainId: 1,
     depth: 0,
     maxDepth: 4,
     seen: new Set(),
@@ -99,5 +100,39 @@ describe("decodeAction (one level)", () => {
     const node = await decodeAction({ to: ADDR, value: 0n, data }, ctx());
     expect(node.name).toBeUndefined();
     expect(node.proxyName).toBeUndefined();
+  });
+
+  it("defaults node.chainId to ctx.chainId and passes it to loadAbi", async () => {
+    let seenChainId: number | undefined;
+    const data = encodeFunctionData({ abi: [transferAbi], functionName: "transfer", args: [ADDR, 1n] });
+    const node = await decodeAction(
+      { to: ADDR, value: 0n, data },
+      ctx({
+        chainId: 1,
+        loadAbi: async (_addr, chainId): Promise<AbiResolution> => {
+          seenChainId = chainId;
+          return { abi: [transferAbi], trust: "verified", isProxy: false, implementation: null };
+        },
+      }),
+    );
+    expect(node.chainId).toBe(1);
+    expect(seenChainId).toBe(1);
+  });
+
+  it("uses an explicit call.chainId for the node and the loadAbi lookup", async () => {
+    let seenChainId: number | undefined;
+    const data = encodeFunctionData({ abi: [transferAbi], functionName: "transfer", args: [ADDR, 1n] });
+    const node = await decodeAction(
+      { to: ADDR, value: 0n, data, chainId: 167000 },
+      ctx({
+        chainId: 1,
+        loadAbi: async (_addr, chainId): Promise<AbiResolution> => {
+          seenChainId = chainId;
+          return { abi: [transferAbi], trust: "verified", isProxy: false, implementation: null };
+        },
+      }),
+    );
+    expect(node.chainId).toBe(167000);
+    expect(seenChainId).toBe(167000);
   });
 });

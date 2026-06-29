@@ -10,6 +10,7 @@ function baseNode(call: RawCall): DecodedNode {
     to: call.to,
     value: call.value,
     data: call.data,
+    chainId: call.chainId ?? 1,
     selector: null,
     functionName: null,
     signature: null,
@@ -24,6 +25,7 @@ function baseNode(call: RawCall): DecodedNode {
 
 export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<DecodedNode> {
   const node = baseNode(call);
+  node.chainId = call.chainId ?? ctx.chainId;
 
   if (!call.data || call.data === "0x") {
     node.trust = "verified";
@@ -40,7 +42,7 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
 
   let resolution;
   try {
-    resolution = await ctx.loadAbi(call.to);
+    resolution = await ctx.loadAbi(call.to, node.chainId);
   } catch (err) {
     console.warn(`decodeAction: ABI resolution failed for ${call.to}`, err);
     resolution = { abi: [], trust: "unknown" as const, isProxy: false, implementation: null };
