@@ -9,8 +9,8 @@ const ACTION_TUPLE = parseAbiParameters("(address,uint256,bytes)[]");
  * target) — never guesses. Chain-agnostic: callers set `chainId` if needed.
  */
 export function decodeActionTupleArray(blob: Hex): RawCall[] | null {
-  if (!blob || blob === "0x" || size(blob) < 64) return null;
   try {
+    if (!blob || blob === "0x" || size(blob) < 64) return null;
     const [arr] = decodeAbiParameters(ACTION_TUPLE, blob) as unknown as [Array<[string, bigint, Hex]>];
     if (!Array.isArray(arr) || arr.length === 0) return null;
     if (!arr.every((t) => isAddress(t[0]))) return null;
