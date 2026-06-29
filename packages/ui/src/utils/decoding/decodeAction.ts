@@ -1,6 +1,7 @@
 import { slice, size, toFunctionSelector, toFunctionSignature, decodeFunctionData, formatEther, type AbiFunction } from "viem";
 import type { DecodeCtx, DecodedNode, RawCall } from "./types";
 import { matchUnwrapper } from "./unwrappers";
+import { findEmbeddedCandidates } from "./embeddedCalls";
 
 // Default ceiling on the total number of decoded sub-nodes per tree.
 const DEFAULT_MAX_NODES = 256;
@@ -125,6 +126,25 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
           node.children.push(await decodeAction(child, childCtx));
         }
       }
+    }
+  }
+
+  // Unverified labeling of any selector-prefixed bytes still shown raw (not already a child).
+  if (node.params.length > 0) {
+    try {
+      const childData = new Set(node.children.map((c) => c.data.toLowerCase()));
+      const candidates = findEmbeddedCandidates(node.params).filter((c) => {
+        // skip a candidate whose bytes are already an expanded child (avoid double-surfacing)
+        return ![...childData].some((d) => d.startsWith(c.selector.toLowerCase()));
+      });
+      const embedded = [];
+      for (const cand of candidates) {
+        const frag = await ctx.loadSignature(cand.selector);
+        if (frag) embedded.push({ path: cand.path, selector: cand.selector, signature: toFunctionSignature(frag) });
+      }
+      if (embedded.length) node.embeddedCalls = embedded;
+    } catch {
+      // labeling is best-effort; never break a decode
     }
   }
 

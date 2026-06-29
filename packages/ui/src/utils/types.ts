@@ -5,7 +5,7 @@ import { Address, Hex, AbiFunction } from "viem";
 // General types
 type JsonLiteral = string | number | boolean;
 export type JsonValue = JsonLiteral | { [k: string]: JsonValue } | JsonValue[];
-export type EvmValue = string | Hex | Address | number | bigint | boolean;
+export type EvmValue = string | Hex | Address | number | bigint | boolean | EvmValue[] | { [key: string]: EvmValue };
 
 export type RawAction = {
   to: Address;

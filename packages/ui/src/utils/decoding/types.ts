@@ -10,6 +10,8 @@ export type DecodedParam = {
   formatted?: string;
 };
 
+export type EmbeddedCall = { path: string; selector: Hex; signature: string | null };
+
 export type DecodedNode = {
   to: Address;
   value: bigint;
@@ -28,6 +30,8 @@ export type DecodedNode = {
   /** Verified name of the proxy contract itself, when the target is a proxy. */
   proxyName?: string;
   summary: string | null;
+  /** Unverified: selector-prefixed bytes found in params, labeled from the 4-byte DB. Never arg values. */
+  embeddedCalls?: EmbeddedCall[];
   children: DecodedNode[];
   error?: string;
   truncated?: "depth" | "cycle" | "budget";

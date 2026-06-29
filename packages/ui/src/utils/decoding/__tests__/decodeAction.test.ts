@@ -119,6 +119,21 @@ describe("decodeAction (one level)", () => {
     expect(seenChainId).toBe(1);
   });
 
+  it("labels a selector-prefixed bytes param via the signature DB, marked unverified (no children)", async () => {
+    const sendAbi = parseAbiItem("function store(bytes data)") as AbiFunction;
+    const inner = ("0x7f07c947" + "00".repeat(32)) as `0x${string}`;
+    const data = encodeFunctionData({ abi: [sendAbi], functionName: "store", args: [inner] });
+    const pinged = parseAbiItem("function onMessageInvocation(bytes)") as AbiFunction;
+    const node = await decodeAction(
+      { to: ADDR, value: 0n, data },
+      ctx({
+        loadAbi: async (): Promise<AbiResolution> => ({ abi: [sendAbi], trust: "verified", isProxy: false, implementation: null }),
+        loadSignature: async () => pinged,
+      }),
+    );
+    expect(node.embeddedCalls?.[0]).toMatchObject({ path: "data", selector: "0x7f07c947", signature: "onMessageInvocation(bytes)" });
+  });
+
   it("uses an explicit call.chainId for the node and the loadAbi lookup", async () => {
     let seenChainId: number | undefined;
     const data = encodeFunctionData({ abi: [transferAbi], functionName: "transfer", args: [ADDR, 1n] });
