@@ -1,7 +1,7 @@
-import { decodeAbiParameters, parseAbiParameters, getAddress, isAddress, size, slice, type Hex } from "viem";
+import { decodeAbiParameters, parseAbiParameters, slice, type Hex } from "viem";
 import type { DecodedNode, RawCall, Unwrapper } from "../types";
+import { decodeActionTupleArray } from "./actionArray";
 
-const ACTION_TUPLE = parseAbiParameters("(address,uint256,bytes)[]");
 const EXECUTE_BYTES = "0x09c5eabe";
 const EXECUTE_BYTES_SIGNATURE = "execute(bytes)";
 
@@ -28,15 +28,8 @@ function candidateBlobs(node: DecodedNode): Hex[] {
 
 function decodeActionArray(node: DecodedNode): RawCall[] | null {
   for (const blob of candidateBlobs(node)) {
-    if (!blob || blob === "0x" || size(blob) < 64) continue;
-    try {
-      const [arr] = decodeAbiParameters(ACTION_TUPLE, blob) as unknown as [Array<[string, bigint, Hex]>];
-      if (!Array.isArray(arr) || arr.length === 0) continue;
-      if (!arr.every((t) => isAddress(t[0]))) continue;
-      return arr.map((t) => ({ to: getAddress(t[0]), value: t[1], data: t[2] }));
-    } catch {
-      continue;
-    }
+    const calls = decodeActionTupleArray(blob);
+    if (calls) return calls;
   }
   return null;
 }
