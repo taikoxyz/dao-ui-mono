@@ -27,12 +27,9 @@ const persister = createAsyncStoragePersister({
   deserialize,
 });
 
-// Bump when the cached shape of decoded data changes so persisted entries are
-// discarded instead of served stale. The action decoder caches results for
-// days (7d tree / 30d ABI); without a buster, a decoding change (e.g. adding
-// contract names to actions) stays invisible to anyone who already cached a
-// proposal until those windows expire.
-const PERSIST_CACHE_BUSTER = "2026-06-26-action-contract-names";
+// Auto-bumped per build (see next.config.js NEXT_PUBLIC_BUILD_ID) so any
+// decoding/shape change invalidates the persisted cache without manual edits.
+const PERSIST_CACHE_BUSTER = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
 
 // Create modal
 createWeb3Modal({
