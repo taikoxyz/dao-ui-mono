@@ -14,9 +14,8 @@ import { If } from "../if";
 import { useActionTree } from "@/hooks/useActionTree";
 import { decodeCamelCase } from "@/utils/case";
 import { ActionNodeBody } from "./actionNode";
-import { contractLabel } from "./actionNode.helpers";
+import { leadParts, contractLabel, chainLabel } from "./actionNode.helpers";
 import { TrustBadge } from "./trustBadge";
-import { displaySummary } from "@/utils/decoding/format";
 
 const DEFAULT_DESCRIPTION =
   "When the proposal passes the community vote, the following actions will be executable by the DAO.";
@@ -79,13 +78,9 @@ export const ProposalActions: React.FC<IProposalActionsProps> = (props) => {
 const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: RawAction; onRemove?: () => any }) => {
   const { node, isLoading } = useActionTree(rawAction);
   const title = `Action ${index + 1}`;
+  const headline = node ? leadParts(node).text : decodeCamelCase("(loading)");
   const label = node ? contractLabel(node) : null;
-  const isEthTransfer = !rawAction.data || rawAction.data === "0x";
-  const headline = node?.functionName
-    ? node.functionName
-    : isEthTransfer
-      ? `Transfer ${PUB_CHAIN.nativeCurrency.symbol}`
-      : "(function call)";
+  const chain = node ? chainLabel(node.chainId) : null;
 
   return (
     <AccordionItem className="border-t border-t-neutral-100 bg-neutral-0" value={title}>
@@ -93,7 +88,7 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
         <div className="flex w-full justify-between gap-x-4">
           <div className="flex w-full flex-1 flex-col items-start gap-y-1.5">
             <span className="text-left text-lg font-semibold leading-tight text-neutral-800 md:text-xl">
-              {decodeCamelCase(headline)}
+              {headline}
             </span>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               {label && <span className="font-semibold text-neutral-700">{label}</span>}
@@ -106,21 +101,17 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
                 {formatHexString(rawAction.to)}
               </Link>
               {node && <TrustBadge trust={node.trust} />}
+              {chain && (
+                <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-semibold text-primary-700">↗ {chain}</span>
+              )}
             </div>
-            {node && displaySummary(node) && (
-              <p className="text-left text-sm text-neutral-600 md:text-base">{displaySummary(node)}</p>
-            )}
           </div>
           <div className="hidden w-24 shrink-0 text-right text-sm text-neutral-500 sm:block md:text-base">{title}</div>
         </div>
       </AccordionItemHeader>
       <AccordionItemContent className="!h-auto !overflow-visible">
         <div className="flex flex-col gap-y-4">
-          {isLoading || !node ? (
-            <p className="text-neutral-500">Decoding…</p>
-          ) : (
-            <ActionNodeBody node={node} />
-          )}
+          {isLoading || !node ? <p className="text-neutral-500">Decoding…</p> : <ActionNodeBody node={node} />}
           <If condition={!!onRemove}>
             <div className="mt-2">
               <Button variant="tertiary" size="sm" iconLeft={IconType.CLOSE} onClick={onRemove}>
