@@ -8,6 +8,10 @@ export type DecodedParam = {
   type: string;
   value: EvmValue;
   formatted?: string;
+  /** ABI internalType (e.g. "struct IBridge.Message"), when available from a verified ABI. */
+  internalType?: string;
+  /** Decoded sub-params for a `tuple` type, so struct fields render with names + types. */
+  components?: DecodedParam[];
 };
 
 export type EmbeddedCall = { path: string; selector: Hex; signature: string | null };

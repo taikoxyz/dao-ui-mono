@@ -2,6 +2,7 @@ import { slice, size, toFunctionSelector, toFunctionSignature, decodeFunctionDat
 import type { DecodeCtx, DecodedNode, RawCall } from "./types";
 import { matchUnwrapper } from "./unwrappers";
 import { findEmbeddedCandidates } from "./embeddedCalls";
+import { buildParams } from "./params";
 
 // Default ceiling on the total number of decoded sub-nodes per tree.
 const DEFAULT_MAX_NODES = 256;
@@ -71,11 +72,7 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
       const { args } = decodeFunctionData({ abi: [fnAbi], data: call.data });
       node.functionName = fnAbi.name;
       node.signature = toFunctionSignature(fnAbi);
-      node.params = fnAbi.inputs.map((inp, i) => ({
-        name: inp.name ?? "",
-        type: inp.type,
-        value: (args as readonly unknown[])[i] as DecodedNode["params"][number]["value"],
-      }));
+      node.params = buildParams(fnAbi.inputs, args as readonly unknown[]);
     } catch {
       node.error = "decode-failed";
     }
