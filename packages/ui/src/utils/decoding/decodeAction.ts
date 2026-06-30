@@ -4,8 +4,11 @@ import { matchUnwrapper } from "./unwrappers";
 import { findEmbeddedCandidates } from "./embeddedCalls";
 import { buildParams } from "./params";
 
-// Default ceiling on the total number of decoded sub-nodes per tree.
-const DEFAULT_MAX_NODES = 256;
+// Default ceiling on the total number of decoded sub-nodes per tree. Each node
+// drives an RPC + Etherscan fetch, so this is a real network-fan-out bound, kept
+// well below the per-array element cap (MAX_ACTION_ELEMENTS) so an oversized
+// batch always trips the shared budget and gets honestly marked truncated.
+const DEFAULT_MAX_NODES = 48;
 
 function baseNode(call: RawCall): DecodedNode {
   return {
@@ -29,6 +32,12 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
   const node = baseNode(call);
   node.chainId = call.chainId ?? ctx.chainId;
 
+  // Shared tree-wide breadth budget. Hoisted so both child recursion and the
+  // embedded-call lookups below draw from one pool (a hostile params blob must
+  // not drive unbounded signature lookups once the node budget is exhausted).
+  const maxNodes = ctx.maxNodes ?? DEFAULT_MAX_NODES;
+  const nodeCount = ctx.nodeCount ?? { value: 0 };
+
   if (!call.data || call.data === "0x") {
     node.trust = "verified";
     node.summary = `Transfer ${formatEther(call.value)} to ${call.to}`;
@@ -47,13 +56,15 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
     resolution = await ctx.loadAbi(call.to, node.chainId);
   } catch (err) {
     console.warn(`decodeAction: ABI resolution failed for ${call.to}`, err);
-    resolution = { abi: [], trust: "unknown" as const, isProxy: false, implementation: null };
+    // loadAbi threw — a transient failure, not a clean unknown: flag refetchable.
+    resolution = { abi: [], trust: "unknown" as const, isProxy: false, implementation: null, retryable: true };
   }
   node.trust = resolution.trust;
   node.isProxy = resolution.isProxy;
   node.implementation = resolution.implementation;
   node.name = resolution.name;
   node.proxyName = resolution.proxyName;
+  node.retryable = resolution.retryable;
 
   let fnAbi: AbiFunction | undefined = resolution.abi.find(
     (f) => f.type === "function" && node.selector === toFunctionSelector(f),
@@ -100,8 +111,6 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
       if (ctx.depth >= ctx.maxDepth) {
         node.truncated = "depth";
       } else {
-        const maxNodes = ctx.maxNodes ?? DEFAULT_MAX_NODES;
-        const nodeCount = ctx.nodeCount ?? { value: 0 };
         for (const child of children) {
           if (nodeCount.value >= maxNodes) {
             node.truncated = "budget";
@@ -136,6 +145,11 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
       });
       const embedded = [];
       for (const cand of candidates) {
+        // Embedded signature lookups draw from the same tree-wide budget as child
+        // recursion, so a hostile params blob can't drive unbounded network calls
+        // once the node budget is exhausted.
+        if (nodeCount.value >= maxNodes) break;
+        nodeCount.value += 1;
         const frag = await ctx.loadSignature(cand.selector);
         if (frag) embedded.push({ path: cand.path, selector: cand.selector, signature: toFunctionSignature(frag) });
       }
@@ -144,6 +158,10 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
       // labeling is best-effort; never break a decode
     }
   }
+
+  // A transient failure anywhere in the subtree taints the whole tree as stale,
+  // so the hook refetches rather than caching a partial degraded result.
+  if (node.children.some((c) => c.retryable)) node.retryable = true;
 
   return node;
 }

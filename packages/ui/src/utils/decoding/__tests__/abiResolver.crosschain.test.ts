@@ -41,13 +41,17 @@ describe("cross-chain verified resolver", () => {
     const res = await loadVerifiedAbiFrom(1, ADDR);
     expect(res.trust).toBe("unknown");
     expect(res.name).toBeUndefined();
+    // A clean "not verified" answer is NOT a transient failure — don't flag refetch.
+    expect(res.retryable).toBeFalsy();
   });
 
-  it("never throws; an Etherscan error degrades to unknown", async () => {
+  it("never throws; an Etherscan error degrades to unknown and flags retryable", async () => {
     getContract.mockRejectedValue(new Error("rate limited"));
     const res = await loadVerifiedAbiFrom(1, ADDR);
     expect(res.trust).toBe("unknown");
     expect(res.abi).toEqual([]);
+    // The fetch threw (outage) — transient, so the caller can refetch.
+    expect(res.retryable).toBe(true);
   });
 });
 
@@ -104,6 +108,13 @@ describe("loadVerifiedViaRpc (proxy-aware cross-chain)", () => {
     const res = await loadVerifiedViaRpc(167000, PROXY, fakeClient(() => { throw new Error("rpc down"); }));
     expect(res.trust).toBe("unknown");
     expect(res.abi).toEqual([]);
+  });
+
+  it("flags retryable when the Etherscan fetch itself throws (outage)", async () => {
+    getContract.mockRejectedValue(new Error("rate limited"));
+    const res = await loadVerifiedViaRpc(167000, PROXY, fakeClient(padded(IMPL)));
+    expect(res.trust).toBe("unknown");
+    expect(res.retryable).toBe(true);
   });
 
   it("chainClient memoizes one client per supported chain and returns null for unsupported", () => {

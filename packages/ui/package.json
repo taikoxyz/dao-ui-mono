@@ -11,7 +11,8 @@
     "prepare": "husky",
     "clean": "rm -rf node_modules && rm -rf .next",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
   },
   "lint-staged": {
     "*.{js, jsx,ts,tsx}": [
@@ -69,6 +70,7 @@
     "eslint-config-next": "^15.0.3",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.0.11",
+    "jsdom": "^25.0.1",
     "lint-staged": "^15.2.2",
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",

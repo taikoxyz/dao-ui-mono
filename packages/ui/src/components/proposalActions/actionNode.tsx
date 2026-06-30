@@ -4,7 +4,7 @@ import Link from "next/link";
 import { formatEther } from "viem";
 import type { DecodedNode, DecodedParam } from "@/utils/decoding/types";
 import { shortHex } from "@/utils/decoding/format";
-import { childNumber, friendlySignature, leadParts, contractLabel, chainLabel } from "./actionNode.helpers";
+import { childNumber, friendlySignature, leadParts, contractLabel, chainLabel, worstTrust } from "./actionNode.helpers";
 import { EncodedView } from "./encodedView";
 import { TrustBadge } from "./trustBadge";
 import { CopyButton } from "@/components/copy/copyButton";
@@ -74,12 +74,16 @@ const InputsPanel: React.FC<{ node: DecodedNode }> = ({ node }) => {
   const sig = friendlySignature(node);
   const hasChildren = node.children.length > 0;
   const symbol = PUB_CHAIN.nativeCurrency.symbol;
-  const unverified = node.trust === "signature-db";
+  // Any decode that did not come from a verified ABI source (bytecode guess,
+  // community signature DB, or unknown) gets the same amber caveat panel, so the
+  // body matches the headline's "Unverified:" prefix and the trust badge. Only a
+  // verified source renders neutral.
+  const unverified = node.trust !== "verified";
 
   return (
     <div className={`rounded-lg border px-3 py-3 ${unverified ? "border-warning-200 bg-warning-50" : "border-neutral-100 bg-neutral-50"}`}>
       {unverified && (
-        <p className="mb-2 text-xs text-warning-800">⚠ Decoded from an unverified signature — verify against raw calldata.</p>
+        <p className="mb-2 text-xs text-warning-800">⚠ Decoded without a verified source — verify against raw calldata.</p>
       )}
       {sig.short && (
         <details className="mb-2">
@@ -192,11 +196,16 @@ export const ActionNodeBody: React.FC<{ node: DecodedNode }> = ({ node }) => {
     const label = contractLabel(node);
     return (
       <div className="flex flex-col">
-        <p className="px-1 pb-2 text-xs text-neutral-500">
-          Executes a batch of {node.children.length} via{" "}
-          {label && <span className="font-semibold text-neutral-700">{label} </span>}
-          <span className="font-mono">{formatHexString(node.to)}</span>
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 pb-2">
+          <p className="text-xs text-neutral-500">
+            Executes a batch of {node.children.length} via{" "}
+            {label && <span className="font-semibold text-neutral-700">{label} </span>}
+            <span className="font-mono">{formatHexString(node.to)}</span>
+          </p>
+          {/* Worst-case trust across the batch — a verified wrapper must not imply
+              every child action is verified. Per-row badges remain on each child. */}
+          <TrustBadge trust={worstTrust(node)} />
+        </div>
         {node.children.map((c, i) => (
           <ActionRow key={i} node={c} number={childNumber("", i)} />
         ))}

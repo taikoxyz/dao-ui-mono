@@ -14,8 +14,10 @@ import { If } from "../if";
 import { useActionTree } from "@/hooks/useActionTree";
 import { decodeCamelCase } from "@/utils/case";
 import { ActionNodeBody } from "./actionNode";
-import { leadParts, contractLabel, chainLabel } from "./actionNode.helpers";
+import { leadParts, contractLabel, chainLabel, worstTrust } from "./actionNode.helpers";
 import { TrustBadge } from "./trustBadge";
+import { EncodedView } from "./encodedView";
+import { ActionErrorBoundary } from "./actionErrorBoundary";
 
 const DEFAULT_DESCRIPTION =
   "When the proposal passes the community vote, the following actions will be executable by the DAO.";
@@ -76,11 +78,14 @@ export const ProposalActions: React.FC<IProposalActionsProps> = (props) => {
 };
 
 const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: RawAction; onRemove?: () => any }) => {
-  const { node, isLoading } = useActionTree(rawAction);
+  const { node, isLoading, isError } = useActionTree(rawAction);
   const title = `Action ${index + 1}`;
   const headline = node ? leadParts(node).text : decodeCamelCase("(loading)");
   const label = node ? contractLabel(node) : null;
   const chain = node ? chainLabel(node.chainId) : null;
+  // Collapsed header reflects the WORST trust across the whole subtree, so a
+  // "Verified" wrapper can't mask an unverified descendant before it's expanded.
+  const headerTrust = node ? (node.children.length > 0 ? worstTrust(node) : node.trust) : null;
 
   return (
     <AccordionItem className="border-t border-t-neutral-100 bg-neutral-0" value={title}>
@@ -100,7 +105,7 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
               >
                 {formatHexString(rawAction.to)}
               </Link>
-              {node && <TrustBadge trust={node.trust} />}
+              {headerTrust && <TrustBadge trust={headerTrust} />}
               {chain && (
                 <span className="rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-semibold text-primary-700">↗ {chain}</span>
               )}
@@ -111,7 +116,20 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
       </AccordionItemHeader>
       <AccordionItemContent className="!h-auto !overflow-visible">
         <div className="flex flex-col gap-y-4">
-          {isLoading || !node ? <p className="text-neutral-500">Decoding…</p> : <ActionNodeBody node={node} />}
+          {isLoading ? (
+            <p className="text-neutral-500">Decoding…</p>
+          ) : node && !isError ? (
+            <ActionErrorBoundary rawAction={rawAction}>
+              <ActionNodeBody node={node} />
+            </ActionErrorBoundary>
+          ) : (
+            // Settled with an error or no decoded node: degrade honestly to raw
+            // calldata instead of stranding on a permanent "Decoding…" spinner.
+            <div className="flex flex-col gap-y-2">
+              <p className="text-sm text-warning-800">Could not decode — showing raw calldata.</p>
+              <EncodedView rawAction={rawAction} />
+            </div>
+          )}
           <If condition={!!onRemove}>
             <div className="mt-2">
               <Button variant="tertiary" size="sm" iconLeft={IconType.CLOSE} onClick={onRemove}>

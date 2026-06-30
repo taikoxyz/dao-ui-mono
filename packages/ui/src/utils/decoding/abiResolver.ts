@@ -81,7 +81,8 @@ export async function loadVerifiedViaRpc(
       proxyName,
     };
   } catch {
-    return empty;
+    // A fetch/RPC actually threw (outage) — degraded, but transient: refetchable.
+    return { ...empty, retryable: true };
   }
 }
 
@@ -106,7 +107,8 @@ export async function loadVerifiedAbiFrom(chainId: number, address: Address): Pr
       name: result.name || undefined,
     };
   } catch {
-    return empty;
+    // A fetch actually threw (Etherscan outage) — degraded, but transient: refetchable.
+    return { ...empty, retryable: true };
   }
 }
 
@@ -175,8 +177,27 @@ export async function loadAbiWith(publicClient: PublicClient, address: Address):
     return { abi, trust, isProxy, implementation, name, proxyName };
   } catch (err) {
     console.warn(`abiResolver: whatsabi autoload failed for ${target}`, err);
-    return { ...empty, isProxy, implementation };
+    // autoload threw (RPC/Etherscan outage) — degraded, but transient: refetchable.
+    return { ...empty, isProxy, implementation, retryable: true };
   }
+}
+
+/**
+ * Shared app-chain ABI fetch keyed by `abiQueryKey`. The SINGLE queryFn used by
+ * both `useAbi` and `useActionTree` for the app chain so a contract's ABI is
+ * resolved once and cached once regardless of which hook fetches it first.
+ * Intentionally SIDE-EFFECT FREE — the "Cannot fetch" alert lives in useAbi's
+ * component body (a useEffect), not here, so whether the alert fires can't depend
+ * on cache ordering. Returns the clean empty resolution for a missing client or
+ * an invalid/partial address (no fetch, no alert).
+ */
+export async function fetchAbiResolution(
+  publicClient: PublicClient | undefined,
+  address: Address,
+): Promise<AbiResolution> {
+  const empty: AbiResolution = { abi: [], trust: "unknown", isProxy: false, implementation: null };
+  if (!publicClient || !isAddress(address)) return empty;
+  return loadAbiWith(publicClient, address);
 }
 
 export async function loadTokenWith(

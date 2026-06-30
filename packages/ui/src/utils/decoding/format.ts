@@ -6,12 +6,14 @@ export function shortHex(value: string): string {
 }
 
 /**
- * Summary text for display. When the decode relied on a community signature DB
- * (openchain.xyz — anyone can register a selector→name mapping), the friendly
- * sentence is prefixed with "Unverified:" so the caveat travels with the claim
- * itself, not only the adjacent trust badge.
+ * Summary text for display. Any decode that did NOT come from a verified ABI
+ * source — a community signature DB (openchain.xyz, where anyone can register a
+ * selector→name mapping), a bytecode guess, or an unknown target — has its
+ * friendly sentence prefixed with "Unverified:" so the caveat travels with the
+ * claim itself, not only the adjacent trust badge. This is the single source of
+ * truth for the caveat: unwrappers never prefix their own summaries.
  */
 export function displaySummary(node: Pick<DecodedNode, "summary" | "trust">): string | null {
   if (!node.summary) return null;
-  return node.trust === "signature-db" ? `Unverified: ${node.summary}` : node.summary;
+  return node.trust !== "verified" ? `Unverified: ${node.summary}` : node.summary;
 }

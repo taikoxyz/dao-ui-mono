@@ -1,12 +1,44 @@
 import { PUB_CHAIN } from "@/constants";
 import { decodeCamelCase } from "@/utils/case";
 import { displaySummary } from "@/utils/decoding/format";
-import type { DecodedNode } from "@/utils/decoding/types";
+import type { DecodedNode, TrustLevel } from "@/utils/decoding/types";
 
 // Pure view-model helpers for the proposal-action tree. No JSX lives here — the
 // rendering components in actionNode.tsx consume these.
 
 export type Lead = { text: string; hex?: string };
+
+// Trust ranking, most → least trusted. Single source of truth for ordering trust
+// levels (used by worstTrust to fold a subtree to its weakest link).
+const TRUST_RANK: Record<TrustLevel, number> = {
+  verified: 3,
+  bytecode: 2,
+  "signature-db": 1,
+  unknown: 0,
+};
+
+/**
+ * The least-trusted trust level across `node` AND all its descendants. A
+ * collapsed wrapper (bridge/batch) can be "verified" itself while hiding an
+ * unverified child; the collapsed header shows THIS so an unverified descendant
+ * can't masquerade as verified until the row is expanded.
+ */
+export function worstTrust(node: DecodedNode): TrustLevel {
+  let worst = node.trust;
+  for (const child of node.children) {
+    const childWorst = worstTrust(child);
+    if (TRUST_RANK[childWorst] < TRUST_RANK[worst]) worst = childWorst;
+  }
+  return worst;
+}
+
+// Carry displaySummary's "Unverified:" caveat onto a NON-summary fallback lead
+// (a guessed function-name / setXTrusted text), so a guess carries the caveat in
+// the headline too. Matches displaySummary's wording; the summary path is already
+// caveated there, so it must NOT be passed through this.
+function caveatLead(text: string, trust: TrustLevel): string {
+  return trust !== "verified" ? `Unverified: ${text}` : text;
+}
 
 /**
  * Plain-English "impact" lead for a call. Priority:
@@ -22,14 +54,17 @@ export function leadParts(node: DecodedNode): Lead {
   const fn = node.functionName;
   if (!fn) return { text: node.selector ? "Unrecognized call" : `Transfer ${PUB_CHAIN.nativeCurrency.symbol}` };
 
-  const boolParam = node.params.find((p) => p.type === "bool");
-  if (/trusted$/i.test(fn) && boolParam) {
+  // Strict set<Thing>Trusted(id, bool): require EXACTLY one bool param so the
+  // trust flag is unambiguous. The old "first positional bool" heuristic could
+  // invert Trust/Untrust on multi-bool calldata — fall back to the plain name then.
+  const boolParams = node.params.filter((p) => p.type === "bool");
+  if (/trusted$/i.test(fn) && boolParams.length === 1) {
     const subject = decodeCamelCase(fn.replace(/^set/i, "").replace(/trusted$/i, "")).toLowerCase().trim();
     const idParam = node.params.find((p) => p.type !== "bool");
-    const verb = boolParam.value ? "Trust" : "Untrust";
-    return { text: `${verb} ${subject}`.trim(), hex: idParam ? String(idParam.value) : undefined };
+    const verb = boolParams[0].value ? "Trust" : "Untrust";
+    return { text: caveatLead(`${verb} ${subject}`.trim(), node.trust), hex: idParam ? String(idParam.value) : undefined };
   }
-  return { text: decodeCamelCase(fn) };
+  return { text: caveatLead(decodeCamelCase(fn), node.trust) };
 }
 
 /**

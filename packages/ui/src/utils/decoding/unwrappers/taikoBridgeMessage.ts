@@ -1,10 +1,9 @@
-import { decodeAbiParameters, parseAbiParameters, isAddress, getAddress, type Address, type Hex } from "viem";
+import { isAddress, getAddress, type Address, type Hex } from "viem";
 import type { DecodedNode, RawCall, Unwrapper } from "../types";
+import { isKnownBridge } from "../knownContracts";
 
-// Taiko IBridge.Message tuple (field order confirmed against on-chain proposals).
-const MESSAGE_TUPLE = parseAbiParameters(
-  "(uint64,uint64,uint32,address,uint64,address,uint64,address,address,uint256,bytes)",
-);
+// Taiko IBridge.Message field order:
+// (id,fee,gasLimit,from,srcChainId,srcOwner,destChainId,destOwner,to,value,data)
 const FIELDS = ["id","fee","gasLimit","from","srcChainId","srcOwner","destChainId","destOwner","to","value","data"] as const;
 
 type MessageView = { destChainId: bigint; to: string; value: bigint; data: Hex };
@@ -26,38 +25,35 @@ function readMessage(value: unknown): MessageView | null {
   return { destChainId, to, value: typeof valueField === "bigint" ? valueField : 0n, data: data as Hex };
 }
 
+// A trusted bridge `sendMessage((tuple))`: verified ABI AND the call target is a known
+// bridge contract. The address bind stops a foreign contract that merely exposes a
+// sendMessage((tuple)) signature from being labeled a "Bridge message".
 function isSendMessage(node: DecodedNode): boolean {
   return (
     node.trust === "verified" &&
     node.functionName === "sendMessage" &&
-    node.params[0]?.type?.startsWith("tuple") === true
+    node.params[0]?.type?.startsWith("tuple") === true &&
+    isKnownBridge(node.to)
   );
 }
-function isOnMessageInvocation(node: DecodedNode): boolean {
-  return node.functionName === "onMessageInvocation" && node.params[0]?.type === "bytes";
-}
 
-/** Extract the routed Message from either shape, or null if it can't be trusted. */
+/** Extract the routed Message, or null if it can't be trusted. */
 function extractMessage(node: DecodedNode): MessageView | null {
   if (isSendMessage(node)) {
     return readMessage(node.params[0]?.value);
   }
-  if (isOnMessageInvocation(node)) {
-    const bytes = node.params[0]?.value as Hex | undefined;
-    if (!bytes || bytes === "0x") return null;
-    try {
-      const [decoded] = decodeAbiParameters(MESSAGE_TUPLE, bytes);
-      return readMessage(decoded);
-    } catch {
-      return null;
-    }
-  }
   return null;
 }
 
+// NOTE: onMessageInvocation(bytes) is intentionally NOT handled here. Its payload is
+// `8-byte executionId + abi.encode((address,uint256,bytes)[])` — an Action array, NOT an
+// IBridge.Message — and is decoded by delegateControllerCall (the sole onMessageInvocation
+// handler). A real bridge sendMessage's Message.data is emitted below as a child RawCall and
+// decoded independently; if that child is itself an onMessageInvocation call, delegateControllerCall
+// unwraps it then.
 export const taikoBridgeMessage: Unwrapper = {
   id: "taiko-bridge-message",
-  match: (node) => (isSendMessage(node) || isOnMessageInvocation(node)) && extractMessage(node) !== null,
+  match: (node) => isSendMessage(node) && extractMessage(node) !== null,
   apply: async (node) => {
     const msg = extractMessage(node);
     if (!msg) return { summary: null, children: [] };

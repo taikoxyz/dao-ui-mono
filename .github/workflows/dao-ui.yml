@@ -19,7 +19,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+    test:
+        runs-on: [arc-runner-set]
+        steps:
+            - name: Install Git
+              run: sudo apt-get update && sudo apt-get install -y git
+
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Install pnpm dependencies
+              uses: ./.github/actions/install-pnpm-dependencies
+
+            - name: Lint
+              run: pnpm --filter dao-ui lint
+
+            - name: Type-check
+              run: pnpm --filter dao-ui type-check
+
+            - name: Run tests
+              run: pnpm --filter dao-ui test
+
     deploy_ui_mainnet_preview:
+        needs: test
         if: ${{ github.event.pull_request.draft == false  && !startsWith(github.head_ref, 'release-please') }}
         uses: ./.github/workflows/repo--vercel-deploy.yml
         with:
@@ -31,6 +53,7 @@ jobs:
             vercel_token: ${{ secrets.VERCEL_TOKEN }}       
     
     deploy_ui_mainnet_production:
+        needs: test
         if: ${{ startsWith(github.ref, 'refs/tags/dao-ui-v') }}
         uses: ./.github/workflows/repo--vercel-deploy.yml
         with:

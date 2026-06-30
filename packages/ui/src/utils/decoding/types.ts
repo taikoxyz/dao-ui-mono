@@ -39,6 +39,15 @@ export type DecodedNode = {
   children: DecodedNode[];
   error?: string;
   truncated?: "depth" | "cycle" | "budget";
+  /**
+   * True when this node is degraded because a fetch actually THREW (network/RPC/
+   * Etherscan outage), not because the contract is genuinely unverified/unknown.
+   * The hook reads this to refetch (staleTime 0) instead of caching a transient
+   * failure as a clean "unknown". Propagated up the tree: any retryable child
+   * flags its parent. A clean unknown (non-contract, verified-but-empty) is NOT
+   * retryable.
+   */
+  retryable?: boolean;
 };
 
 export type AbiResolution = {
@@ -50,6 +59,12 @@ export type AbiResolution = {
   name?: string;
   /** Verified name of the proxy contract itself, when `isProxy`. */
   proxyName?: string;
+  /**
+   * True when the empty/degraded result came from a fetch that THREW (network/RPC/
+   * Etherscan outage) rather than a clean unverified/non-contract answer. Lets the
+   * caller mark the decode stale-and-refetchable instead of caching it as success.
+   */
+  retryable?: boolean;
 };
 
 export type RawCall = { to: Address; value: bigint; data: Hex; chainId?: number };
@@ -57,7 +72,8 @@ export type RawCall = { to: Address; value: bigint; data: Hex; chainId?: number 
 export type DecodeCtx = {
   loadAbi: (address: Address, chainId: number) => Promise<AbiResolution>;
   loadSignature: (selector: Hex) => Promise<AbiFunction | null>;
-  loadToken: (address: Address) => Promise<{ decimals: number; symbol: string } | null>;
+  /** Token metadata on a specific chain — a bridged L2 token reads from its own chain. */
+  loadToken: (address: Address, chainId: number) => Promise<{ decimals: number; symbol: string } | null>;
   /** App/default chain id; a call without an explicit chainId resolves here. */
   chainId: number;
   depth: number;

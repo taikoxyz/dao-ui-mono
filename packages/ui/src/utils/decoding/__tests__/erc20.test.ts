@@ -14,7 +14,7 @@ function node(p: Partial<DecodedNode> = {}): DecodedNode {
     chainId: 1, trust: "verified", isProxy: false, implementation: null, summary: null, children: [], ...p,
   };
 }
-const ctx = { loadToken: async () => ({ decimals: 6, symbol: "USDC" }) } as unknown as DecodeCtx;
+const ctx = { loadToken: async (_addr: string, _chainId: number) => ({ decimals: 6, symbol: "USDC" }) } as unknown as DecodeCtx;
 
 describe("erc20 unwrapper", () => {
   it("formats transfer amount with token decimals and symbol", async () => {
@@ -63,5 +63,18 @@ describe("erc20 unwrapper", () => {
     const nftCtx = { loadToken: async () => null } as unknown as DecodeCtx;
     const { summary } = await erc20.apply(n, nftCtx);
     expect(summary).toBeNull();
+  });
+
+  it("reads token metadata from the node's own chain (cross-chain bridged token)", async () => {
+    const n = node({ chainId: 167000 });
+    let seenChainId: number | undefined;
+    const xChainCtx = {
+      loadToken: async (_addr: string, chainId: number) => {
+        seenChainId = chainId;
+        return { decimals: 6, symbol: "USDC" };
+      },
+    } as unknown as DecodeCtx;
+    await erc20.apply(n, xChainCtx);
+    expect(seenChainId).toBe(167000);
   });
 });

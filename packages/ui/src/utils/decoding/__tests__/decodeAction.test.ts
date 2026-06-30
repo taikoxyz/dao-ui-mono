@@ -134,6 +134,37 @@ describe("decodeAction (one level)", () => {
     expect(node.embeddedCalls?.[0]).toMatchObject({ path: "data", selector: "0x7f07c947", signature: "onMessageInvocation(bytes)" });
   });
 
+  it("marks the node retryable when loadAbi throws (transient failure, not a clean unknown)", async () => {
+    const data = encodeFunctionData({ abi: [transferAbi], functionName: "transfer", args: [ADDR, 1n] });
+    const node = await decodeAction(
+      { to: ADDR, value: 0n, data },
+      ctx({
+        loadAbi: async () => {
+          throw new Error("rpc down");
+        },
+      }),
+    );
+    expect(node.retryable).toBe(true);
+    expect(node.trust).toBe("unknown");
+  });
+
+  it("copies retryable from a degraded resolution (resolver caught a network throw)", async () => {
+    const data = encodeFunctionData({ abi: [transferAbi], functionName: "transfer", args: [ADDR, 1n] });
+    const node = await decodeAction(
+      { to: ADDR, value: 0n, data },
+      ctx({ loadAbi: async () => ({ abi: [], trust: "unknown", isProxy: false, implementation: null, retryable: true }) }),
+    );
+    expect(node.retryable).toBe(true);
+  });
+
+  it("leaves retryable unset for a clean unknown (verified-but-empty / non-contract)", async () => {
+    const node = await decodeAction(
+      { to: ADDR, value: 0n, data: "0x12345678" },
+      ctx({ loadAbi: async () => ({ abi: [], trust: "unknown", isProxy: false, implementation: null }) }),
+    );
+    expect(node.retryable).toBeFalsy();
+  });
+
   it("uses an explicit call.chainId for the node and the loadAbi lookup", async () => {
     let seenChainId: number | undefined;
     const data = encodeFunctionData({ abi: [transferAbi], functionName: "transfer", args: [ADDR, 1n] });

@@ -14,15 +14,18 @@ describe("shortHex", () => {
 });
 
 describe("displaySummary", () => {
-  it("prefixes 'Unverified:' for signature-db trust so the caveat travels with the claim", () => {
+  it("leaves verified summaries untouched (a verified ABI source is trustworthy)", () => {
+    expect(displaySummary({ summary: "Upgrades proxy", trust: "verified" })).toBe("Upgrades proxy");
+  });
+
+  it("prefixes 'Unverified:' for ANY non-verified trust so the caveat travels with the claim", () => {
     expect(displaySummary({ summary: "Transfer 1.5 USDC → 0x0000…dEaD", trust: "signature-db" })).toBe(
       "Unverified: Transfer 1.5 USDC → 0x0000…dEaD",
     );
-  });
-
-  it("leaves verified / bytecode summaries untouched", () => {
-    expect(displaySummary({ summary: "Upgrades proxy", trust: "verified" })).toBe("Upgrades proxy");
-    expect(displaySummary({ summary: "Upgrades proxy", trust: "bytecode" })).toBe("Upgrades proxy");
+    expect(displaySummary({ summary: "Upgrades proxy", trust: "bytecode" })).toBe("Unverified: Upgrades proxy");
+    expect(displaySummary({ summary: "Executes 2 sub-action(s)", trust: "unknown" })).toBe(
+      "Unverified: Executes 2 sub-action(s)",
+    );
   });
 
   it("returns null when there is no summary", () => {

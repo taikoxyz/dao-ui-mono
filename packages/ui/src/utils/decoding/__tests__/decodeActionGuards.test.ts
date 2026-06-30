@@ -60,6 +60,24 @@ describe("decodeAction recursion / breadth guards", () => {
     expect(node.children).toHaveLength(0);
   });
 
+  it("propagates a child's retryable flag up to the parent (whole tree marked stale)", async () => {
+    // Resolve the executor fine, but make the sub-action's target throw (transient
+    // RPC failure). The child is retryable; the parent must inherit the flag so the
+    // hook refetches the whole tree instead of caching a half-degraded result.
+    const node = await decodeAction(
+      { to: CONTROLLER, value: 0n, data: P33_DATA },
+      ctx({
+        loadAbi: async (addr): Promise<AbiResolution> => {
+          if (addr.toLowerCase() === PROXY.toLowerCase()) throw new Error("rpc down");
+          return { abi: [executeAbi], trust: "verified", isProxy: false, implementation: null };
+        },
+      }),
+    );
+    expect(node.children).toHaveLength(1);
+    expect(node.children[0].retryable).toBe(true);
+    expect(node.retryable).toBe(true);
+  });
+
   it("degrades to the raw decoded node (error='unwrap-failed') when an unwrapper throws", async () => {
     const data = encodeFunctionData({ abi: [transferAbi], functionName: "transfer", args: [ADDR, 1000n] });
     const node = await decodeAction(

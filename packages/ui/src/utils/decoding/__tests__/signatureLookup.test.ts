@@ -31,4 +31,18 @@ describe("loadSignatureFrom", () => {
     const fn = await loadSignatureFrom(fetchImpl, "0xdeadbeef");
     expect(fn).toBeNull();
   });
+
+  it("aborts and returns null when the lookup exceeds the timeout", async () => {
+    // A fetch that never resolves on its own, only rejecting once its abort signal fires.
+    const fetchImpl = vi.fn(
+      (_url: string, init?: { signal: AbortSignal }) =>
+        new Promise<any>((_resolve, reject) => {
+          init?.signal.addEventListener("abort", () => reject(new Error("aborted")));
+        }),
+    );
+    // 5ms timeout so the test stays fast with real timers.
+    const fn = await loadSignatureFrom(fetchImpl, "0xdeadbeef", 5);
+    expect(fn).toBeNull();
+    expect(fetchImpl).toHaveBeenCalledWith(expect.any(String), { signal: expect.any(AbortSignal) });
+  });
 });
