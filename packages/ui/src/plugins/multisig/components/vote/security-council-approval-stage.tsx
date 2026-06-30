@@ -11,6 +11,9 @@ interface SecurityCouncilApprovalStageProps {
   requiredApprovals: number;
   votes?: IVote[];
   canApprove?: boolean;
+  canApproveLoading?: boolean;
+  canApproveError?: boolean;
+  onRetryCanApprove?: () => void;
   onApprove?: () => void;
   isApproveLoading?: boolean;
   canExecute?: boolean;
@@ -30,6 +33,9 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
   requiredApprovals,
   votes = [],
   canApprove = false,
+  canApproveLoading = false,
+  canApproveError = false,
+  onRetryCanApprove,
   onApprove,
   isApproveLoading = false,
   canExecute = false,
@@ -171,7 +177,24 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
               {/* Action buttons */}
               {!executed && (
                 <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4">
-                  {!thresholdReached && !hasApproved && (
+                  {!thresholdReached && !hasApproved && canApproveLoading && (
+                    <Button size="md" variant="primary" disabled={true} isLoading={true} className="w-full">
+                      Checking eligibility…
+                    </Button>
+                  )}
+
+                  {!thresholdReached && !hasApproved && !canApproveLoading && canApproveError && (
+                    <Button
+                      size="md"
+                      variant="tertiary"
+                      onClick={onRetryCanApprove}
+                      className="w-full"
+                    >
+                      Couldn&apos;t verify eligibility — retry
+                    </Button>
+                  )}
+
+                  {!thresholdReached && !hasApproved && !canApproveLoading && !canApproveError && (
                     <Button
                       size="md"
                       variant="primary"
@@ -204,9 +227,13 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                     </div>
                   )}
 
-                  {!canApprove && !hasApproved && !thresholdReached && (
-                    <p className="text-xs text-neutral-500">Only Security Council members can approve proposals</p>
-                  )}
+                  {!canApprove &&
+                    !canApproveLoading &&
+                    !canApproveError &&
+                    !hasApproved &&
+                    !thresholdReached && (
+                      <p className="text-xs text-neutral-500">Only Security Council members can approve proposals</p>
+                    )}
                 </div>
               )}
 

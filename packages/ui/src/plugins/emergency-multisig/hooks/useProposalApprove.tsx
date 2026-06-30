@@ -24,7 +24,12 @@ export function useProposalApprove(proposalId: string) {
     status: approveStatus,
   } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: approveTxHash });
-  const { canApprove, refetch: refetchCanApprove } = useUserCanApprove(proposalId);
+  const {
+    canApprove,
+    isLoading: canApproveLoading,
+    error: canApproveError,
+    refetch: refetchCanApprove,
+  } = useUserCanApprove(proposalId);
 
   useEffect(() => {
     if (approveStatus === "idle" || approveStatus === "pending") return;
@@ -94,6 +99,9 @@ export function useProposalApprove(proposalId: string) {
     proposalFetchStatus,
     approvals,
     canApprove: !!canApprove,
+    canApproveLoading,
+    canApproveError,
+    refetchCanApprove,
     isConfirming: approveStatus === "pending" || isConfirming,
     isConfirmed,
     approveProposal,

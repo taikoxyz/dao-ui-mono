@@ -27,6 +27,9 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     proposal,
     proposalFetchStatus,
     canApprove,
+    canApproveLoading,
+    canApproveError,
+    refetchCanApprove,
     approvals,
     isConfirming: isConfirmingApproval,
     approveProposal,
@@ -132,6 +135,9 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
                     requiredApprovals={proposal?.parameters.minApprovals ?? 0}
                     votes={approvalVotes}
                     canApprove={canApprove}
+                    canApproveLoading={canApproveLoading}
+                    canApproveError={!!canApproveError}
+                    onRetryCanApprove={refetchCanApprove}
                     onApprove={approveProposal}
                     isApproveLoading={isConfirmingApproval}
                     canExecute={canExecute}
