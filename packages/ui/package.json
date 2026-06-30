@@ -11,7 +11,6 @@
     "format:check": "prettier --check .",
     "type-check": "tsc --noEmit",
     "test": "bun test",
-    "ipfs:seed": "bun src/scripts/ipfs-seed.ts",
     "prepare": "husky",
     "clean": "rm -rf node_modules && rm -rf .next"
   },
