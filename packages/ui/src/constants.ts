@@ -46,10 +46,14 @@ export const PUB_ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY ?
 
 export const PUB_WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ?? "";
 
-// NOTE: IPFS read endpoints are static and live in src/utils/ipfs.ts, not here —
-// the same-origin /api/ipfs proxy plus a public-gateway fallback don't vary per
-// environment. The Pinata credential is also intentionally NOT exposed here: it
-// is a server-only secret (process.env.PINATA_JWT) read by src/pages/api/pin.ts.
+// Public IPFS gateway hosts (no trailing path). Shared by ENS avatar resolution
+// (WalletContainer) and the client-side IPFS read fallback (utils/ipfs.ts).
+export const PUB_IPFS_GATEWAYS = ["https://ipfs.io"];
+
+// NOTE: the same-origin /api/ipfs proxy plus the gateway fallback above are the
+// only IPFS read endpoints (static, in src/utils/ipfs.ts) — no env var needed.
+// The Pinata credential is also intentionally NOT exposed here: it is a
+// server-only secret (process.env.PINATA_JWT) read by src/pages/api/pin.ts.
 
 // Private multisig
 export const DETERMINISTIC_EMERGENCY_PAYLOAD =

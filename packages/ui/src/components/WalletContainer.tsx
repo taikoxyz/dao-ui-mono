@@ -1,4 +1,4 @@
-import { PUB_CHAIN, PUB_CHAIN_NAME } from "@/constants";
+import { PUB_CHAIN, PUB_CHAIN_NAME, PUB_IPFS_GATEWAYS } from "@/constants";
 import { useWalletChainPolicy } from "@/context/WalletChainPolicy";
 import { config } from "@/context/Web3Modal";
 import { formatHexString } from "@/utils/evm";
@@ -32,7 +32,7 @@ const WalletContainer = () => {
     chainId: activeChain.id,
     // cloudflare-ipfs.com is deprecated/dead; use a live gateway so IPFS-hosted
     // ENS avatars resolve (falls back to the address blockie if this fails).
-    gatewayUrls: ["https://ipfs.io"],
+    gatewayUrls: PUB_IPFS_GATEWAYS,
     query: { enabled: !!ensName },
   });
 
