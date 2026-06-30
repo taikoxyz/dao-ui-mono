@@ -6,7 +6,7 @@ on:
           - "packages/ui/**"
         tags:
           - "dao-ui-v*"
-    
+
     pull_request:
         types: [opened, synchronize, reopened, ready_for_review]
         paths:
@@ -19,6 +19,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+    checks:
+        if: ${{ github.event.pull_request.draft == false && !startsWith(github.head_ref, 'release-please') }}
+        runs-on: [arc-runner-set]
+        defaults:
+            run:
+                working-directory: packages/ui
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Install dependencies
+              uses: ./.github/actions/install-pnpm-dependencies
+
+            - name: Set up Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - name: Type-check
+              run: bun run type-check
+
+            - name: Test
+              run: bun test
+
+            # Non-blocking for now: the package has pre-existing prettier drift in
+            # files unrelated to current work (CHANGELOG.md and a few proposal/l2
+            # pages). Flip to a required check once those are formatted.
+            - name: Prettier
+              run: bun run format:check
+              continue-on-error: true
+
     deploy_ui_mainnet_preview:
         if: ${{ github.event.pull_request.draft == false  && !startsWith(github.head_ref, 'release-please') }}
         uses: ./.github/workflows/repo--vercel-deploy.yml
@@ -28,8 +59,8 @@ jobs:
         secrets:
             vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID_DAO_MAINNET }}
             vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
-            vercel_token: ${{ secrets.VERCEL_TOKEN }}       
-    
+            vercel_token: ${{ secrets.VERCEL_TOKEN }}
+
     deploy_ui_mainnet_production:
         if: ${{ startsWith(github.ref, 'refs/tags/dao-ui-v') }}
         uses: ./.github/workflows/repo--vercel-deploy.yml
