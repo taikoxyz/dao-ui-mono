@@ -8,7 +8,6 @@ const transferAbi = parseAbiItem("function transfer(address to, uint256 amount)"
 function ctx(overrides: Partial<DecodeCtx> = {}): DecodeCtx {
   return {
     loadAbi: async (): Promise<AbiResolution> => ({ abi: [transferAbi], trust: "verified", isProxy: false, implementation: null }),
-    loadSignature: async () => null,
     loadToken: async () => null,
     chainId: 1,
     depth: 0,
@@ -39,24 +38,16 @@ describe("decodeAction (one level)", () => {
     expect(node.trust).toBe("verified");
   });
 
-  it("falls back to signature DB when the ABI lacks the selector", async () => {
+  it("returns an error node when the verified ABI lacks the selector", async () => {
     const pause = parseAbiItem("function pause()") as AbiFunction;
     const data = encodeFunctionData({ abi: [pause], functionName: "pause", args: [] });
     const node = await decodeAction(
       { to: ADDR, value: 0n, data },
-      ctx({ loadAbi: async () => ({ abi: [], trust: "unknown", isProxy: false, implementation: null }), loadSignature: async () => pause }),
+      ctx({ loadAbi: async () => ({ abi: [], trust: "unknown", isProxy: false, implementation: null }) }),
     );
-    expect(node.functionName).toBe("pause");
-    expect(node.trust).toBe("signature-db");
-  });
-
-  it("labels signature DB fallback as unverified even when another ABI source loaded", async () => {
-    const pause = parseAbiItem("function pause()") as AbiFunction;
-    const data = encodeFunctionData({ abi: [pause], functionName: "pause", args: [] });
-    const node = await decodeAction({ to: ADDR, value: 0n, data }, ctx({ loadSignature: async () => pause }));
-
-    expect(node.functionName).toBe("pause");
-    expect(node.trust).toBe("signature-db");
+    expect(node.functionName).toBeNull();
+    expect(node.error).toBe("no-abi");
+    expect(node.trust).toBe("unknown");
   });
 
   it("returns an error node for calldata shorter than a selector", async () => {
@@ -117,21 +108,6 @@ describe("decodeAction (one level)", () => {
     );
     expect(node.chainId).toBe(1);
     expect(seenChainId).toBe(1);
-  });
-
-  it("labels a selector-prefixed bytes param via the signature DB, marked unverified (no children)", async () => {
-    const sendAbi = parseAbiItem("function store(bytes data)") as AbiFunction;
-    const inner = ("0x7f07c947" + "00".repeat(32)) as `0x${string}`;
-    const data = encodeFunctionData({ abi: [sendAbi], functionName: "store", args: [inner] });
-    const pinged = parseAbiItem("function onMessageInvocation(bytes)") as AbiFunction;
-    const node = await decodeAction(
-      { to: ADDR, value: 0n, data },
-      ctx({
-        loadAbi: async (): Promise<AbiResolution> => ({ abi: [sendAbi], trust: "verified", isProxy: false, implementation: null }),
-        loadSignature: async () => pinged,
-      }),
-    );
-    expect(node.embeddedCalls?.[0]).toMatchObject({ path: "data", selector: "0x7f07c947", signature: "onMessageInvocation(bytes)" });
   });
 
   it("marks the node retryable when loadAbi throws (transient failure, not a clean unknown)", async () => {

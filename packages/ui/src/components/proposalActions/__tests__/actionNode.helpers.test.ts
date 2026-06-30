@@ -104,19 +104,19 @@ describe("worstTrust", () => {
   });
 
   it("returns the least-trusted level across descendants", () => {
-    // verified root, but a signature-db grandchild must surface as the worst.
+    // verified root, but an unknown grandchild must surface as the worst.
     const node = makeNode({
       trust: "verified",
       children: [
-        makeNode({ trust: "verified", children: [makeNode({ trust: "signature-db" })] }),
+        makeNode({ trust: "verified", children: [makeNode({ trust: "unknown" })] }),
         makeNode({ trust: "bytecode" }),
       ],
     });
-    expect(worstTrust(node)).toBe("signature-db");
+    expect(worstTrust(node)).toBe("unknown");
   });
 
-  it("ranks unknown below signature-db below bytecode below verified", () => {
-    const order: TrustLevel[] = ["verified", "bytecode", "signature-db", "unknown"];
+  it("ranks unknown below bytecode below verified", () => {
+    const order: TrustLevel[] = ["verified", "bytecode", "unknown"];
     // Each level paired with a verified sibling must collapse to itself (it is worse).
     for (const level of order) {
       const node = makeNode({ trust: "verified", children: [makeNode({ trust: level })] });
@@ -171,7 +171,7 @@ describe("leadParts setXTrusted heuristic", () => {
 
 describe("leadParts caveat on non-verified fallback leads", () => {
   it("prefixes 'Unverified:' on a bare function-name lead when trust is not verified", () => {
-    const node = makeNode({ trust: "signature-db", functionName: "doSomething" });
+    const node = makeNode({ trust: "bytecode", functionName: "doSomething" });
     expect(leadParts(node).text).toBe("Unverified: Do something");
   });
 
@@ -193,7 +193,7 @@ describe("leadParts caveat on non-verified fallback leads", () => {
   });
 
   it("does not double-prefix a summary (already caveated by displaySummary)", () => {
-    const node = makeNode({ trust: "signature-db", summary: "Transfer 5 TKO" });
+    const node = makeNode({ trust: "bytecode", summary: "Transfer 5 TKO" });
     expect(leadParts(node).text).toBe("Unverified: Transfer 5 TKO");
   });
 });

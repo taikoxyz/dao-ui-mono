@@ -19,7 +19,7 @@ describe("displaySummary", () => {
   });
 
   it("prefixes 'Unverified:' for ANY non-verified trust so the caveat travels with the claim", () => {
-    expect(displaySummary({ summary: "Transfer 1.5 USDC → 0x0000…dEaD", trust: "signature-db" })).toBe(
+    expect(displaySummary({ summary: "Transfer 1.5 USDC → 0x0000…dEaD", trust: "bytecode" })).toBe(
       "Unverified: Transfer 1.5 USDC → 0x0000…dEaD",
     );
     expect(displaySummary({ summary: "Upgrades proxy", trust: "bytecode" })).toBe("Unverified: Upgrades proxy");
@@ -29,6 +29,6 @@ describe("displaySummary", () => {
   });
 
   it("returns null when there is no summary", () => {
-    expect(displaySummary({ summary: null, trust: "signature-db" })).toBeNull();
+    expect(displaySummary({ summary: null, trust: "bytecode" })).toBeNull();
   });
 });

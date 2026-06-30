@@ -1,7 +1,7 @@
 import type { Address, Hex, AbiFunction } from "viem";
 import type { EvmValue } from "@/utils/types";
 
-export type TrustLevel = "verified" | "bytecode" | "signature-db" | "unknown";
+export type TrustLevel = "verified" | "bytecode" | "unknown";
 
 export type DecodedParam = {
   name: string;
@@ -13,8 +13,6 @@ export type DecodedParam = {
   /** Decoded sub-params for a `tuple` type, so struct fields render with names + types. */
   components?: DecodedParam[];
 };
-
-export type EmbeddedCall = { path: string; selector: Hex; signature: string | null };
 
 export type DecodedNode = {
   to: Address;
@@ -34,8 +32,6 @@ export type DecodedNode = {
   /** Verified name of the proxy contract itself, when the target is a proxy. */
   proxyName?: string;
   summary: string | null;
-  /** Unverified: selector-prefixed bytes found in params, labeled from the 4-byte DB. Never arg values. */
-  embeddedCalls?: EmbeddedCall[];
   children: DecodedNode[];
   error?: string;
   truncated?: "depth" | "cycle" | "budget";
@@ -71,7 +67,6 @@ export type RawCall = { to: Address; value: bigint; data: Hex; chainId?: number 
 
 export type DecodeCtx = {
   loadAbi: (address: Address, chainId: number) => Promise<AbiResolution>;
-  loadSignature: (selector: Hex) => Promise<AbiFunction | null>;
   /** Token metadata on a specific chain — a bridged L2 token reads from its own chain. */
   loadToken: (address: Address, chainId: number) => Promise<{ decimals: number; symbol: string } | null>;
   /** App/default chain id; a call without an explicit chainId resolves here. */

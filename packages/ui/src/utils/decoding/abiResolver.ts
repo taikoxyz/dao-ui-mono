@@ -6,8 +6,6 @@ import { ADDRESS_ZERO, isAddress, isContract } from "@/utils/evm";
 import { PUB_CHAIN, PUB_ETHERSCAN_API_KEY, PUB_TAIKO_RPC } from "@/constants";
 import type { AbiResolution } from "./types";
 
-export { loadSignature } from "./signatureLookup";
-
 /**
  * Canonical react-query key for a resolved ABI. Shared by `useAbi` and
  * `useActionTree` so the same contract's ABI (whatsabi autoload + Etherscan +

@@ -45,7 +45,7 @@ describe("delegateControllerCall", () => {
   });
 
   it("does not match when trust is not verified", () => {
-    expect(delegateControllerCall.match(node({ trust: "signature-db" }))).toBe(false);
+    expect(delegateControllerCall.match(node({ trust: "bytecode" }))).toBe(false);
   });
 
   it("does not match when the contract name is not in the allowlist", () => {

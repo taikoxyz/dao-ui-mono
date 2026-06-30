@@ -20,7 +20,6 @@ function ctx(overrides: Partial<DecodeCtx> = {}): DecodeCtx {
       const abi = addr.toLowerCase() === CONTROLLER.toLowerCase() ? [executeAbi] : [upgradeToAbi];
       return { abi, trust: "verified", isProxy: addr.toLowerCase() === PROXY.toLowerCase(), implementation: null };
     },
-    loadSignature: async () => null,
     loadToken: async () => null,
     chainId: 1,
     depth: 0,

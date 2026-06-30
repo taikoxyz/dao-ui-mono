@@ -75,8 +75,8 @@ describe("taikoBridgeMessage", () => {
     expect(taikoBridgeMessage.match(node)).toBe(false);
   });
 
-  it("does not match sendMessage decoded only from the signature DB (untrusted) and emits no child", async () => {
-    const node = sendMessageNode({ to: BRIDGE, value: MESSAGE_ARRAY, trust: "signature-db" });
+  it("does not match sendMessage decoded only from bytecode (untrusted) and emits no child", async () => {
+    const node = sendMessageNode({ to: BRIDGE, value: MESSAGE_ARRAY, trust: "bytecode" });
     expect(taikoBridgeMessage.match(node)).toBe(false);
     const { children } = await taikoBridgeMessage.apply(node, {} as any);
     expect(children).toHaveLength(0);

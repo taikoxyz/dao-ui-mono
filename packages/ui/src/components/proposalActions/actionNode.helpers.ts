@@ -11,9 +11,8 @@ export type Lead = { text: string; hex?: string };
 // Trust ranking, most → least trusted. Single source of truth for ordering trust
 // levels (used by worstTrust to fold a subtree to its weakest link).
 const TRUST_RANK: Record<TrustLevel, number> = {
-  verified: 3,
-  bytecode: 2,
-  "signature-db": 1,
+  verified: 2,
+  bytecode: 1,
   unknown: 0,
 };
 

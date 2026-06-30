@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePublicClient } from "wagmi";
-import { keccak256, toHex, type Address, type Hex, type PublicClient } from "viem";
+import { keccak256, toHex, type Address, type PublicClient } from "viem";
 import { PUB_CHAIN } from "@/constants";
 import type { RawAction } from "@/utils/types";
 import type { AbiResolution, DecodedNode } from "@/utils/decoding/types";
@@ -9,7 +9,6 @@ import {
   fetchAbiResolution,
   loadVerifiedAbiFrom,
   loadTokenWith,
-  loadSignature,
   abiQueryKey,
   chainClient,
   isVerifiedAbiChainSupported,
@@ -21,7 +20,6 @@ const DAY = 1000 * 60 * 60 * 24;
 const CLEAN_TREE_STALE = DAY * 7;
 const CLEAN_ABI_STALE = DAY * 30;
 const TOKEN_STALE = DAY * 30;
-const SIGNATURE_STALE = DAY * 30;
 
 export function useActionTree(action: RawAction): { node: DecodedNode | null; isLoading: boolean; isError: boolean } {
   const publicClient = usePublicClient({ chainId: PUB_CHAIN.id });
@@ -62,14 +60,6 @@ export function useActionTree(action: RawAction): { node: DecodedNode | null; is
             // A transient ABI failure must not be pinned 30d, or the outer tree
             // refetch would just re-read the stale retryable ABI and never recover.
             staleTime: (q) => (q.state.data?.retryable ? 0 : CLEAN_ABI_STALE),
-          }),
-        // Cache + dedup signature-DB lookups (the only resolver previously passed
-        // bare/uncached). The engine added an internal timeout inside loadSignature.
-        loadSignature: (selector: Hex) =>
-          queryClient.fetchQuery({
-            queryKey: ["signature", selector],
-            queryFn: () => loadSignature(selector),
-            staleTime: SIGNATURE_STALE,
           }),
         // Token metadata reads from the call's OWN chain: a bridged L2 ERC-20
         // reads decimals/symbol from the L2, not the app chain. Cache key includes

@@ -3,7 +3,6 @@ import { formatHexString } from "@/utils/evm";
 import Link from "next/link";
 import { formatEther } from "viem";
 import type { DecodedNode, DecodedParam } from "@/utils/decoding/types";
-import { shortHex } from "@/utils/decoding/format";
 import { childNumber, friendlySignature, leadParts, contractLabel, chainLabel } from "./actionNode.helpers";
 import { EncodedView } from "./encodedView";
 import { TrustBadge } from "./trustBadge";
@@ -117,19 +116,6 @@ const InputsPanel: React.FC<{ node: DecodedNode }> = ({ node }) => {
         node.params.map((p, i) => <ParamItem key={i} p={p} childrenDecoded={hasChildren} />)
       ) : (
         <p className="text-sm text-neutral-500">No input parameters.</p>
-      )}
-      {node.embeddedCalls && node.embeddedCalls.length > 0 && (
-        <div className="mt-2 flex flex-col gap-y-1 rounded-md border border-warning-200 bg-warning-50 px-3 py-2">
-          <span className="text-xs font-semibold text-warning-800">Encoded call(s) detected — Unverified</span>
-          {node.embeddedCalls.map((e, i) => (
-            <div key={i} className="flex flex-wrap items-center gap-x-2 text-xs text-neutral-700">
-              <span className="font-mono text-neutral-500">{e.path}</span>
-              <span>→</span>
-              <span className="font-medium">{e.signature ?? "unknown function"}</span>
-              <span className="font-mono text-neutral-500">{shortHex(e.selector)}</span>
-            </div>
-          ))}
-        </div>
       )}
       {node.value > 0n && (
         <p className="mt-2 text-sm text-neutral-600">

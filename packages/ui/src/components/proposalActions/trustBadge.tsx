@@ -12,7 +12,6 @@ const MAP: Record<
   // Bytecode-guessed ABI: real but unverified — visually distinct from the
   // "Verified" checkmark so voters don't read it as an endorsed source.
   bytecode: { label: "Decoded from bytecode", variant: "info", tooltip: "info", icon: IconType.BLOCKCHAIN_SMARTCONTRACT },
-  "signature-db": { label: "Unverified signature", variant: "warning", tooltip: "warning", icon: IconType.WARNING },
   unknown: { label: "Could not decode", variant: "warning", tooltip: "critical", icon: IconType.WARNING },
 };
 

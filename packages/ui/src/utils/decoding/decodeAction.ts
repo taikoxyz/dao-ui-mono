@@ -1,7 +1,6 @@
 import { slice, size, toFunctionSelector, toFunctionSignature, decodeFunctionData, formatEther, type AbiFunction } from "viem";
 import type { DecodeCtx, DecodedNode, RawCall } from "./types";
 import { matchUnwrapper } from "./unwrappers";
-import { findEmbeddedCandidates } from "./embeddedCalls";
 import { buildParams } from "./params";
 
 // Default ceiling on the total number of decoded sub-nodes per tree. Each node
@@ -32,9 +31,8 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
   const node = baseNode(call);
   node.chainId = call.chainId ?? ctx.chainId;
 
-  // Shared tree-wide breadth budget. Hoisted so both child recursion and the
-  // embedded-call lookups below draw from one pool (a hostile params blob must
-  // not drive unbounded signature lookups once the node budget is exhausted).
+  // Shared tree-wide breadth budget for child recursion (a hostile action array
+  // must not drive unbounded RPC fan-out once the node budget is exhausted).
   const maxNodes = ctx.maxNodes ?? DEFAULT_MAX_NODES;
   const nodeCount = ctx.nodeCount ?? { value: 0 };
 
@@ -66,17 +64,9 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
   node.proxyName = resolution.proxyName;
   node.retryable = resolution.retryable;
 
-  let fnAbi: AbiFunction | undefined = resolution.abi.find(
+  const fnAbi: AbiFunction | undefined = resolution.abi.find(
     (f) => f.type === "function" && node.selector === toFunctionSelector(f),
   );
-
-  if (!fnAbi) {
-    const frag = await ctx.loadSignature(node.selector);
-    if (frag) {
-      fnAbi = frag;
-      node.trust = "signature-db";
-    }
-  }
 
   if (fnAbi) {
     try {
@@ -132,30 +122,6 @@ export async function decodeAction(call: RawCall, ctx: DecodeCtx): Promise<Decod
           node.children.push(await decodeAction(child, childCtx));
         }
       }
-    }
-  }
-
-  // Unverified labeling of any selector-prefixed bytes still shown raw (not already a child).
-  if (node.params.length > 0) {
-    try {
-      const childData = new Set(node.children.map((c) => c.data.toLowerCase()));
-      const candidates = findEmbeddedCandidates(node.params).filter((c) => {
-        // skip a candidate whose bytes are already an expanded child (avoid double-surfacing)
-        return ![...childData].some((d) => d.startsWith(c.selector.toLowerCase()));
-      });
-      const embedded = [];
-      for (const cand of candidates) {
-        // Embedded signature lookups draw from the same tree-wide budget as child
-        // recursion, so a hostile params blob can't drive unbounded network calls
-        // once the node budget is exhausted.
-        if (nodeCount.value >= maxNodes) break;
-        nodeCount.value += 1;
-        const frag = await ctx.loadSignature(cand.selector);
-        if (frag) embedded.push({ path: cand.path, selector: cand.selector, signature: toFunctionSignature(frag) });
-      }
-      if (embedded.length) node.embeddedCalls = embedded;
-    } catch {
-      // labeling is best-effort; never break a decode
     }
   }
 
