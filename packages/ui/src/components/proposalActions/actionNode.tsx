@@ -4,7 +4,7 @@ import Link from "next/link";
 import { formatEther } from "viem";
 import type { DecodedNode, DecodedParam } from "@/utils/decoding/types";
 import { shortHex } from "@/utils/decoding/format";
-import { childNumber, friendlySignature, leadParts, contractLabel, chainLabel, worstTrust } from "./actionNode.helpers";
+import { childNumber, friendlySignature, leadParts, contractLabel, chainLabel } from "./actionNode.helpers";
 import { EncodedView } from "./encodedView";
 import { TrustBadge } from "./trustBadge";
 import { CopyButton } from "@/components/copy/copyButton";
@@ -40,19 +40,34 @@ const TYPE_CHIP = "rounded-md bg-primary-50 px-1.5 font-mono text-[10.5px] text-
 /** One parameter row: name + type chip → value (address links; tuples recurse; bytes-that-became-children noted). */
 const ParamItem: React.FC<{ p: DecodedParam; childrenDecoded: boolean }> = ({ p, childrenDecoded }) => {
   const isBytesExpanded = p.type === "bytes" && childrenDecoded;
-  return (
-    <div className="grid grid-cols-[minmax(120px,200px)_1fr] items-start gap-x-3 gap-y-1 py-1">
-      <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-        <span className="font-semibold text-neutral-700">{p.name || "(unnamed)"}</span>
-        <span className={TYPE_CHIP}>{p.type}</span>
-      </span>
-      {p.components && p.components.length > 0 ? (
-        <div className="flex flex-col gap-y-1">
+
+  const nameChip = (
+    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+      <span className="font-semibold text-neutral-700">{p.name || "(unnamed)"}</span>
+      <span className={TYPE_CHIP}>{p.type}</span>
+    </span>
+  );
+
+  // Tuple/struct: render the label on its own line with the fields indented
+  // beneath it, instead of squeezing them into the value column (which left a
+  // wide empty gap under the struct name).
+  if (p.components && p.components.length > 0) {
+    return (
+      <div className="py-1">
+        {nameChip}
+        <div className="mt-1 flex flex-col gap-y-1 border-l-2 border-neutral-100 pl-3">
           {p.components.map((c, i) => (
             <ParamItem key={i} p={c} childrenDecoded={childrenDecoded} />
           ))}
         </div>
-      ) : isBytesExpanded ? (
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-[minmax(120px,200px)_1fr] items-start gap-x-3 gap-y-1 py-1">
+      {nameChip}
+      {isBytesExpanded ? (
         <span className="text-sm italic text-primary-600">↓ decoded as the action(s) below</span>
       ) : p.type === "address" ? (
         <AddrLink address={String(p.value)} />
@@ -142,8 +157,10 @@ const ActionRow: React.FC<{ node: DecodedNode; number: string }> = ({ node, numb
   const label = contractLabel(node);
   const chain = chainLabel(node.chainId);
   const isChild = number.includes(".");
+  // No left border here: the parent's children container (below) draws the single
+  // nesting guide line for the whole group. Adding one per row too doubled it.
   return (
-    <div className={isChild ? "border-l-2 border-l-primary-100 pl-3" : ""}>
+    <div>
       <details className="group border-t border-neutral-100 first:border-t-0">
         <summary className="grid cursor-pointer list-none grid-cols-[auto_1fr_auto] items-start gap-x-3 rounded-lg px-1 py-3 hover:bg-neutral-50">
           <span
@@ -196,27 +213,20 @@ export const ActionNodeBody: React.FC<{ node: DecodedNode }> = ({ node }) => {
     const label = contractLabel(node);
     return (
       <div className="flex flex-col">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 pb-2">
-          <p className="text-xs text-neutral-500">
-            Executes a batch of {node.children.length} via{" "}
-            {label && <span className="font-semibold text-neutral-700">{label} </span>}
-            <span className="font-mono">{formatHexString(node.to)}</span>
-          </p>
-          {/* Worst-case trust across the batch — a verified wrapper must not imply
-              every child action is verified. Per-row badges remain on each child. */}
-          <TrustBadge trust={worstTrust(node)} />
-        </div>
+        {/* No trust badge here: the top-level Action header already shows the
+            batch's worst-case trust, and every child row carries its own. */}
+        <p className="px-1 pb-2 text-xs text-neutral-500">
+          Executes a batch of {node.children.length} via{" "}
+          {label && <span className="font-semibold text-neutral-700">{label} </span>}
+          <span className="font-mono">{formatHexString(node.to)}</span>
+        </p>
         {node.children.map((c, i) => (
           <ActionRow key={i} node={c} number={childNumber("", i)} />
         ))}
       </div>
     );
   }
-  // Single leaf action: show its title line + inputs.
-  return (
-    <div className="flex flex-col gap-y-2">
-      <p className="text-sm text-neutral-700">{leadParts(node).text}</p>
-      <InputsPanel node={node} />
-    </div>
-  );
+  // Single leaf action: the accordion header already shows its title + contract,
+  // so the body is just the typed inputs (no duplicate title line).
+  return <InputsPanel node={node} />;
 };

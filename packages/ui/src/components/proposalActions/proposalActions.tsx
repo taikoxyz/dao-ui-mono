@@ -7,12 +7,12 @@ import {
   AccordionItemHeader,
   Button,
   IconType,
+  Spinner,
 } from "@aragon/ods";
 import Link from "next/link";
 import type { RawAction } from "@/utils/types";
 import { If } from "../if";
 import { useActionTree } from "@/hooks/useActionTree";
-import { decodeCamelCase } from "@/utils/case";
 import { ActionNodeBody } from "./actionNode";
 import { leadParts, contractLabel, chainLabel, worstTrust } from "./actionNode.helpers";
 import { TrustBadge } from "./trustBadge";
@@ -80,7 +80,7 @@ export const ProposalActions: React.FC<IProposalActionsProps> = (props) => {
 const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: RawAction; onRemove?: () => any }) => {
   const { node, isLoading, isError } = useActionTree(rawAction);
   const title = `Action ${index + 1}`;
-  const headline = node ? leadParts(node).text : decodeCamelCase("(loading)");
+  const headline = node ? leadParts(node).text : "";
   const label = node ? contractLabel(node) : null;
   const chain = node ? chainLabel(node.chainId) : null;
   // Collapsed header reflects the WORST trust across the whole subtree, so a
@@ -93,7 +93,15 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
         <div className="flex w-full justify-between gap-x-4">
           <div className="flex w-full flex-1 flex-col items-start gap-y-1.5">
             <span className="text-left text-lg font-semibold leading-tight text-neutral-800 md:text-xl">
-              {headline}
+              {node ? (
+                headline
+              ) : isError ? (
+                "Could not decode"
+              ) : (
+                <span className="inline-flex items-center gap-x-2 text-base font-normal text-neutral-500">
+                  <Spinner size="sm" variant="neutral" /> Decoding…
+                </span>
+              )}
             </span>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               {label && <span className="font-semibold text-neutral-700">{label}</span>}
@@ -117,7 +125,9 @@ const ActionItem = ({ index, rawAction, onRemove }: { index: number; rawAction: 
       <AccordionItemContent className="!h-auto !overflow-visible">
         <div className="flex flex-col gap-y-4">
           {isLoading ? (
-            <p className="text-neutral-500">Decoding…</p>
+            <p className="flex items-center gap-x-2 text-neutral-500">
+              <Spinner size="sm" variant="neutral" /> Decoding…
+            </p>
           ) : node && !isError ? (
             <ActionErrorBoundary rawAction={rawAction}>
               <ActionNodeBody node={node} />
