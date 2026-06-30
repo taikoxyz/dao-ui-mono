@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { parseIpfsPath, safeContentType, warmToCache } from "../../server/ipfs/mirror";
 
 const PINATA_PIN_FILE_URL = "https://api.pinata.cloud/pinning/pinFileToIPFS";
 const UPLOAD_FILE_NAME = "taiko.json";
@@ -112,5 +113,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     fail(res, status, "BAD_GATEWAY", `Pinata returned a non-JSON response (HTTP ${pinataRes.status})`);
     return;
   }
+
+  if (!pinataRes.ok) {
+    res.status(pinataRes.status).json(data);
+    return;
+  }
+
+  const ipfsHash =
+    data &&
+    typeof data === "object" &&
+    "IpfsHash" in data &&
+    typeof (data as { IpfsHash: unknown }).IpfsHash === "string"
+      ? (data as { IpfsHash: string }).IpfsHash
+      : undefined;
+  const parsedIpfsPath = ipfsHash ? parseIpfsPath(ipfsHash) : null;
+  if (!parsedIpfsPath) {
+    fail(res, 502, "BAD_GATEWAY", "Pinata returned a successful response without a valid IpfsHash");
+    return;
+  }
+
+  // Pre-warm the durable cache with the bytes we just pinned: verify + one Blob
+  // PUT (a few hundred ms), so the first viewer never pays a cold gateway fetch.
+  // Best-effort — a non-raw CID or a transient Blob error must never fail
+  // proposal creation, and the read path warms lazily on first fetch anyway.
+  try {
+    await warmToCache(parsedIpfsPath, Buffer.from(strBody, "utf8"), inferMetadataContentType(strBody));
+  } catch {
+    // Ignore: the pin succeeded, which is what gates creation.
+  }
+
   res.status(pinataRes.status).json(data);
+}
+
+function inferMetadataContentType(body: string): string {
+  return safeParse(body) === undefined ? "text/plain" : safeContentType("application/json").value;
 }

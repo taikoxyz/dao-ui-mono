@@ -1,13 +1,17 @@
-import { PUB_IPFS_ENDPOINTS } from "@/constants";
 import { Hex, fromHex, toBytes } from "viem";
 import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
 
-// Generous enough to let the /api/ipfs proxy's first (cold) gateway race
-// complete. The previous 1s abort killed cold proxy/gateway fetches before
-// they could return, which is what left cards stuck on "Loading metadata…".
-const IPFS_FETCH_TIMEOUT = 10000; // 10 seconds
+// Read endpoints, tried in order. Static by design — nothing here varies per
+// environment, so it lives in code rather than an env var: the same-origin
+// /api/ipfs proxy (Blob + CDN backed) first, then a public gateway as a
+// last-resort fallback for the rare case our origin is unavailable.
+const IPFS_ENDPOINTS = ["/api/ipfs", "https://ipfs.io/ipfs"];
+
+// How long to wait on each endpoint before trying the next. The proxy normally
+// answers from Blob/CDN in well under a second; this only bites on a cold miss.
+const IPFS_FETCH_TIMEOUT = 15000; // 15 seconds
 
 export function fetchIpfsAsJson(ipfsUri: string) {
   return fetchRawIpfs(ipfsUri).then((res) => res.json());
@@ -58,12 +62,9 @@ async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
     if (!ipfsUri) throw new Error("Invalid IPFS URI");
   }
 
-  const uriPrefixes = PUB_IPFS_ENDPOINTS.split(",").filter((uri) => !!uri.trim());
-  if (!uriPrefixes.length) throw new Error("No available IPFS endpoints to fetch from");
-
   const cid = resolvePath(ipfsUri);
 
-  for (const uriPrefix of uriPrefixes) {
+  for (const uriPrefix of IPFS_ENDPOINTS) {
     const controller = new AbortController();
     const abortId = setTimeout(() => controller.abort(), IPFS_FETCH_TIMEOUT);
     try {
@@ -73,9 +74,8 @@ async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
       });
       if (response.ok) return response; // .json(), .text(), .blob(), etc.
     } catch {
-      // Timed out or network error: fall through to the next endpoint. The
-      // proxy (/api/ipfs) is listed first; a direct public gateway can be
-      // listed after it as a decentralized fallback if the proxy is down.
+      // Timed out or network error: fall through only if an operator has
+      // explicitly configured more endpoints.
     } finally {
       clearTimeout(abortId);
     }

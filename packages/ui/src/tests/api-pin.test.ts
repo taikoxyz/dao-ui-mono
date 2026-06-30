@@ -1,5 +1,14 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { CID } from "multiformats/cid";
+import * as raw from "multiformats/codecs/raw";
+import { sha256 } from "multiformats/hashes/sha2";
 import handler from "../pages/api/pin";
+import {
+  createMemoryIpfsCacheStorage,
+  getCachedIpfs,
+  parseIpfsPath,
+  setIpfsCacheStorageForTests,
+} from "../server/ipfs/mirror";
 
 type MockRes = {
   statusCode: number;
@@ -40,18 +49,31 @@ type Handler = typeof handler;
 const call = (req: unknown, res: MockRes) =>
   handler(req as Parameters<Handler>[0], res as unknown as Parameters<Handler>[1]);
 
+async function cidForBody(body: string) {
+  const bytes = Buffer.from(body, "utf8");
+  const hash = await sha256.digest(bytes);
+  return CID.create(1, raw.code, hash).toString();
+}
+
 describe("/api/pin", () => {
   const originalFetch = globalThis.fetch;
   const originalJwt = process.env.PINATA_JWT;
 
+  beforeEach(() => {
+    setIpfsCacheStorageForTests(createMemoryIpfsCacheStorage());
+  });
+
   afterEach(() => {
+    setIpfsCacheStorageForTests(null);
     globalThis.fetch = originalFetch;
     if (originalJwt === undefined) delete process.env.PINATA_JWT;
     else process.env.PINATA_JWT = originalJwt;
   });
 
-  test("attaches the server-only JWT and relays the Pinata CID", async () => {
+  test("attaches the server-only JWT, relays the CID, and pre-warms the durable cache", async () => {
     process.env.PINATA_JWT = "server-secret-jwt";
+    const metadata = JSON.stringify({ title: "x" });
+    const cid = await cidForBody(metadata);
     let pinataUrl = "";
     let pinataAuth = "";
     let sentBody: unknown;
@@ -59,19 +81,24 @@ describe("/api/pin", () => {
       pinataUrl = typeof input === "string" ? input : ((input as Request)?.url ?? "");
       pinataAuth = new Headers(init?.headers).get("authorization") ?? "";
       sentBody = init?.body;
-      return new Response(JSON.stringify({ IpfsHash: "bafyServer" }), {
+      return new Response(JSON.stringify({ IpfsHash: cid }), {
         status: 200,
         headers: { "content-type": "application/json" },
       });
     }) as unknown as typeof fetch;
 
     const res = mockRes();
-    await call(mockReq({ body: { body: JSON.stringify({ title: "x" }) } }), res);
+    await call(mockReq({ body: { body: metadata } }), res);
 
     expect(pinataUrl).toBe("https://api.pinata.cloud/pinning/pinFileToIPFS");
     expect(pinataAuth).toBe("Bearer server-secret-jwt");
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ IpfsHash: "bafyServer" });
+    expect(res.body).toEqual({ IpfsHash: cid });
+    // The just-pinned bytes are verified and written to the durable cache.
+    const parsed = parseIpfsPath(cid);
+    if (!parsed) throw new Error("test CID did not parse");
+    const cached = await getCachedIpfs(parsed);
+    expect(cached?.body.toString("utf8")).toBe(metadata);
     // Multipart contract: a file part is sent (no reliance on global `File`)
     expect(sentBody).toBeInstanceOf(FormData);
     const form = sentBody as FormData;
@@ -83,19 +110,54 @@ describe("/api/pin", () => {
     process.env.PINATA_JWT = "server-secret-jwt";
     globalThis.fetch = (async () =>
       new Response(
-        JSON.stringify({
-          error: { reason: "FORBIDDEN", details: "Account blocked due to plan usage limit" },
-        }),
-        { status: 403, headers: { "content-type": "application/json" } }
+        JSON.stringify({ error: { reason: "FORBIDDEN", details: "Account blocked due to plan usage limit" } }),
+        {
+          status: 403,
+          headers: { "content-type": "application/json" },
+        }
       )) as unknown as typeof fetch;
 
     const res = mockRes();
     await call(mockReq(), res);
 
     expect(res.statusCode).toBe(403);
-    expect(res.body).toEqual({
-      error: { reason: "FORBIDDEN", details: "Account blocked due to plan usage limit" },
-    });
+    expect(res.body).toEqual({ error: { reason: "FORBIDDEN", details: "Account blocked due to plan usage limit" } });
+  });
+
+  test("still succeeds (best-effort warm) when the returned CID does not match the submitted bytes", async () => {
+    process.env.PINATA_JWT = "server-secret-jwt";
+    const mismatchedCid = await cidForBody("different bytes");
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ IpfsHash: mismatchedCid }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+
+    const res = mockRes();
+    await call(mockReq({ body: { body: JSON.stringify({ title: "x" }) } }), res);
+
+    // Pin succeeds — a warm failure must never block proposal creation...
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ IpfsHash: mismatchedCid });
+    // ...and the mismatched bytes are not written to the cache.
+    const parsed = parseIpfsPath(mismatchedCid);
+    if (!parsed) throw new Error("test CID did not parse");
+    expect(await getCachedIpfs(parsed)).toBeNull();
+  });
+
+  test("rejects a successful Pinata response without a valid IpfsHash", async () => {
+    process.env.PINATA_JWT = "server-secret-jwt";
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ IpfsHash: "not-a-cid" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+
+    const res = mockRes();
+    await call(mockReq(), res);
+
+    expect(res.statusCode).toBe(502);
+    expect((res.body as { error: { reason: string } }).error.reason).toBe("BAD_GATEWAY");
   });
 
   test("rejects non-POST requests", async () => {

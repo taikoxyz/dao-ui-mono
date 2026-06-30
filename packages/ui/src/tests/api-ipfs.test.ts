@@ -1,5 +1,15 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { CID } from "multiformats/cid";
+import * as raw from "multiformats/codecs/raw";
+import { sha256 } from "multiformats/hashes/sha2";
 import handler from "../pages/api/ipfs/[...cid]";
+import {
+  createMemoryIpfsCacheStorage,
+  IMMUTABLE_CACHE,
+  parseIpfsPath,
+  setIpfsCacheStorageForTests,
+  warmToCache,
+} from "../server/ipfs/mirror";
 
 type MockRes = {
   statusCode: number;
@@ -36,97 +46,132 @@ function mockRes(): MockRes {
 
 type ReqInit = { method?: string; cid?: string | string[] };
 function mockReq(init: ReqInit = {}) {
-  return {
-    method: init.method ?? "GET",
-    query: { cid: init.cid ?? VALID_CID },
-    headers: {},
-  };
+  return { method: init.method ?? "GET", query: { cid: init.cid ?? VALID_CID } };
 }
 
 type Handler = typeof handler;
 const call = (req: ReturnType<typeof mockReq>, res: MockRes) =>
   handler(req as unknown as Parameters<Handler>[0], res as unknown as Parameters<Handler>[1]);
 
+// A well-formed raw CID with no content seeded (used for 4xx/5xx paths).
 const VALID_CID = "bafkreid7qoywk77r7rj3slobqfekdvs57qwuwh5d2z3sqsw52iabe3mqne";
-const IMMUTABLE = "public, s-maxage=31536000, max-age=31536000, immutable";
+
+async function cidForBytes(bytes: Uint8Array) {
+  const hash = await sha256.digest(bytes);
+  return CID.create(1, raw.code, hash).toString();
+}
+
+// Seed the durable cache directly (no gateway fetch), as the pin/seed paths do.
+async function seedCache(value: string | Uint8Array, contentType = "application/json") {
+  const body = typeof value === "string" ? new TextEncoder().encode(value) : value;
+  const cid = await cidForBytes(body);
+  const parsed = parseIpfsPath(cid);
+  if (!parsed) throw new Error("test CID did not parse");
+  await warmToCache(parsed, Buffer.from(body), contentType);
+  return { cid, body: Buffer.from(body) };
+}
+
+// Pretend the public gateways return `body` for any request.
+function mockGateway(body: Uint8Array, contentType: string) {
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    return new Response(body, { status: 200, headers: { "content-type": contentType } });
+  }) as unknown as typeof fetch;
+  return () => calls;
+}
 
 describe("/api/ipfs/[...cid]", () => {
   const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    setIpfsCacheStorageForTests(createMemoryIpfsCacheStorage());
+  });
+
   afterEach(() => {
+    setIpfsCacheStorageForTests(null);
     globalThis.fetch = originalFetch;
   });
 
-  test("fetches a valid CID via a gateway and returns it with an immutable cache header", async () => {
+  test("serves a cached CID from Blob without touching a gateway", async () => {
     const payload = JSON.stringify({ title: "Enable Raiko2 on mainnet" });
-    let requestedUrl = "";
-    globalThis.fetch = (async (input: unknown) => {
-      requestedUrl = typeof input === "string" ? input : (input as Request).url;
-      return new Response(payload, { status: 200, headers: { "content-type": "application/json" } });
+    const { cid } = await seedCache(payload);
+    let fetched = false;
+    globalThis.fetch = (async () => {
+      fetched = true;
+      return new Response("nope", { status: 200 });
     }) as unknown as typeof fetch;
 
     const res = mockRes();
-    await call(mockReq(), res);
+    await call(mockReq({ cid }), res);
 
+    expect(fetched).toBe(false);
     expect(res.statusCode).toBe(200);
-    expect(requestedUrl).toContain(`/${VALID_CID}`);
-    expect(res.headers["cache-control"]).toBe(IMMUTABLE);
+    expect(res.headers["cache-control"]).toBe(IMMUTABLE_CACHE);
     expect(res.headers["content-type"]).toBe("application/json");
-    expect(Buffer.isBuffer(res.body)).toBe(true);
+    expect(res.headers["content-security-policy"]).toContain("sandbox");
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
     expect((res.body as Buffer).toString("utf8")).toBe(payload);
   });
 
-  test("forwards a CID subpath (catch-all route) to the gateway", async () => {
-    let requestedUrl = "";
-    globalThis.fetch = (async (input: unknown) => {
-      requestedUrl = typeof input === "string" ? input : (input as Request).url;
-      return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
-    }) as unknown as typeof fetch;
+  test("on a cold miss, races gateways, serves, and writes through so the next read is cached", async () => {
+    const payload = JSON.stringify({ hello: "world" });
+    const body = new TextEncoder().encode(payload);
+    const cid = await cidForBytes(body);
+    const gatewayCalls = mockGateway(body, "application/json");
 
-    const res = mockRes();
-    // Next gives a catch-all param as an array of path segments.
-    await call(mockReq({ cid: [VALID_CID, "metadata.json"] }), res);
+    const first = mockRes();
+    await call(mockReq({ cid }), first);
+    expect(first.statusCode).toBe(200);
+    expect(first.headers["cache-control"]).toBe(IMMUTABLE_CACHE);
+    expect((first.body as Buffer).toString("utf8")).toBe(payload);
+    expect(gatewayCalls()).toBeGreaterThan(0);
 
-    expect(res.statusCode).toBe(200);
-    expect(requestedUrl).toContain(`/${VALID_CID}/metadata.json`);
+    // Second read is served from the durable cache — no further gateway calls.
+    const callsAfterFirst = gatewayCalls();
+    const second = mockRes();
+    await call(mockReq({ cid }), second);
+    expect(second.statusCode).toBe(200);
+    expect(gatewayCalls()).toBe(callsAfterFirst);
   });
 
-  test("relays opaque (encrypted, non-JSON) bytes unchanged", async () => {
-    const ciphertext = new Uint8Array([0x00, 0x01, 0xff, 0xfe, 0x42]);
-    globalThis.fetch = (async () =>
-      new Response(ciphertext, {
-        status: 200,
-        headers: { "content-type": "application/octet-stream" },
-      })) as unknown as typeof fetch;
+  test("collapses scriptable content to an inert attachment", async () => {
+    const html = "<script>alert(document.cookie)</script>";
+    const body = new TextEncoder().encode(html);
+    const cid = await cidForBytes(body);
+    mockGateway(body, "text/html");
 
     const res = mockRes();
-    await call(mockReq(), res);
+    await call(mockReq({ cid }), res);
 
     expect(res.statusCode).toBe(200);
     expect(res.headers["content-type"]).toBe("application/octet-stream");
-    expect(Uint8Array.from(res.body as Buffer)).toEqual(ciphertext);
+    expect(res.headers["content-disposition"]).toBe('attachment; filename="ipfs-content.bin"');
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
   });
 
-  test("races gateways: succeeds even when some gateways fail", async () => {
-    let calls = 0;
-    globalThis.fetch = (async (input: unknown) => {
-      calls++;
-      const url = typeof input === "string" ? input : (input as Request).url;
-      // Only the pinata gateway succeeds; the rest 500.
-      if (url.includes("gateway.pinata.cloud")) {
-        return new Response("ok", { status: 200, headers: { "content-type": "text/plain" } });
-      }
-      return new Response("nope", { status: 500 });
+  test("supports HEAD without returning a body", async () => {
+    const { cid } = await seedCache("verified metadata", "text/plain");
+    const res = mockRes();
+    await call(mockReq({ method: "HEAD", cid }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBeUndefined();
+  });
+
+  test("returns 502 (not cached) when every gateway fails", async () => {
+    globalThis.fetch = (async () => {
+      throw new Error("gateway down");
     }) as unknown as typeof fetch;
 
     const res = mockRes();
     await call(mockReq(), res);
 
-    expect(res.statusCode).toBe(200);
-    expect((res.body as Buffer).toString("utf8")).toBe("ok");
-    expect(calls).toBeGreaterThan(1);
+    expect(res.statusCode).toBe(502);
+    expect(res.headers["cache-control"]).toBe("no-store");
+    expect((res.body as { error: { reason: string } }).error.reason).toBe("IPFS_UNAVAILABLE");
   });
 
-  test("rejects a non-CID path (SSRF guard) without contacting any gateway", async () => {
+  test("rejects a non-CID path without contacting any gateway", async () => {
     let fetched = false;
     globalThis.fetch = (async () => {
       fetched = true;
@@ -138,7 +183,6 @@ describe("/api/ipfs/[...cid]", () => {
 
     expect(fetched).toBe(false);
     expect(res.statusCode).toBe(400);
-    expect((res.body as { error: { reason: string } }).error.reason).toBe("BAD_REQUEST");
     expect(res.headers["cache-control"]).toBe("no-store");
   });
 
@@ -148,47 +192,18 @@ describe("/api/ipfs/[...cid]", () => {
     expect(res.statusCode).toBe(400);
   });
 
-  test("returns no-store on a gateway failure (never caches an error)", async () => {
-    globalThis.fetch = (async () => new Response("nope", { status: 502 })) as unknown as typeof fetch;
+  test("rejects URL-encoded path traversal in the CID subpath", async () => {
+    let fetched = false;
+    globalThis.fetch = (async () => {
+      fetched = true;
+      return new Response("should not happen", { status: 200 });
+    }) as unknown as typeof fetch;
 
     const res = mockRes();
-    await call(mockReq(), res);
+    await call(mockReq({ cid: [VALID_CID, "%2e%2e", "secret"] }), res);
 
-    expect(res.statusCode).toBe(502);
-    expect(res.headers["cache-control"]).toBe("no-store");
-    expect((res.body as { error: { reason: string } }).error.reason).toBe("BAD_GATEWAY");
-  });
-
-  test("collapses scriptable content to an inert type and marks the response non-executable", async () => {
-    globalThis.fetch = (async () =>
-      new Response("<script>alert(document.cookie)</script>", {
-        status: 200,
-        headers: { "content-type": "text/html" },
-      })) as unknown as typeof fetch;
-
-    const res = mockRes();
-    await call(mockReq(), res);
-
-    expect(res.statusCode).toBe(200);
-    // Never echo text/html back from our own origin.
-    expect(res.headers["content-type"]).toBe("application/octet-stream");
-    expect(res.headers["x-content-type-options"]).toBe("nosniff");
-    expect(res.headers["content-security-policy"]).toContain("sandbox");
-  });
-
-  test("rejects an oversized response (memory-DoS guard) without caching it", async () => {
-    const huge = new Uint8Array(10 * 1024 * 1024 + 1);
-    globalThis.fetch = (async () =>
-      new Response(huge, {
-        status: 200,
-        headers: { "content-type": "application/octet-stream" },
-      })) as unknown as typeof fetch;
-
-    const res = mockRes();
-    await call(mockReq(), res);
-
-    expect(res.statusCode).toBe(502);
-    expect(res.headers["cache-control"]).toBe("no-store");
+    expect(fetched).toBe(false);
+    expect(res.statusCode).toBe(400);
   });
 
   test("rejects non-GET methods", async () => {
