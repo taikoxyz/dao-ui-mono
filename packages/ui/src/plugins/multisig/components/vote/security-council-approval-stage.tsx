@@ -215,7 +215,7 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                 <p className="text-xs text-primary-800">
                   {isEmergency ? (
                     <>
-                      <strong>Emergency proposals</strong> require approval from 6 or 75% of Security Council members
+                      <strong>Emergency proposals</strong> require approval from 7 or 75% of Security Council members
                       and are executed directly by the DAO upon approval.
                     </>
                   ) : (

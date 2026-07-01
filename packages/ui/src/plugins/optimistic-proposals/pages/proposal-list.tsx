@@ -182,7 +182,7 @@ function AsideSection() {
 
         <ul className="list-inside list-disc">
           <li>Initiated only by Security Council Members</li>
-          <li>Executed upon approval from more than 6 or 75% of the Security Council members</li>
+          <li>Executed upon approval from more than 7 or 75% of the Security Council members</li>
           <li>
             Relates to any issues/actions relating to:
             <ul className="list-inside list-decimal pl-4">
