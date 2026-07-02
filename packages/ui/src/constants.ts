@@ -24,6 +24,11 @@ export const PUB_TAIKO_L2_RPC_URL = process.env.NEXT_PUBLIC_TAIKO_L2_RPC_URL ?? 
 
 // Taiko L1 protocol contracts (deployed on Ethereum mainnet)
 export const L1_SIGNAL_SERVICE_ADDRESS = "0x9e0a24964e5397B566c1ed39258e21aB5E35C77C" as Address;
+// Standard proposals route execute() through the TaikoDAOController, a separate
+// contract from the OSx DAO (PUB_DAO_ADDRESS). Checked-in like the other L1/L2
+// protocol addresses (verified on-chain, mainnet) and used as an identity gate so
+// a foreign contract cannot impersonate the executor via a spoofed verified name.
+export const TAIKO_DAO_CONTROLLER_ADDRESS = "0x75Ba76403b13b26AD1beC70D6eE937314eeaCD0a" as Address;
 
 // Taiko L2 precompile addresses (deterministic across all Taiko networks)
 export const TAIKO_L2_ANCHOR_ADDRESS = "0x1670000000000000000000000000000000010001" as Address;

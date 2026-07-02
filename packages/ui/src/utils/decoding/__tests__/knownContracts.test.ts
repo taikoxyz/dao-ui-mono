@@ -19,6 +19,7 @@ vi.mock("@/constants", () => ({
   PUB_DAO_ADDRESS: DAO,
   PUB_TAIKO_BRIDGE_ADDRESS: "0xd60247c6848B7Ca29eDdF63AA924E53dB6Ddd8EC",
   L1_SIGNAL_SERVICE_ADDRESS: "0x9e0a24964e5397B566c1ed39258e21aB5E35C77C",
+  TAIKO_DAO_CONTROLLER_ADDRESS: CONTROLLER,
   TAIKO_L2_BRIDGE_ADDRESS: TAIKO_L2_BRIDGE,
   TAIKO_L2_SIGNAL_SERVICE_ADDRESS: TAIKO_L2_SIGNAL,
 }));
@@ -29,18 +30,20 @@ function node(over: Partial<DecodedNode>): Pick<DecodedNode, "to" | "name"> {
   return { to: RANDOM, ...over } as Pick<DecodedNode, "to" | "name">;
 }
 
-describe("isKnownExecutor (DAO address configured)", () => {
-  it("recognizes the TaikoDAOController by its verified name (the real standard-proposal executor, NOT the DAO address)", () => {
+describe("isKnownExecutor (address-gated)", () => {
+  it("recognizes the TaikoDAOController by its checked-in address (the real standard-proposal executor, NOT the DAO address)", () => {
     expect(isKnownExecutor(node({ to: CONTROLLER, name: "TaikoDAOController" }))).toBe(true);
+    // Address is the boundary: a verified name is neither required nor relied upon.
+    expect(isKnownExecutor(node({ to: CONTROLLER, name: undefined }))).toBe(true);
   });
 
-  it("recognizes the OSx DAO by verified name and by configured address", () => {
-    expect(isKnownExecutor(node({ to: RANDOM, name: "DAO" }))).toBe(true);
+  it("recognizes the OSx DAO by its configured address", () => {
     expect(isKnownExecutor(node({ to: DAO, name: undefined }))).toBe(true);
   });
 
-  it("REJECTS a foreign verified contract: unknown name and non-DAO address are not dressed up as a batch", () => {
-    expect(isKnownExecutor(node({ to: CONTROLLER, name: "EvilExecutor" }))).toBe(false);
+  it("REJECTS name spoofing: a foreign address with a trusted-looking verified name is not dressed up as a batch", () => {
+    expect(isKnownExecutor(node({ to: RANDOM, name: "DAO" }))).toBe(false);
+    expect(isKnownExecutor(node({ to: RANDOM, name: "TaikoDAOController" }))).toBe(false);
     expect(isKnownExecutor(node({ to: RANDOM, name: undefined }))).toBe(false);
   });
 });

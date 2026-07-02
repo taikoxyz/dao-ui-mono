@@ -4,6 +4,7 @@ import {
   PUB_DAO_ADDRESS,
   PUB_TAIKO_BRIDGE_ADDRESS,
   L1_SIGNAL_SERVICE_ADDRESS,
+  TAIKO_DAO_CONTROLLER_ADDRESS,
   TAIKO_L2_BRIDGE_ADDRESS,
   TAIKO_L2_SIGNAL_SERVICE_ADDRESS,
 } from "@/constants";
@@ -30,17 +31,11 @@ const BRIDGE_ADDRESSES = lowerSet([
   TAIKO_L2_SIGNAL_SERVICE_ADDRESS,
 ]);
 
-// The DAO executor address. Env-derived, so EMPTY in tests/unconfigured envs.
-const EXECUTOR_ADDRESSES = lowerSet([PUB_DAO_ADDRESS]);
-
-// Verified contract names whose execute(bytes) we trust as an OSx-style action
-// batch. A node's `name` is only ever populated from a verified Etherscan source,
-// so a name match implies trust==="verified". This is the deployment-agnostic
-// signal (no per-network executor env var): on mainnet the OSx DAO (0x9CDf…) is
-// "DAO" and proposals route execute() through the "TaikoDAOController" (0x75Ba…,
-// a separate address from the DAO — see isKnownExecutor). Mirrors
-// delegateControllerCall's DELEGATE_NAMES name-gate.
-const EXECUTOR_NAMES = new Set(["DAO", "TaikoDAOController"]);
+// DAO executor addresses: the env-configured OSx DAO plus the checked-in
+// TaikoDAOController (the contract standard proposals actually route execute()
+// through). PUB_DAO_ADDRESS is env-derived (EMPTY in tests/unconfigured envs);
+// TAIKO_DAO_CONTROLLER_ADDRESS is always present, so the set is non-empty in prod.
+const EXECUTOR_ADDRESSES = lowerSet([PUB_DAO_ADDRESS, TAIKO_DAO_CONTROLLER_ADDRESS]);
 
 /** True if `address` is a known Taiko bridge / signal-service contract. Set is always non-empty. */
 export function isKnownBridge(address: Address): boolean {
@@ -51,17 +46,18 @@ export function isKnownBridge(address: Address): boolean {
  * True if `node` targets a known DAO executor whose execute(bytes) we will
  * confidently expand into an OSx-style action batch.
  *
- * Recognized two ways: (1) by VERIFIED contract name — the robust,
- * deployment-agnostic signal, since `node.name` is only set from a verified
- * source and the executor address differs per network (and the controller has no
- * env var); (2) by the configured DAO address (PUB_DAO_ADDRESS). The address set
- * is env-derived and EMPTY in tests/unconfigured envs, so when it is empty AND no
- * name matches we return true to keep the decode path exercised; in prod (set
- * populated) a foreign contract whose name isn't allow-listed and whose address
- * isn't the DAO is NOT dressed up as a batch.
+ * Gated purely by ADDRESS: the configured OSx DAO (PUB_DAO_ADDRESS) or the
+ * checked-in TaikoDAOController (TAIKO_DAO_CONTROLLER_ADDRESS). A verified
+ * contract *name* is deliberately NOT trusted — the name is deployer-chosen
+ * metadata (anyone can verify a contract literally named "DAO"/"TaikoDAOController"),
+ * so it is not an identity boundary. Mirrors isKnownBridge's address gate.
+ *
+ * The set is empty only when BOTH the env DAO and the controller are unset (a
+ * fully-mocked test); there we return true to keep the decode path exercised. In
+ * prod the hardcoded controller is always present, so a foreign address is NOT
+ * dressed up as a batch.
  */
-export function isKnownExecutor(node: Pick<DecodedNode, "to" | "name">): boolean {
-  if (node.name && EXECUTOR_NAMES.has(node.name)) return true;
+export function isKnownExecutor(node: Pick<DecodedNode, "to">): boolean {
   if (EXECUTOR_ADDRESSES.size === 0) return true;
   return EXECUTOR_ADDRESSES.has(node.to.toLowerCase());
 }

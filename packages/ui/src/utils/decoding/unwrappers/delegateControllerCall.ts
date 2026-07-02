@@ -4,6 +4,12 @@ import { decodeActionTupleArray } from "./actionArray";
 
 // Taiko contracts that expose onMessageInvocation(bytes) with the
 // `executionId + Action[]` payload (verified-source confirmed).
+//
+// NOTE: still gated by verified NAME (spoofable), unlike the executor/bridge gates
+// which are address-bound — we don't yet have a checked-in L2 DelegateController/
+// DelegateOwner address. Residual risk is limited: this node is only reached behind
+// the address-gated bridge unwrapper (a real known-bridge sendMessage). Replace with
+// an address gate once the L2 address is captured, same as TAIKO_DAO_CONTROLLER_ADDRESS.
 const DELEGATE_NAMES = new Set(["DelegateController", "DelegateOwner"]);
 
 /**

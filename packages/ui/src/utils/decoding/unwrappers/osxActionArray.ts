@@ -49,11 +49,11 @@ export function extractActionArray(node: DecodedNode): ActionArray | null {
 }
 
 // Identity gate: only confidently expand execute(bytes) when the target is a
-// known DAO executor — recognized by verified contract name ("DAO" /
-// "TaikoDAOController") or the configured DAO address. Standard proposals route
-// execute() through the TaikoDAOController (0x75Ba…, a DIFFERENT address from the
-// OSx DAO at PUB_DAO_ADDRESS), so a DAO-address-only gate wrongly collapses real
-// batches to raw calldata; the verified-name gate handles it deployment-agnostically.
+// known DAO executor — gated by ADDRESS (the configured OSx DAO or the checked-in
+// TaikoDAOController). Standard proposals route execute() through the
+// TaikoDAOController (0x75Ba…, a DIFFERENT address from the OSx DAO at
+// PUB_DAO_ADDRESS), which is why the controller address is allow-listed alongside
+// the DAO. A verified contract *name* is intentionally not trusted (spoofable).
 // The cross-chain L2 executor path (DelegateController/DelegateOwner) is handled by
 // delegateControllerCall. See isKnownExecutor for the tests/unconfigured fallback.
 export const osxActionArray: Unwrapper = {
