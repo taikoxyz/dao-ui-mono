@@ -20,6 +20,11 @@ const IPFS_GATEWAYS = [
 // the edge without invoking the function or touching Blob.
 export const IMMUTABLE_CACHE = "public, s-maxage=31536000, max-age=31536000, immutable";
 
+// For content we could NOT verify against its CID (dag-pb CIDs, subpaths): the
+// bytes are whatever a public gateway said they were, so a bad response must
+// age out of the CDN in an hour instead of being pinned there for a year.
+export const UNVERIFIED_CACHE = "public, s-maxage=3600, max-age=3600";
+
 const NO_EXECUTE_CSP = "default-src 'none'; sandbox;";
 const BLOB_PREFIX = "ipfs-cache/v1";
 const GATEWAY_TIMEOUT = 20_000;
@@ -194,11 +199,13 @@ export function safeContentType(rawContentType: string): { value: string; forceA
 }
 
 // Inert response headers for serving third-party IPFS bytes from our own origin.
-export function ipfsResponseHeaders(rawContentType: string): Record<string, string> {
+// Only bytes proven to match their CID earn the immutable header; anything else
+// gets the short unverified TTL.
+export function ipfsResponseHeaders(rawContentType: string, verified: boolean): Record<string, string> {
   const safe = safeContentType(rawContentType);
   const headers: Record<string, string> = {
     "Content-Type": safe.value,
-    "Cache-Control": IMMUTABLE_CACHE,
+    "Cache-Control": verified ? IMMUTABLE_CACHE : UNVERIFIED_CACHE,
     "Content-Security-Policy": NO_EXECUTE_CSP,
     "X-Content-Type-Options": "nosniff",
   };
@@ -219,6 +226,52 @@ export function isRawSha256(parsed: ParsedIpfsPath): boolean {
 async function verifiesRawCid(parsed: ParsedIpfsPath, body: Buffer): Promise<boolean> {
   const digest = await sha256.digest(body);
   return bytesEqual(digest.bytes, parsed.cid.multihash.bytes);
+}
+
+// ---------------------------------------------------------------------------
+// Pin-list gate for durable writes.
+// ---------------------------------------------------------------------------
+
+const PINATA_PIN_LIST_URL = "https://api.pinata.cloud/data/pinList";
+const PIN_CHECK_TIMEOUT = 5_000;
+
+let pinnedCidCheckOverride: ((rootCid: string) => Promise<boolean>) | null = null;
+
+export function setPinnedCidCheckForTests(check: ((rootCid: string) => Promise<boolean>) | null) {
+  pinnedCidCheckOverride = check;
+}
+
+// True only for CIDs pinned on the project's own Pinata account (i.e. real
+// proposal metadata). The read route uses this to gate lazy Blob writes:
+// verification alone proves bytes match the CID, but any attacker-pinned IPFS
+// object matches its own CID — without this gate an anonymous GET could mirror
+// arbitrary content into our public Blob store. Fails closed (not pinned) on
+// missing credentials or Pinata errors: we just skip the durable write.
+export async function isPinnedCid(rootCid: string): Promise<boolean> {
+  if (pinnedCidCheckOverride) return pinnedCidCheckOverride(rootCid);
+
+  const jwt = process.env.PINATA_JWT;
+  if (!jwt) return false;
+
+  try {
+    const url = `${PINATA_PIN_LIST_URL}?status=pinned&hashContains=${encodeURIComponent(rootCid)}&pageLimit=10`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${jwt}` },
+      signal: AbortSignal.timeout(PIN_CHECK_TIMEOUT),
+    });
+    if (!response.ok) return false;
+    const data: unknown = await response.json();
+    const rows =
+      data && typeof data === "object" && "rows" in data && Array.isArray((data as { rows: unknown }).rows)
+        ? (data as { rows: unknown[] }).rows
+        : [];
+    // hashContains is a substring match on Pinata's side; require an exact hit.
+    return rows.some(
+      (row) => row && typeof row === "object" && (row as { ipfs_pin_hash?: unknown }).ipfs_pin_hash === rootCid
+    );
+  } catch {
+    return false;
+  }
 }
 
 // ---------------------------------------------------------------------------

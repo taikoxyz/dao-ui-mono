@@ -8,6 +8,8 @@ import {
   IMMUTABLE_CACHE,
   parseIpfsPath,
   setIpfsCacheStorageForTests,
+  setPinnedCidCheckForTests,
+  UNVERIFIED_CACHE,
   warmToCache,
 } from "../server/ipfs/mirror";
 
@@ -86,10 +88,14 @@ describe("/api/ipfs/[...cid]", () => {
 
   beforeEach(() => {
     setIpfsCacheStorageForTests(createMemoryIpfsCacheStorage());
+    // Durable writes are gated on the CID being pinned on our Pinata account;
+    // default to "pinned" so the write-through tests exercise the happy path.
+    setPinnedCidCheckForTests(async () => true);
   });
 
   afterEach(() => {
     setIpfsCacheStorageForTests(null);
+    setPinnedCidCheckForTests(null);
     globalThis.fetch = originalFetch;
   });
 
@@ -133,6 +139,69 @@ describe("/api/ipfs/[...cid]", () => {
     await call(mockReq({ cid }), second);
     expect(second.statusCode).toBe(200);
     expect(gatewayCalls()).toBe(callsAfterFirst);
+  });
+
+  test("serves an unpinned CID but never writes it to the durable cache", async () => {
+    setPinnedCidCheckForTests(async () => false);
+    const body = new TextEncoder().encode(JSON.stringify({ attacker: "pinned this themselves" }));
+    const cid = await cidForBytes(body);
+    const gatewayCalls = mockGateway(body, "application/json");
+
+    const first = mockRes();
+    await call(mockReq({ cid }), first);
+    expect(first.statusCode).toBe(200);
+    const callsAfterFirst = gatewayCalls();
+
+    // Not persisted: the second read must hit the gateways again.
+    const second = mockRes();
+    await call(mockReq({ cid }), second);
+    expect(second.statusCode).toBe(200);
+    expect(gatewayCalls()).toBeGreaterThan(callsAfterFirst);
+  });
+
+  test("serves an unverifiable (dag-pb) CID with a short TTL, not immutable", async () => {
+    // CIDv0 → dag-pb, not raw sha2-256, so the bytes cannot be verified.
+    const dagPbCid = "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG";
+    const body = new TextEncoder().encode("legacy proposal metadata");
+    mockGateway(body, "application/json");
+
+    const res = mockRes();
+    await call(mockReq({ cid: dagPbCid }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["cache-control"]).toBe(UNVERIFIED_CACHE);
+  });
+
+  test("serves a CID subpath with a short TTL, not immutable", async () => {
+    const body = new TextEncoder().encode("file in a directory");
+    mockGateway(body, "text/plain");
+
+    const res = mockRes();
+    await call(mockReq({ cid: [VALID_CID, "metadata.json"] }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["cache-control"]).toBe(UNVERIFIED_CACHE);
+  });
+
+  test("falls back to the gateways when the durable cache errors (e.g. Blob outage)", async () => {
+    setIpfsCacheStorageForTests({
+      async get() {
+        throw new Error("BLOB_READ_WRITE_TOKEN missing");
+      },
+      async put() {
+        throw new Error("BLOB_READ_WRITE_TOKEN missing");
+      },
+    });
+    const payload = JSON.stringify({ still: "served" });
+    const body = new TextEncoder().encode(payload);
+    const cid = await cidForBytes(body);
+    mockGateway(body, "application/json");
+
+    const res = mockRes();
+    await call(mockReq({ cid }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect((res.body as Buffer).toString("utf8")).toBe(payload);
   });
 
   test("collapses scriptable content to an inert attachment", async () => {

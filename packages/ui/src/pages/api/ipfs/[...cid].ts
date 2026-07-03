@@ -3,6 +3,7 @@ import {
   fetchFromGateways,
   getCachedIpfs,
   ipfsResponseHeaders,
+  isPinnedCid,
   isRawSha256,
   parseIpfsPath,
   warmToCache,
@@ -17,12 +18,16 @@ export const config = { maxDuration: 30 };
  * Same-origin IPFS read proxy.
  *
  * 1. Serve from the durable Blob cache if present (re-verified against the CID).
- * 2. Otherwise race public gateways once, write the verified raw object back to
- *    the cache (lazy self-heal), and serve it with a 1-year immutable header so
- *    the CDN absorbs every subsequent read.
+ * 2. Otherwise race public gateways once and serve the result. Verifiable bytes
+ *    (raw sha2-256, no subpath) get a 1-year immutable header so the CDN absorbs
+ *    every subsequent read; unverifiable bytes get a short TTL instead, so a bad
+ *    gateway response cannot be pinned at the edge for a year.
+ * 3. Write verified bytes back to the durable cache (lazy self-heal) — but only
+ *    for CIDs pinned on the project's Pinata account, so anonymous GETs cannot
+ *    mirror arbitrary attacker-pinned IPFS content into our public Blob store.
  *
- * New proposals are pre-warmed at pin time and existing ones by the one-time
- * seed script, so a cold miss here is the rare fallback, not the common path.
+ * New proposals are pre-warmed at pin time, so a cold miss here is the rare
+ * fallback, not the common path.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET" && req.method !== "HEAD") {
@@ -37,35 +42,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
+  // A Blob outage (or missing token) must degrade to the gateway race, not take
+  // the whole proxy down — treat any cache-read failure as a miss.
+  let cached: CachedObject | null = null;
   try {
-    const cached = await getCachedIpfs(parsed);
-    if (cached) {
-      serve(req, res, cached);
-      return;
-    }
+    cached = await getCachedIpfs(parsed);
+  } catch {
+    cached = null;
+  }
+  if (cached) {
+    serve(req, res, cached, true);
+    return;
+  }
 
+  try {
     const verifiable = isRawSha256(parsed);
     const fetched = await fetchFromGateways(parsed, verifiable);
 
-    // Persist verifiable raw objects so the next read (any user, any region)
-    // hits Blob/CDN instead of a gateway. Best-effort: never block the response.
+    // Persist verified raw objects so the next read (any user, any region) hits
+    // Blob/CDN instead of a gateway — but only CIDs our Pinata account actually
+    // pinned. Best-effort: never block or fail the response.
     if (verifiable) {
       try {
-        await warmToCache(parsed, fetched.body, fetched.contentType);
+        if (await isPinnedCid(parsed.rootCid)) {
+          await warmToCache(parsed, fetched.body, fetched.contentType);
+        }
       } catch {
         // Ignore: we still serve the bytes we already have in hand.
       }
     }
 
-    serve(req, res, fetched);
+    serve(req, res, fetched, verifiable);
   } catch {
     res.setHeader("Cache-Control", "no-store");
     res.status(502).json({ error: { reason: "IPFS_UNAVAILABLE", details: "Could not retrieve content from IPFS" } });
   }
 }
 
-function serve(req: NextApiRequest, res: NextApiResponse, object: CachedObject) {
-  for (const [key, value] of Object.entries(ipfsResponseHeaders(object.contentType))) {
+function serve(req: NextApiRequest, res: NextApiResponse, object: CachedObject, verified: boolean) {
+  for (const [key, value] of Object.entries(ipfsResponseHeaders(object.contentType, verified))) {
     res.setHeader(key, value);
   }
   res.status(200).send(req.method === "HEAD" ? undefined : object.body);
