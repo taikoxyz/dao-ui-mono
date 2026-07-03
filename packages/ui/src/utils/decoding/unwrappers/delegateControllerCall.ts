@@ -1,27 +1,22 @@
 import { size, slice, type Hex } from "viem";
 import type { DecodedNode, RawCall, Unwrapper } from "../types";
 import { decodeActionTupleArray } from "./actionArray";
-
-// Taiko contracts that expose onMessageInvocation(bytes) with the
-// `executionId + Action[]` payload (verified-source confirmed).
-//
-// NOTE: still gated by verified NAME (spoofable), unlike the executor/bridge gates
-// which are address-bound — we don't yet have a checked-in L2 DelegateController/
-// DelegateOwner address. Residual risk is limited: this node is only reached behind
-// the address-gated bridge unwrapper (a real known-bridge sendMessage). Replace with
-// an address gate once the L2 address is captured, same as TAIKO_DAO_CONTROLLER_ADDRESS.
-const DELEGATE_NAMES = new Set(["DelegateController", "DelegateOwner"]);
+import { isKnownDelegateController } from "../knownContracts";
 
 /**
  * Decode a DelegateController onMessageInvocation payload into its actions, or
  * null if it isn't one we can trust+validate. `_data` = 8-byte executionId then
  * abi.encode((address,uint256,bytes)[]).
+ *
+ * Identity is ADDRESS+CHAIN bound via isKnownDelegateController (the checked-in L2
+ * DelegateController on chain 167000), NOT the spoofable verified name — mirroring
+ * the executor/bridge gates.
  */
 function extractActions(node: DecodedNode): RawCall[] | null {
   if (node.functionName !== "onMessageInvocation") return null;
   if (node.params[0]?.type !== "bytes") return null;
   if (node.trust !== "verified") return null;
-  if (!node.name || !DELEGATE_NAMES.has(node.name)) return null;
+  if (!isKnownDelegateController(node)) return null;
   const data = node.params[0].value as Hex;
   if (!data || size(data) < 8) return null;
   return decodeActionTupleArray(slice(data, 8));

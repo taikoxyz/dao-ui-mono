@@ -7,6 +7,10 @@ const TARGET1 = "0x1670000000000000000000000000000000010001" as const;
 const TARGET2 = "0x1670000000000000000000000000000000000005" as const;
 const UPGRADE = ("0x3659cfe6" + "00".repeat(32)) as Hex;
 
+// The real checked-in L2 DelegateController (chain 167000) and a foreign address.
+const DELEGATE = "0xfA06E15B8b4c5BF3FC5d9cfD083d45c53Cbe8C7C" as const;
+const FOREIGN = "0x000000000000000000000000000000000000dEaD" as const;
+
 // _data = 8-byte executionId + abi.encode(Action[])
 function makeData(items: Array<[Hex, bigint, Hex]>): Hex {
   const actions = encodeAbiParameters(parseAbiParameters("(address,uint256,bytes)[]"), [items]);
@@ -15,7 +19,7 @@ function makeData(items: Array<[Hex, bigint, Hex]>): Hex {
 
 function node(overrides: Partial<DecodedNode> = {}): DecodedNode {
   return {
-    to: "0x00000000000000000000000000000000000000Aa",
+    to: DELEGATE,
     value: 0n,
     data: "0x" as Hex,
     chainId: 167000,
@@ -48,13 +52,18 @@ describe("delegateControllerCall", () => {
     expect(delegateControllerCall.match(node({ trust: "bytecode" }))).toBe(false);
   });
 
-  it("does not match when the contract name is not in the allowlist", () => {
-    expect(delegateControllerCall.match(node({ name: "SomeOtherContract" }))).toBe(false);
-    expect(delegateControllerCall.match(node({ name: undefined }))).toBe(false);
+  it("REJECTS name spoofing: a foreign address with a trusted-looking verified name is not expanded", () => {
+    expect(delegateControllerCall.match(node({ to: FOREIGN, name: "DelegateController" }))).toBe(false);
+    expect(delegateControllerCall.match(node({ to: FOREIGN, name: "DelegateOwner" }))).toBe(false);
   });
 
-  it("matches DelegateOwner too", () => {
-    expect(delegateControllerCall.match(node({ name: "DelegateOwner" }))).toBe(true);
+  it("REJECTS the right address on the wrong chain (address+chain bound)", () => {
+    expect(delegateControllerCall.match(node({ chainId: 1 }))).toBe(false);
+  });
+
+  it("ignores the verified name — identity is the address, not the name", () => {
+    expect(delegateControllerCall.match(node({ name: undefined }))).toBe(true);
+    expect(delegateControllerCall.match(node({ name: "SomethingElse" }))).toBe(true);
   });
 
   it("does not match when _data is shorter than the 8-byte executionId", () => {

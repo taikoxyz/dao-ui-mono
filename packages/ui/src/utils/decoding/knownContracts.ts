@@ -5,8 +5,10 @@ import {
   PUB_TAIKO_BRIDGE_ADDRESS,
   L1_SIGNAL_SERVICE_ADDRESS,
   TAIKO_DAO_CONTROLLER_ADDRESS,
+  DELEGATE_CONTROLLER_ADDRESS,
   TAIKO_L2_BRIDGE_ADDRESS,
   TAIKO_L2_SIGNAL_SERVICE_ADDRESS,
+  TAIKO_L2_CHAIN_ID,
 } from "@/constants";
 
 /**
@@ -37,9 +39,23 @@ const BRIDGE_ADDRESSES = lowerSet([
 // TAIKO_DAO_CONTROLLER_ADDRESS is always present, so the set is non-empty in prod.
 const EXECUTOR_ADDRESSES = lowerSet([PUB_DAO_ADDRESS, TAIKO_DAO_CONTROLLER_ADDRESS]);
 
+// L2 DelegateController — the L1-DAO-driven owner of L2 protocol contracts. Always
+// present (hardcoded), so no unconfigured-env fallback is needed here.
+const DELEGATE_ADDRESSES = lowerSet([DELEGATE_CONTROLLER_ADDRESS]);
+
 /** True if `address` is a known Taiko bridge / signal-service contract. Set is always non-empty. */
 export function isKnownBridge(address: Address): boolean {
   return BRIDGE_ADDRESSES.has(address.toLowerCase());
+}
+
+/**
+ * True if `node` targets the Taiko L2 DelegateController whose onMessageInvocation
+ * we will expand into its bridged Action[]. Bound to BOTH the checked-in address
+ * AND the L2 chain (167000): a verified contract *name* is not trusted (spoofable),
+ * and an address match on the wrong chain is rejected. Mirrors isKnownBridge/isKnownExecutor.
+ */
+export function isKnownDelegateController(node: Pick<DecodedNode, "to" | "chainId">): boolean {
+  return node.chainId === TAIKO_L2_CHAIN_ID && DELEGATE_ADDRESSES.has(node.to.toLowerCase());
 }
 
 /**

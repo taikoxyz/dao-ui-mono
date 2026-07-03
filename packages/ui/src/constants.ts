@@ -36,6 +36,13 @@ export const TAIKO_L2_BRIDGE_ADDRESS = "0x16700000000000000000000000000000000000
 export const TAIKO_L2_SIGNAL_SERVICE_ADDRESS = "0x1670000000000000000000000000000000000005" as Address;
 export const TAIKO_L2_CHAIN_ID = 167000;
 
+// Taiko L2 DelegateController (chain 167000): the contract the L1 DAO drives via a
+// bridged onMessageInvocation to act as owner of L2 protocol contracts. A normal
+// deployment (not a precompile), verified on-chain — proxy 0xfA06…, impl 0x6900f893…
+// per taiko-mono's mainnet L2 deployment log. Used as an identity gate so a foreign
+// L2 contract cannot impersonate it via a spoofed verified name.
+export const DELEGATE_CONTROLLER_ADDRESS = "0xfA06E15B8b4c5BF3FC5d9cfD083d45c53Cbe8C7C" as Address;
+
 export const PUB_SUBGRAPH_URL = (process.env.NEXT_PUBLIC_SUBGRAPH_URL ?? "") as string;
 
 // Target chain
