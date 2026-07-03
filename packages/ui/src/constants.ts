@@ -46,6 +46,10 @@ export const PUB_ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY ?
 
 export const PUB_WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ?? "";
 
+// Single public IPFS gateway origin, reused by the client-side read fallback and
+// ENS avatar resolution so swapping the public gateway is a one-line change.
+export const PUB_IPFS_IO_GATEWAY = "https://ipfs.io";
+
 // Optional public-gateway fallbacks tried after the same-origin /api/ipfs
 // proxy (see utils/ipfs.ts). Comma-separated URL prefixes, e.g.
 // "https://ipfs.io/ipfs".

@@ -16,7 +16,14 @@ const IPFS_ENDPOINTS = [
 
 // How long to wait on each endpoint before trying the next. The proxy normally
 // answers from Blob/CDN in well under a second; this only bites on a cold miss.
-const IPFS_FETCH_TIMEOUT = 15000; // 15 seconds
+const IPFS_FETCH_TIMEOUT = 12000; // 12 seconds
+
+// Overall budget for one attempt across ALL endpoints, so a hanging endpoint
+// plus the public fallback can't stack into ~30s per attempt (which, multiplied
+// by react-query retries, left cards "Loading metadata…" for well over a
+// minute). Combined with the server-side gateway race, one attempt now settles
+// within this budget.
+const IPFS_TOTAL_TIMEOUT = 18000; // 18 seconds
 
 export function fetchIpfsAsJson(ipfsUri: string) {
   return fetchRawIpfs(ipfsUri).then((res) => res.json());
@@ -68,10 +75,14 @@ async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
   }
 
   const cid = resolvePath(ipfsUri);
+  const deadline = Date.now() + IPFS_TOTAL_TIMEOUT;
 
   for (const uriPrefix of IPFS_ENDPOINTS) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break; // overall budget spent — don't start another endpoint
+
     const controller = new AbortController();
-    const abortId = setTimeout(() => controller.abort(), IPFS_FETCH_TIMEOUT);
+    const abortId = setTimeout(() => controller.abort(), Math.min(IPFS_FETCH_TIMEOUT, remaining));
     try {
       const response = await fetch(`${uriPrefix}/${cid}`, {
         method: "GET",

@@ -11,10 +11,12 @@ const UPLOAD_FILE_NAME = "taiko.json";
 // for any future large proposal while still blocking multi-MB/GB abuse.
 const MAX_METADATA_BYTES = 2 * 1024 * 1024;
 
-// Allow the JSON envelope ({"body": <escaped metadata>}) for a 2 MB payload
-// through Next's body parser; oversized abuse is still rejected below with a
-// structured error rather than Next's opaque default.
-export const config = { api: { bodyParser: { sizeLimit: "6mb" } } };
+// Cap the raw request body close to the 2 MB metadata limit (with headroom for
+// the JSON envelope + string escaping) so an oversized payload is rejected by
+// the parser instead of being fully buffered into memory ahead of our own 2 MB
+// check below. Oversized abuse still gets a structured error, not Next's opaque
+// default.
+export const config = { api: { bodyParser: { sizeLimit: "3mb" } } };
 
 function fail(res: NextApiResponse, status: number, reason: string, details: string) {
   res.status(status).json({ error: { reason, details } });
@@ -138,8 +140,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // proposal creation, and the read path warms lazily on first fetch anyway.
   try {
     await warmToCache(parsedIpfsPath, Buffer.from(strBody, "utf8"), inferMetadataContentType(strBody));
-  } catch {
-    // Ignore: the pin succeeded, which is what gates creation.
+  } catch (err) {
+    // The pin succeeded, which is what gates creation — so we never fail here.
+    // But log instead of silently swallowing: the durable cache only holds raw
+    // single-block (<=256 KiB) sha2-256 CIDs, so a larger proposal pinned as a
+    // multi-block dag-pb CID lands here every time, and a silent swallow would
+    // hide that the durable cache is being bypassed for exactly the biggest,
+    // slowest reads.
+    console.warn(
+      `[pin] durable pre-warm skipped for ${parsedIpfsPath.rootCid}: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 
   res.status(pinataRes.status).json(data);

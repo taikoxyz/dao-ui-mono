@@ -10,10 +10,11 @@ export function useMetadata<T = JsonValue>(ipfsUri?: string) {
 
       return fetchIpfsAsJson(ipfsUri);
     },
-    // Bounded, not infinite: a genuinely missing CID falls through to the
-    // "(metadata not available)" state instead of looping forever. The
-    // /api/ipfs proxy + CDN already absorbs the cold-fetch latency.
-    retry: 2,
+    // Bounded, not infinite: the /api/ipfs proxy already races several gateways
+    // server-side, so a single client retry is enough. A genuinely missing CID
+    // settles to the "(metadata not available)" state quickly instead of
+    // stacking many multi-second endpoint timeouts before it gives up.
+    retry: 1,
     refetchOnMount: false,
     refetchOnReconnect: false,
     retryOnMount: true,

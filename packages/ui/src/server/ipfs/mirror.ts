@@ -3,17 +3,31 @@ import { equals as bytesEqual } from "multiformats/bytes";
 import * as rawCodec from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
 import { head, put } from "@vercel/blob";
+import { waitUntil } from "@vercel/functions";
 
 // Public gateways raced on a cold miss. Pinata's own gateway is first: it has
 // every proposal's metadata pinned, so it resolves fast. The CID is only ever
 // appended as a path to one of these hardcoded hosts — never a user-supplied
-// host (SSRF-safe).
+// host — and redirects are constrained to the allowlist below, so the connected
+// host stays inside this set on every hop (SSRF-safe).
 const IPFS_GATEWAYS = [
   "https://gateway.pinata.cloud/ipfs",
   "https://ipfs.io/ipfs",
   "https://dweb.link/ipfs",
   "https://w3s.link/ipfs",
 ];
+
+// The only hosts a gateway request may end up connected to, derived from the
+// list above so it stays in sync. Subdomain gateways (dweb.link, w3s.link)
+// legitimately 301 a path request to `<cid>.ipfs.<host>`, so any subdomain of a
+// trusted gateway host is allowed too — but nothing else, so a gateway that
+// tried to redirect us to an arbitrary or internal host is refused.
+const GATEWAY_HOSTS = IPFS_GATEWAYS.map((gateway) => new URL(gateway).hostname);
+
+function isAllowedGatewayHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return GATEWAY_HOSTS.some((base) => host === base || host.endsWith(`.${base}`));
+}
 
 // CIDs are content hashes, so the bytes can never change — caching forever is
 // correct, not a gamble. This header lets Vercel's CDN serve repeat reads from
@@ -25,9 +39,19 @@ export const IMMUTABLE_CACHE = "public, s-maxage=31536000, max-age=31536000, imm
 // age out of the CDN in an hour instead of being pinned there for a year.
 export const UNVERIFIED_CACHE = "public, s-maxage=3600, max-age=3600";
 
+// A gateway miss/failure is transient, but a flood of the same bogus CID should
+// be absorbed by the CDN for a short window instead of re-running the whole
+// gateway race on every hit. Short enough that a CID that becomes retrievable
+// (e.g. just pinned) is reachable again within the minute.
+export const FAILURE_CACHE = "public, s-maxage=60, max-age=0";
+
 const NO_EXECUTE_CSP = "default-src 'none'; sandbox;";
 const BLOB_PREFIX = "ipfs-cache/v1";
-const GATEWAY_TIMEOUT = 20_000;
+// Cap the cold-miss gateway race well under the function's maxDuration. Promise
+// .any resolves on the fastest of four gateways, so a healthy read returns in
+// ~1s; this only bounds the worst case where every gateway is slow.
+const GATEWAY_TIMEOUT = 8_000;
+const MAX_REDIRECTS = 3;
 const MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
 const BLOB_CACHE_MAX_AGE = 31_536_000;
 
@@ -234,11 +258,24 @@ async function verifiesRawCid(parsed: ParsedIpfsPath, body: Buffer): Promise<boo
 
 const PINATA_PIN_LIST_URL = "https://api.pinata.cloud/data/pinList";
 const PIN_CHECK_TIMEOUT = 5_000;
+const PIN_CHECK_TTL_MS = 60_000;
 
 let pinnedCidCheckOverride: ((rootCid: string) => Promise<boolean>) | null = null;
 
+// Short-TTL memo of pin-list results (both hits AND misses). The read route
+// calls isPinnedCid on every verifiable cold miss, and query-string cache
+// busting (`/api/ipfs/<cid>?n=1,2,3`) bypasses the CDN, so without this a single
+// unpinned CID could be replayed to fire one authenticated Pinata pin-list call
+// per request and drain the shared account's quota. Memoizing collapses repeats
+// to one call per CID per TTL window.
+const pinnedCidMemo = new Map<string, { value: boolean; expiresAt: number }>();
+
 export function setPinnedCidCheckForTests(check: ((rootCid: string) => Promise<boolean>) | null) {
   pinnedCidCheckOverride = check;
+}
+
+export function clearPinnedCidMemoForTests() {
+  pinnedCidMemo.clear();
 }
 
 // True only for CIDs pinned on the project's own Pinata account (i.e. real
@@ -250,6 +287,15 @@ export function setPinnedCidCheckForTests(check: ((rootCid: string) => Promise<b
 export async function isPinnedCid(rootCid: string): Promise<boolean> {
   if (pinnedCidCheckOverride) return pinnedCidCheckOverride(rootCid);
 
+  const cached = pinnedCidMemo.get(rootCid);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+  const value = await queryPinataPinned(rootCid);
+  pinnedCidMemo.set(rootCid, { value, expiresAt: Date.now() + PIN_CHECK_TTL_MS });
+  return value;
+}
+
+async function queryPinataPinned(rootCid: string): Promise<boolean> {
   const jwt = process.env.PINATA_JWT;
   if (!jwt) return false;
 
@@ -284,7 +330,7 @@ export async function fetchFromGateways(parsed: ParsedIpfsPath, verify: boolean)
   try {
     return await Promise.any(
       IPFS_GATEWAYS.map(async (gateway) => {
-        const response = await fetch(`${gateway}/${parsed.cidPath}`, { method: "GET", signal: controller.signal });
+        const response = await gatewayFetch(`${gateway}/${parsed.cidPath}`, controller.signal);
         if (!response.ok) throw new Error(`${gateway} returned HTTP ${response.status}`);
         const body = await readBounded(response, MAX_RESPONSE_BYTES);
         if (verify && !(await verifiesRawCid(parsed, body)))
@@ -296,6 +342,30 @@ export async function fetchFromGateways(parsed: ParsedIpfsPath, verify: boolean)
   } finally {
     clearTimeout(timer);
   }
+}
+
+// Fetch a gateway URL while keeping the connected host inside the gateway
+// allowlist on EVERY hop. We follow redirects manually (fetch's default
+// `redirect: "follow"` would transparently chase a gateway's 3xx to any host,
+// including an internal/metadata address — an SSRF vector) and refuse any
+// redirect whose target host is not an allowed gateway host. Subdomain gateways
+// legitimately redirect `.../ipfs/<cid>` to `<cid>.ipfs.<host>`, which the
+// allowlist permits; anything else throws so Promise.any moves to another
+// gateway.
+async function gatewayFetch(url: string, signal: AbortSignal): Promise<Response> {
+  let current = url;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    const response = await fetch(current, { method: "GET", redirect: "manual", signal });
+    if (response.status < 300 || response.status >= 400) return response;
+
+    const location = response.headers.get("location");
+    if (!location) throw new Error(`redirect from ${current} had no Location`);
+    const target = new URL(location, current);
+    if (target.protocol !== "https:" || !isAllowedGatewayHost(target.hostname))
+      throw new Error(`redirect to disallowed host ${target.host}`);
+    current = target.toString();
+  }
+  throw new Error(`too many redirects for ${url}`);
 }
 
 async function readBounded(response: Response, max: number): Promise<Buffer> {
@@ -325,8 +395,7 @@ async function readBounded(response: Response, max: number): Promise<Buffer> {
 }
 
 // ---------------------------------------------------------------------------
-// Cache read / write-through. One helper, shared by the read route, /api/pin,
-// and the one-time seed script.
+// Cache read / write-through. One helper, shared by the read route and /api/pin.
 // ---------------------------------------------------------------------------
 
 // Returns the durably-cached object for a raw CID, re-verifying the bytes
@@ -340,21 +409,54 @@ export async function getCachedIpfs(parsed: ParsedIpfsPath): Promise<CachedObjec
 }
 
 // Verify + store a raw CID in the durable cache. Idempotent: a CID already
-// cached is skipped. `bytes` is supplied at pin time (no gateway fetch needed);
-// omit it to fetch+verify from the gateways (read-path self-heal / seed).
-export async function warmToCache(parsed: ParsedIpfsPath, bytes?: Buffer, contentType?: string): Promise<void> {
+// cached is skipped. `bytes` must already be in hand — the pin-time upload, or
+// the read route's just-fetched gateway bytes — and are re-verified against the
+// CID before the write, so a body that does not hash to its CID can never be
+// persisted.
+export async function warmToCache(parsed: ParsedIpfsPath, bytes: Buffer, contentType?: string): Promise<void> {
   if (!isRawSha256(parsed)) throw new Error(`CID ${parsed.cidPath} is not a directly verifiable raw sha2-256 object`);
   if (await getCachedIpfs(parsed)) return;
+  if (!(await verifiesRawCid(parsed, bytes))) throw new Error(`provided bytes do not match CID ${parsed.rootCid}`);
 
-  let body = bytes;
-  let type = contentType ?? "application/octet-stream";
-  if (body) {
-    if (!(await verifiesRawCid(parsed, body))) throw new Error(`provided bytes do not match CID ${parsed.rootCid}`);
-  } else {
-    const fetched = await fetchFromGateways(parsed, true);
-    body = fetched.body;
-    type = fetched.contentType;
+  await storage().put(blobKey(parsed.rootCid), bytes, safeContentType(contentType ?? "application/octet-stream").value);
+}
+
+// ---------------------------------------------------------------------------
+// Background work: run a best-effort task (the durable write-through) AFTER the
+// response is sent, so it never adds latency to the user's read or risks a
+// maxDuration timeout with the bytes already in hand.
+// ---------------------------------------------------------------------------
+
+let backgroundCollectorForTests: Promise<unknown>[] | null = null;
+
+// Tests drive the handler directly (no Vercel request context, so `waitUntil`
+// is unavailable). Collect background tasks instead so a test can await them and
+// assert the write-through landed. Call before invoking the handler.
+export function collectBackgroundTasksForTests() {
+  backgroundCollectorForTests = [];
+}
+
+export async function flushBackgroundTasksForTests(): Promise<void> {
+  const pending = backgroundCollectorForTests ?? [];
+  backgroundCollectorForTests = [];
+  await Promise.allSettled(pending);
+}
+
+export function runInBackground(task: Promise<unknown>): void {
+  // Swallow errors so a best-effort warm failure can never surface as an
+  // unhandled rejection (which would crash the runtime, or fail a test that
+  // never awaited it).
+  const guarded = task.catch(() => undefined);
+  if (backgroundCollectorForTests) {
+    backgroundCollectorForTests.push(guarded);
+    return;
   }
-
-  await storage().put(blobKey(parsed.rootCid), body, safeContentType(type).value);
+  // Hand the task to Vercel's waitUntil to keep the function alive until it
+  // settles, without delaying the response that was already sent.
+  try {
+    waitUntil(guarded);
+  } catch {
+    // Outside a Vercel request context (local dev): plain fire-and-forget.
+    void guarded;
+  }
 }
