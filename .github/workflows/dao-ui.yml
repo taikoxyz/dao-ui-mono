@@ -45,9 +45,6 @@ jobs:
             - name: Test
               run: bun test
 
-            # Non-blocking for now: the package has pre-existing prettier drift in
-            # files unrelated to current work (CHANGELOG.md and a few proposal/l2
-            # pages). Flip to a required check once those are formatted.
             - name: Prettier
               run: bun run format:check
               continue-on-error: true
