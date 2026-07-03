@@ -25,9 +25,11 @@ export const PUB_TAIKO_L2_RPC_URL = process.env.NEXT_PUBLIC_TAIKO_L2_RPC_URL ?? 
 // Taiko L1 protocol contracts (deployed on Ethereum mainnet)
 export const L1_SIGNAL_SERVICE_ADDRESS = "0x9e0a24964e5397B566c1ed39258e21aB5E35C77C" as Address;
 // Standard proposals route execute() through the TaikoDAOController, a separate
-// contract from the OSx DAO (PUB_DAO_ADDRESS). Checked-in like the other L1/L2
-// protocol addresses (verified on-chain, mainnet) and used as an identity gate so
-// a foreign contract cannot impersonate the executor via a spoofed verified name.
+// contract from the OSx DAO (PUB_DAO_ADDRESS). Checked-in as an identity gate so a
+// foreign contract cannot impersonate the executor via a spoofed verified name.
+// Provenance / re-verify (mainnet): ERC1967 proxy, impl 0x4347df… verified-source
+// name "TaikoDAOController", and owner() == NEXT_PUBLIC_DAO_ADDRESS (our DAO 0x9CDf…)
+// — an unforgeable binding to the configured DAO, not just a name match.
 export const TAIKO_DAO_CONTROLLER_ADDRESS = "0x75Ba76403b13b26AD1beC70D6eE937314eeaCD0a" as Address;
 
 // Taiko L2 precompile addresses (deterministic across all Taiko networks)
@@ -36,11 +38,12 @@ export const TAIKO_L2_BRIDGE_ADDRESS = "0x16700000000000000000000000000000000000
 export const TAIKO_L2_SIGNAL_SERVICE_ADDRESS = "0x1670000000000000000000000000000000000005" as Address;
 export const TAIKO_L2_CHAIN_ID = 167000;
 
-// Taiko L2 DelegateController (chain 167000): the contract the L1 DAO drives via a
-// bridged onMessageInvocation to act as owner of L2 protocol contracts. A normal
-// deployment (not a precompile), verified on-chain — proxy 0xfA06…, impl 0x6900f893…
-// per taiko-mono's mainnet L2 deployment log. Used as an identity gate so a foreign
-// L2 contract cannot impersonate it via a spoofed verified name.
+// Taiko L2 DelegateController (chain 167000): the L1 DAO drives it via a bridged
+// onMessageInvocation to act as owner of L2 protocol contracts. Checked-in as an
+// identity gate so a foreign L2 contract cannot impersonate it via a spoofed name.
+// Provenance / re-verify (chain 167000): ERC1967 proxy, impl 0x6900f893… verified-
+// source name "DelegateController", daoController() == TAIKO_DAO_CONTROLLER_ADDRESS
+// and l1ChainId() == 1 — i.e. bound on-chain to our DAO's L1 controller.
 export const DELEGATE_CONTROLLER_ADDRESS = "0xfA06E15B8b4c5BF3FC5d9cfD083d45c53Cbe8C7C" as Address;
 
 export const PUB_SUBGRAPH_URL = (process.env.NEXT_PUBLIC_SUBGRAPH_URL ?? "") as string;
