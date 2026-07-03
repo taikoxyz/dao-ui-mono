@@ -3,7 +3,7 @@ import { Card, Tag, Button, Icon, IconType, Tabs } from "@aragon/ods";
 import { Tabs as RadixTabsRoot } from "@radix-ui/react-tabs";
 import dayjs from "dayjs";
 import { VotesDataList } from "@/components/proposalVoting/votesDataList/votesDataList";
-import { getApprovalButtonState } from "@/utils/approval-eligibility";
+import { ApprovalButtonState, getApprovalButtonState } from "@/utils/approval-eligibility";
 import type { IVote } from "@/utils/types";
 
 interface SecurityCouncilApprovalStageProps {
@@ -184,13 +184,13 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
               {/* Action buttons */}
               {!executed && (
                 <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4">
-                  {!thresholdReached && !hasApproved && approvalButtonState === "checking" && (
+                  {!thresholdReached && !hasApproved && approvalButtonState === ApprovalButtonState.CHECKING && (
                     <Button size="md" variant="primary" disabled={true} isLoading={true} className="w-full">
                       Checking eligibility…
                     </Button>
                   )}
 
-                  {!thresholdReached && !hasApproved && approvalButtonState === "retry" && (
+                  {!thresholdReached && !hasApproved && approvalButtonState === ApprovalButtonState.RETRY && (
                     <Button size="md" variant="tertiary" onClick={onRetryCanApprove} className="w-full">
                       Couldn&apos;t verify eligibility — retry
                     </Button>
@@ -198,7 +198,8 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
 
                   {!thresholdReached &&
                     !hasApproved &&
-                    (approvalButtonState === "approve" || approvalButtonState === "unable") && (
+                    (approvalButtonState === ApprovalButtonState.APPROVE ||
+                      approvalButtonState === ApprovalButtonState.UNABLE) && (
                       <Button
                         size="md"
                         variant="primary"
@@ -207,7 +208,7 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                         isLoading={isApproveLoading}
                         className="w-full"
                       >
-                        {approvalButtonState === "approve" ? "Approve Proposal" : "Unable to Approve"}
+                        {approvalButtonState === ApprovalButtonState.APPROVE ? "Approve Proposal" : "Unable to Approve"}
                       </Button>
                     )}
 
@@ -231,7 +232,7 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                     </div>
                   )}
 
-                  {approvalButtonState === "unable" && !hasApproved && !thresholdReached && (
+                  {approvalButtonState === ApprovalButtonState.UNABLE && !hasApproved && !thresholdReached && (
                     <p className="text-xs text-neutral-500">Only Security Council members can approve proposals</p>
                   )}
                 </div>

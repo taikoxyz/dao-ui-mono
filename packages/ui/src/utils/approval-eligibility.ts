@@ -1,4 +1,9 @@
-export type ApprovalButtonState = "checking" | "retry" | "approve" | "unable";
+export enum ApprovalButtonState {
+  CHECKING = "checking",
+  RETRY = "retry",
+  APPROVE = "approve",
+  UNABLE = "unable",
+}
 
 interface ApprovalEligibilityInput {
   // undefined = eligibility was never determined (read pending, errored, or never ran)
@@ -20,9 +25,9 @@ export function getApprovalButtonState({
   isFetching,
   hasError,
 }: ApprovalEligibilityInput): ApprovalButtonState {
-  if (canApprove === true) return "approve";
-  if (canApprove === false) return "unable";
-  if (isFetching) return "checking";
-  if (hasError) return "retry";
-  return "unable";
+  if (canApprove === true) return ApprovalButtonState.APPROVE;
+  if (canApprove === false) return ApprovalButtonState.UNABLE;
+  if (isFetching) return ApprovalButtonState.CHECKING;
+  if (hasError) return ApprovalButtonState.RETRY;
+  return ApprovalButtonState.UNABLE;
 }
