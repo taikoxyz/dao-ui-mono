@@ -1,14 +1,18 @@
-import { PUB_IPFS_GATEWAYS } from "@/constants";
+import { PUB_IPFS_ENDPOINTS } from "@/constants";
 import { Hex, fromHex, toBytes } from "viem";
 import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
 
-// Read endpoints, tried in order. Static by design — nothing here varies per
-// environment, so it lives in code rather than an env var: the same-origin
-// /api/ipfs proxy (Blob + CDN backed) first, then the shared public gateway(s)
+// Read endpoints, tried in order: the same-origin /api/ipfs proxy (Blob + CDN
+// backed) first, then any public-gateway prefixes from NEXT_PUBLIC_IPFS_ENDPOINTS
 // as a last-resort fallback for the rare case our origin is unavailable.
-const IPFS_ENDPOINTS = ["/api/ipfs", ...PUB_IPFS_GATEWAYS.map((gateway) => `${gateway}/ipfs`)];
+const IPFS_ENDPOINTS = [
+  "/api/ipfs",
+  ...PUB_IPFS_ENDPOINTS.split(",")
+    .map((endpoint) => endpoint.trim())
+    .filter(Boolean),
+];
 
 // How long to wait on each endpoint before trying the next. The proxy normally
 // answers from Blob/CDN in well under a second; this only bites on a cold miss.
