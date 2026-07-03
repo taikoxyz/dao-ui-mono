@@ -3,6 +3,7 @@ import { Card, Tag, Button, Icon, IconType, Tabs } from "@aragon/ods";
 import { Tabs as RadixTabsRoot } from "@radix-ui/react-tabs";
 import dayjs from "dayjs";
 import { VotesDataList } from "@/components/proposalVoting/votesDataList/votesDataList";
+import { getApprovalButtonState } from "@/utils/approval-eligibility";
 import type { IVote } from "@/utils/types";
 
 interface SecurityCouncilApprovalStageProps {
@@ -50,6 +51,11 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
 }) => {
   const progressPercentage = (approvals / requiredApprovals) * 100;
   const thresholdReached = approvals >= requiredApprovals;
+  const approvalButtonState = getApprovalButtonState({
+    canApprove,
+    isLoading: canApproveLoading,
+    hasError: canApproveError,
+  });
 
   const getStatusIcon = () => {
     if (executed) return <Icon icon={IconType.CHECKMARK} size="md" className="text-success-600" />;
@@ -177,35 +183,32 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
               {/* Action buttons */}
               {!executed && (
                 <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4">
-                  {!thresholdReached && !hasApproved && canApproveLoading && (
+                  {!thresholdReached && !hasApproved && approvalButtonState === "checking" && (
                     <Button size="md" variant="primary" disabled={true} isLoading={true} className="w-full">
                       Checking eligibility…
                     </Button>
                   )}
 
-                  {!thresholdReached && !hasApproved && !canApproveLoading && canApproveError && (
-                    <Button
-                      size="md"
-                      variant="tertiary"
-                      onClick={onRetryCanApprove}
-                      className="w-full"
-                    >
+                  {!thresholdReached && !hasApproved && approvalButtonState === "retry" && (
+                    <Button size="md" variant="tertiary" onClick={onRetryCanApprove} className="w-full">
                       Couldn&apos;t verify eligibility — retry
                     </Button>
                   )}
 
-                  {!thresholdReached && !hasApproved && !canApproveLoading && !canApproveError && (
-                    <Button
-                      size="md"
-                      variant="primary"
-                      disabled={!canApprove}
-                      onClick={onApprove}
-                      isLoading={isApproveLoading}
-                      className="w-full"
-                    >
-                      {canApprove ? "Approve Proposal" : "Unable to Approve"}
-                    </Button>
-                  )}
+                  {!thresholdReached &&
+                    !hasApproved &&
+                    (approvalButtonState === "approve" || approvalButtonState === "unable") && (
+                      <Button
+                        size="md"
+                        variant="primary"
+                        disabled={!canApprove}
+                        onClick={onApprove}
+                        isLoading={isApproveLoading}
+                        className="w-full"
+                      >
+                        {canApprove ? "Approve Proposal" : "Unable to Approve"}
+                      </Button>
+                    )}
 
                   {thresholdReached && (
                     <Button
@@ -227,13 +230,9 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                     </div>
                   )}
 
-                  {!canApprove &&
-                    !canApproveLoading &&
-                    !canApproveError &&
-                    !hasApproved &&
-                    !thresholdReached && (
-                      <p className="text-xs text-neutral-500">Only Security Council members can approve proposals</p>
-                    )}
+                  {approvalButtonState === "unable" && !hasApproved && !thresholdReached && (
+                    <p className="text-xs text-neutral-500">Only Security Council members can approve proposals</p>
+                  )}
                 </div>
               )}
 
