@@ -9,7 +9,7 @@ export function useUserCanApprove(proposalId: string | bigint | number) {
 
   const {
     data: canApprove,
-    isLoading,
+    isFetching,
     error,
     refetch,
   } = useReadContract({
@@ -29,5 +29,5 @@ export function useUserCanApprove(proposalId: string | bigint | number) {
     }
   }, [blockNumber, refetch]);
 
-  return { canApprove, isLoading, error, refetch };
+  return { canApprove, isFetching, error, refetch };
 }

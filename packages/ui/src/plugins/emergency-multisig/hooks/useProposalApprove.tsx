@@ -26,7 +26,7 @@ export function useProposalApprove(proposalId: string) {
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: approveTxHash });
   const {
     canApprove,
-    isLoading: canApproveLoading,
+    isFetching: canApproveFetching,
     error: canApproveError,
     refetch: refetchCanApprove,
   } = useUserCanApprove(proposalId);
@@ -98,8 +98,9 @@ export function useProposalApprove(proposalId: string) {
     proposal,
     proposalFetchStatus,
     approvals,
-    canApprove: !!canApprove,
-    canApproveLoading,
+    // tri-state: undefined = eligibility never determined; do not collapse to false
+    canApprove,
+    canApproveFetching,
     canApproveError,
     refetchCanApprove,
     isConfirming: approveStatus === "pending" || isConfirming,

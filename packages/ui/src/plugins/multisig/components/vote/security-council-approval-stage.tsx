@@ -11,8 +11,9 @@ interface SecurityCouncilApprovalStageProps {
   approvals: number;
   requiredApprovals: number;
   votes?: IVote[];
+  // undefined = eligibility not yet determined (read in flight, errored, or never ran)
   canApprove?: boolean;
-  canApproveLoading?: boolean;
+  canApproveFetching?: boolean;
   canApproveError?: boolean;
   onRetryCanApprove?: () => void;
   onApprove?: () => void;
@@ -33,8 +34,8 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
   approvals,
   requiredApprovals,
   votes = [],
-  canApprove = false,
-  canApproveLoading = false,
+  canApprove,
+  canApproveFetching = false,
   canApproveError = false,
   onRetryCanApprove,
   onApprove,
@@ -53,7 +54,7 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
   const thresholdReached = approvals >= requiredApprovals;
   const approvalButtonState = getApprovalButtonState({
     canApprove,
-    isLoading: canApproveLoading,
+    isFetching: canApproveFetching,
     hasError: canApproveError,
   });
 
@@ -201,12 +202,12 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                       <Button
                         size="md"
                         variant="primary"
-                        disabled={!canApprove}
+                        disabled={approvalButtonState !== "approve"}
                         onClick={onApprove}
                         isLoading={isApproveLoading}
                         className="w-full"
                       >
-                        {canApprove ? "Approve Proposal" : "Unable to Approve"}
+                        {approvalButtonState === "approve" ? "Approve Proposal" : "Unable to Approve"}
                       </Button>
                     )}
 

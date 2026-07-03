@@ -27,7 +27,7 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     proposal,
     proposalFetchStatus,
     canApprove,
-    canApproveLoading,
+    canApproveFetching,
     canApproveError,
     refetchCanApprove,
     approvals,
@@ -52,8 +52,10 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
   // The subgraph data is more reliable as event log fetching can fail or return empty
   const approvalVotes: IVote[] =
     (gqlProposal?.approvers?.length ?? 0) > 0
-      ? gqlProposal!.approvers.map(({ address: approverAddress }) => ({ address: approverAddress, variant: "approve" }) as IVote)
-      : approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [];
+      ? gqlProposal!.approvers.map(
+          ({ address: approverAddress }) => ({ address: approverAddress, variant: "approve" }) as IVote
+        )
+      : (approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? []);
 
   // Check if current user has already approved - check both subgraph and event data
   const hasApproved =
@@ -135,7 +137,7 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
                     requiredApprovals={proposal?.parameters.minApprovals ?? 0}
                     votes={approvalVotes}
                     canApprove={canApprove}
-                    canApproveLoading={canApproveLoading}
+                    canApproveFetching={canApproveFetching}
                     canApproveError={!!canApproveError}
                     onRetryCanApprove={refetchCanApprove}
                     onApprove={approveProposal}
