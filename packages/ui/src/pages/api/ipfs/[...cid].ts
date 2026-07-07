@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
   fetchFromGateways,
+  fetchVerifiedDag,
   FAILURE_CACHE,
   getCachedIpfs,
   ipfsResponseHeaders,
@@ -29,16 +30,20 @@ const IPFS_RATE_LIMIT = 60;
 const IPFS_RATE_WINDOW_MS = 60_000;
 
 /**
- * Same-origin IPFS read proxy.
+ * Same-origin IPFS read proxy. Everything it serves is verified against the
+ * requested CID — there is no unverified path.
  *
  * 1. Serve from the durable Blob cache if present (re-verified against the CID).
- * 2. Otherwise race public gateways once and serve the result. Verifiable bytes
- *    (raw sha2-256, no subpath) get a 1-year immutable header so the CDN absorbs
- *    every subsequent read; unverifiable bytes get a short TTL instead, so a bad
- *    gateway response cannot be pinned at the edge for a year.
- * 3. Write verified bytes back to the durable cache (lazy self-heal) — but only
- *    for CIDs pinned on the project's Pinata account, so anonymous GETs cannot
- *    mirror arbitrary attacker-pinned IPFS content into our public Blob store.
+ * 2. Otherwise fetch and verify: raw sha2-256 CIDs race the public gateways
+ *    (bytes hashed against the CID before a gateway can win); multi-block
+ *    content (dag-pb DAGs, subpaths) goes through verified-fetch, which checks
+ *    every block of the DAG. Either way the response earns the 1-year immutable
+ *    header. A fetch that cannot be verified fails closed with a 502.
+ * 3. Write verified raw bytes back to the durable cache (lazy self-heal) — but
+ *    only for CIDs pinned on the project's Pinata account, so anonymous GETs
+ *    cannot mirror arbitrary attacker-pinned IPFS content into our public Blob
+ *    store. (Multi-block content is not durably cached: its file bytes cannot
+ *    be re-verified on read, so it relies on the CDN instead.)
  *
  * New proposals are pre-warmed at pin time, so a cold miss here is the rare
  * fallback, not the common path.
@@ -72,13 +77,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     cached = null;
   }
   if (cached) {
-    serve(req, res, cached, true);
+    serve(req, res, cached);
     return;
   }
 
   try {
-    const verifiable = isRawSha256(parsed);
-    const fetched = await fetchFromGateways(parsed, verifiable);
+    const rawBlock = isRawSha256(parsed);
+    const fetched = rawBlock ? await fetchFromGateways(parsed) : await fetchVerifiedDag(parsed);
 
     // Serve the bytes we already have in hand immediately. Persisting them so the
     // next read (any user, any region) hits Blob/CDN instead of a gateway is
@@ -86,8 +91,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Blob write can never delay the user or push us past maxDuration with the
     // bytes unserved. Gated to CIDs our Pinata account actually pinned, so
     // anonymous GETs cannot mirror attacker-pinned content into our Blob store.
-    serve(req, res, fetched, verifiable);
-    if (verifiable) runInBackground(warmIfPinned(parsed, fetched));
+    serve(req, res, fetched);
+    if (rawBlock) runInBackground(warmIfPinned(parsed, fetched));
   } catch {
     res.setHeader("Cache-Control", FAILURE_CACHE);
     res.status(502).json({ error: { reason: "IPFS_UNAVAILABLE", details: "Could not retrieve content from IPFS" } });
@@ -100,8 +105,8 @@ async function warmIfPinned(parsed: ParsedIpfsPath, fetched: CachedObject): Prom
   }
 }
 
-function serve(req: NextApiRequest, res: NextApiResponse, object: CachedObject, verified: boolean) {
-  for (const [key, value] of Object.entries(ipfsResponseHeaders(object.contentType, verified))) {
+function serve(req: NextApiRequest, res: NextApiResponse, object: CachedObject) {
+  for (const [key, value] of Object.entries(ipfsResponseHeaders(object.contentType))) {
     res.setHeader(key, value);
   }
   res.status(200).send(req.method === "HEAD" ? undefined : object.body);

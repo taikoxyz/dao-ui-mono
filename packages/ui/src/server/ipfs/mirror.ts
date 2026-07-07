@@ -31,13 +31,11 @@ function isAllowedGatewayHost(hostname: string): boolean {
 
 // CIDs are content hashes, so the bytes can never change — caching forever is
 // correct, not a gamble. This header lets Vercel's CDN serve repeat reads from
-// the edge without invoking the function or touching Blob.
+// the edge without invoking the function or touching Blob. Everything this
+// proxy serves is verified against its CID (single raw blocks directly,
+// multi-block DAGs block-by-block via verified-fetch), so it applies to all
+// success responses.
 export const IMMUTABLE_CACHE = "public, s-maxage=31536000, max-age=31536000, immutable";
-
-// For content we could NOT verify against its CID (dag-pb CIDs, subpaths): the
-// bytes are whatever a public gateway said they were, so a bad response must
-// age out of the CDN in an hour instead of being pinned there for a year.
-export const UNVERIFIED_CACHE = "public, s-maxage=3600, max-age=3600";
 
 // A gateway miss/failure is transient, but a flood of the same bogus CID should
 // be absorbed by the CDN for a short window instead of re-running the whole
@@ -222,14 +220,14 @@ export function safeContentType(rawContentType: string): { value: string; forceA
     : { value: "application/octet-stream", forceAttachment: true };
 }
 
-// Inert response headers for serving third-party IPFS bytes from our own origin.
-// Only bytes proven to match their CID earn the immutable header; anything else
-// gets the short unverified TTL.
-export function ipfsResponseHeaders(rawContentType: string, verified: boolean): Record<string, string> {
+// Inert response headers for serving third-party IPFS bytes from our own
+// origin. Callers only reach this with bytes proven to match their CID, so
+// every response earns the immutable header.
+export function ipfsResponseHeaders(rawContentType: string): Record<string, string> {
   const safe = safeContentType(rawContentType);
   const headers: Record<string, string> = {
     "Content-Type": safe.value,
-    "Cache-Control": verified ? IMMUTABLE_CACHE : UNVERIFIED_CACHE,
+    "Cache-Control": IMMUTABLE_CACHE,
     "Content-Security-Policy": NO_EXECUTE_CSP,
     "X-Content-Type-Options": "nosniff",
   };
@@ -324,7 +322,10 @@ async function queryPinataPinned(rootCid: string): Promise<boolean> {
 // Gateway fetch (raced) + bounded read.
 // ---------------------------------------------------------------------------
 
-export async function fetchFromGateways(parsed: ParsedIpfsPath, verify: boolean): Promise<CachedObject> {
+// Race the public gateways for a directly verifiable raw CID. Only called for
+// shapes verifiesRawCid can check — multi-block content goes through
+// fetchVerifiedDag instead — so every response is verified before it can win.
+export async function fetchFromGateways(parsed: ParsedIpfsPath): Promise<CachedObject> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GATEWAY_TIMEOUT);
   try {
@@ -333,7 +334,7 @@ export async function fetchFromGateways(parsed: ParsedIpfsPath, verify: boolean)
         const response = await gatewayFetch(`${gateway}/${parsed.cidPath}`, controller.signal);
         if (!response.ok) throw new Error(`${gateway} returned HTTP ${response.status}`);
         const body = await readBounded(response, MAX_RESPONSE_BYTES);
-        if (verify && !(await verifiesRawCid(parsed, body)))
+        if (!(await verifiesRawCid(parsed, body)))
           throw new Error(`${gateway} returned bytes that do not match the CID`);
         controller.abort();
         return { body, contentType: response.headers.get("content-type") ?? "application/octet-stream" };
@@ -341,6 +342,68 @@ export async function fetchFromGateways(parsed: ParsedIpfsPath, verify: boolean)
     );
   } finally {
     clearTimeout(timer);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Verified fetch for multi-block content (dag-pb DAGs, subpaths).
+// ---------------------------------------------------------------------------
+
+// Trustless-gateway hosts for block-level fetches, dialed DIRECTLY — no
+// redirects are involved, so the connected host is always exactly one of
+// these. gateway.pinata.cloud serves blocks natively and has every proposal
+// pinned; trustless-gateway.link is Interplanetary Shipyard's dedicated block
+// endpoint (ipfs.io and dweb.link redirect block requests there anyway).
+const TRUSTLESS_GATEWAYS = ["https://gateway.pinata.cloud", "https://trustless-gateway.link"];
+
+// Multi-block fetches make one round trip per ~256 KiB block, so give them
+// more headroom than the single-shot raw race while staying under maxDuration.
+const VERIFIED_FETCH_TIMEOUT = 15_000;
+
+type VerifiedFetchFn = (url: string, init?: { signal?: AbortSignal }) => Promise<Response>;
+
+let verifiedFetchPromise: Promise<VerifiedFetchFn> | null = null;
+let verifiedFetchOverride: VerifiedFetchFn | null = null;
+
+export function setVerifiedFetchForTests(fn: VerifiedFetchFn | null) {
+  verifiedFetchOverride = fn;
+}
+
+// Lazy so the Helia dependency tree is only loaded (and its gateway sessions
+// only created) on the first multi-block cold miss, not on every function boot.
+function verifiedFetch(): Promise<VerifiedFetchFn> {
+  verifiedFetchPromise ??= import("@helia/verified-fetch").then(({ createVerifiedFetch }) =>
+    createVerifiedFetch({ gateways: TRUSTLESS_GATEWAYS })
+  );
+  return verifiedFetchPromise;
+}
+
+// Fetch content we cannot check as a single block (dag-pb DAGs, subpaths) via
+// the trustless gateway protocol: every block is hash-verified against its own
+// CID as the DAG is walked from the root the chain pinned, so the reassembled
+// bytes carry the same guarantee as a directly verified raw block. Fails
+// closed — there is no unverified fallback, so a disrupted trustless fetch can
+// never downgrade a response to unverified bytes.
+export async function fetchVerifiedDag(parsed: ParsedIpfsPath): Promise<CachedObject> {
+  const doFetch = verifiedFetchOverride ?? (await verifiedFetch());
+  const response = await doFetch(`ipfs://${parsed.cidPath}`, {
+    signal: AbortSignal.timeout(VERIFIED_FETCH_TIMEOUT),
+  });
+  if (!response.ok) throw new Error(`verified fetch for ${parsed.cidPath} returned HTTP ${response.status}`);
+  const body = await readBounded(response, MAX_RESPONSE_BYTES);
+  return { body, contentType: detectContentType(body, response.headers.get("content-type")) };
+}
+
+// verified-fetch reassembles bytes from raw blocks, so there is no upstream
+// Content-Type header worth trusting (it defaults to octet-stream, which our
+// safety headers turn into a forced download). Sniff JSON — the only content
+// real proposals store — and otherwise keep whatever was declared.
+function detectContentType(body: Buffer, declared: string | null): string {
+  try {
+    JSON.parse(body.toString("utf8"));
+    return "application/json";
+  } catch {
+    return declared ?? "application/octet-stream";
   }
 }
 

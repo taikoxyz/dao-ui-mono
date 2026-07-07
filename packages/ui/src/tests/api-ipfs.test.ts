@@ -14,7 +14,7 @@ import {
   parseIpfsPath,
   setIpfsCacheStorageForTests,
   setPinnedCidCheckForTests,
-  UNVERIFIED_CACHE,
+  setVerifiedFetchForTests,
   warmToCache,
 } from "../server/ipfs/mirror";
 import { resetRateLimitForTests } from "../server/rate-limit";
@@ -100,12 +100,18 @@ describe("/api/ipfs/[...cid]", () => {
     // The write-through now runs in the background; collect the tasks so tests
     // can await them before asserting the durable cache landed.
     collectBackgroundTasksForTests();
+    // Fail loudly if a test reaches the multi-block path without mocking it —
+    // the real implementation would dial live trustless gateways.
+    setVerifiedFetchForTests(async () => {
+      throw new Error("verified fetch not mocked in this test");
+    });
     resetRateLimitForTests();
   });
 
   afterEach(() => {
     setIpfsCacheStorageForTests(null);
     setPinnedCidCheckForTests(null);
+    setVerifiedFetchForTests(null);
     clearPinnedCidMemoForTests();
     resetRateLimitForTests();
     globalThis.fetch = originalFetch;
@@ -175,28 +181,80 @@ describe("/api/ipfs/[...cid]", () => {
     expect(gatewayCalls()).toBeGreaterThan(callsAfterFirst);
   });
 
-  test("serves an unverifiable (dag-pb) CID with a short TTL, not immutable", async () => {
-    // CIDv0 → dag-pb, not raw sha2-256, so the bytes cannot be verified.
+  test("serves a multi-block (dag-pb) CID through verified-fetch with the immutable header", async () => {
+    // CIDv0 → dag-pb, not a single raw block, so it must go through the
+    // block-by-block verified path, never the flat gateway race.
     const dagPbCid = "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG";
-    const body = new TextEncoder().encode("legacy proposal metadata");
-    mockGateway(body, "application/json");
+    const payload = JSON.stringify({ title: "a proposal too big for one block" });
+    let verifiedUrl: string | undefined;
+    setVerifiedFetchForTests(async (url) => {
+      verifiedUrl = url;
+      return new Response(payload, { status: 200 });
+    });
+    let gatewayFetched = false;
+    globalThis.fetch = (async () => {
+      gatewayFetched = true;
+      return new Response("must not be used", { status: 200 });
+    }) as unknown as typeof fetch;
 
     const res = mockRes();
     await call(mockReq({ cid: dagPbCid }), res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.headers["cache-control"]).toBe(UNVERIFIED_CACHE);
+    expect(verifiedUrl).toBe(`ipfs://${dagPbCid}`);
+    expect(gatewayFetched).toBe(false);
+    expect(res.headers["cache-control"]).toBe(IMMUTABLE_CACHE);
+    // Reassembled bytes carry no trustworthy upstream type; JSON is sniffed.
+    expect(res.headers["content-type"]).toBe("application/json");
+    expect((res.body as Buffer).toString("utf8")).toBe(payload);
   });
 
-  test("serves a CID subpath with a short TTL, not immutable", async () => {
-    const body = new TextEncoder().encode("file in a directory");
-    mockGateway(body, "text/plain");
+  test("serves a CID subpath through verified-fetch", async () => {
+    setVerifiedFetchForTests(
+      async () => new Response("file in a directory", { status: 200, headers: { "content-type": "text/plain" } })
+    );
 
     const res = mockRes();
     await call(mockReq({ cid: [VALID_CID, "metadata.json"] }), res);
 
     expect(res.statusCode).toBe(200);
-    expect(res.headers["cache-control"]).toBe(UNVERIFIED_CACHE);
+    expect(res.headers["cache-control"]).toBe(IMMUTABLE_CACHE);
+    expect(res.headers["content-type"]).toBe("text/plain");
+  });
+
+  test("fails closed (502) when a multi-block CID cannot be fetched verified", async () => {
+    // The default beforeEach mock throws — and there must be NO downgrade to
+    // an unverified flat gateway fetch, so the gateways are never contacted.
+    const dagPbCid = "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG";
+    let gatewayFetched = false;
+    globalThis.fetch = (async () => {
+      gatewayFetched = true;
+      return new Response("unverified bytes", { status: 200 });
+    }) as unknown as typeof fetch;
+
+    const res = mockRes();
+    await call(mockReq({ cid: dagPbCid }), res);
+
+    expect(res.statusCode).toBe(502);
+    expect(gatewayFetched).toBe(false);
+    expect(res.headers["cache-control"]).toBe(FAILURE_CACHE);
+  });
+
+  test("does not write multi-block content to the durable cache", async () => {
+    const dagPbCid = "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG";
+    let verifiedCalls = 0;
+    setVerifiedFetchForTests(async () => {
+      verifiedCalls++;
+      return new Response("big verified content", { status: 200, headers: { "content-type": "text/plain" } });
+    });
+
+    await call(mockReq({ cid: dagPbCid }), mockRes());
+    await flushBackgroundTasksForTests();
+
+    // A second read must fetch again: nothing was persisted to Blob (file
+    // bytes of a dag-pb object cannot be re-verified on read).
+    await call(mockReq({ cid: dagPbCid }), mockRes());
+    expect(verifiedCalls).toBe(2);
   });
 
   test("falls back to the gateways when the durable cache errors (e.g. Blob outage)", async () => {

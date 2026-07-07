@@ -1,2 +1,10 @@
 packages:
-- 'packages/*'
+  - "packages/*"
+# Transitive deps of @helia/verified-fetch with install-time build scripts.
+# node-datachannel (libp2p's WebRTC transport) is statically imported by the
+# helia module graph even in our HTTP trustless-gateway-only mode, so its
+# install script must run to fetch the prebuilt binding. iso-constants ships a
+# working prebuilt fallback, so its script stays off.
+allowBuilds:
+  iso-constants: false
+  node-datachannel: true

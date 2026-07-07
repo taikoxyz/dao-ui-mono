@@ -25,6 +25,7 @@
   "dependencies": {
     "@apollo/client": "^3.13.8",
     "@aragon/ods": "workspace:*",
+    "@helia/verified-fetch": "^8.0.1",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-tabs": "^1.1.2",
     "@react-native-async-storage/async-storage": "^1.23.1",

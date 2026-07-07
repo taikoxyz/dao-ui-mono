@@ -75,8 +75,9 @@ export function setIpfsEndpointsForTests(endpoints: string[] | null) {
 // The CID read from the chain is the sha2-256 fingerprint of the content, so
 // for a bare raw single-block CID the browser can check the bytes itself
 // instead of trusting whatever the /api/ipfs proxy (or a public gateway
-// fallback) returned. Same shapes the server can verify — dag-pb roots and
-// subpaths pass through unverified (see server/ipfs/mirror.ts).
+// fallback) returned. Multi-block shapes (dag-pb roots, subpaths) pass through
+// here — the server verifies those block-by-block via verified-fetch before
+// serving them (see server/ipfs/mirror.ts).
 function parseVerifiableRawCid(path: string): CID | null {
   if (path.includes("/")) return null;
   try {
