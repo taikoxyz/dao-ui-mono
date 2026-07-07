@@ -1,5 +1,6 @@
 import { PUB_IPFS_ENDPOINTS } from "@/constants";
 import { Hex, fromHex, toBytes } from "viem";
+import { equals as bytesEqual } from "multiformats/bytes";
 import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
@@ -65,6 +66,32 @@ export async function getContentCid(strMetadata: string) {
 
 // Internal helpers
 
+let endpointsOverrideForTests: string[] | null = null;
+
+export function setIpfsEndpointsForTests(endpoints: string[] | null) {
+  endpointsOverrideForTests = endpoints;
+}
+
+// The CID read from the chain is the sha2-256 fingerprint of the content, so
+// for a bare raw single-block CID the browser can check the bytes itself
+// instead of trusting whatever the /api/ipfs proxy (or a public gateway
+// fallback) returned. Same shapes the server can verify — dag-pb roots and
+// subpaths pass through unverified (see server/ipfs/mirror.ts).
+function parseVerifiableRawCid(path: string): CID | null {
+  if (path.includes("/")) return null;
+  try {
+    const cid = CID.parse(path);
+    return cid.code === raw.code && cid.multihash.code === sha256.code ? cid : null;
+  } catch {
+    return null;
+  }
+}
+
+async function matchesRawCid(cid: CID, bytes: Uint8Array): Promise<boolean> {
+  const digest = await sha256.digest(bytes);
+  return bytesEqual(digest.bytes, cid.multihash.bytes);
+}
+
 async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
   if (!ipfsUri) throw new Error("Invalid IPFS URI");
   else if (ipfsUri.startsWith("0x")) {
@@ -75,9 +102,10 @@ async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
   }
 
   const cid = resolvePath(ipfsUri);
+  const verifiableCid = parseVerifiableRawCid(cid);
   const deadline = Date.now() + IPFS_TOTAL_TIMEOUT;
 
-  for (const uriPrefix of IPFS_ENDPOINTS) {
+  for (const uriPrefix of endpointsOverrideForTests ?? IPFS_ENDPOINTS) {
     const remaining = deadline - Date.now();
     if (remaining <= 0) break; // overall budget spent — don't start another endpoint
 
@@ -88,7 +116,21 @@ async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
         method: "GET",
         signal: controller.signal,
       });
-      if (response.ok) return response; // .json(), .text(), .blob(), etc.
+      if (response.ok) {
+        if (!verifiableCid) return response; // .json(), .text(), .blob(), etc.
+
+        // Verify in the browser before handing the bytes to the caller. A
+        // mismatch means this endpoint served tampered or corrupted content —
+        // treat it like a failed endpoint and fall through to the next one.
+        const body = new Uint8Array(await response.arrayBuffer());
+        if (await matchesRawCid(verifiableCid, body)) {
+          return new Response(body, {
+            status: 200,
+            headers: { "content-type": response.headers.get("content-type") ?? "application/octet-stream" },
+          });
+        }
+        console.warn(`IPFS endpoint ${uriPrefix} returned bytes that do not match ${cid}; trying the next endpoint`);
+      }
     } catch {
       // Timed out or network error: fall through only if an operator has
       // explicitly configured more endpoints.
