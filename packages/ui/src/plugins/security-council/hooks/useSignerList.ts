@@ -59,7 +59,7 @@ async function getGqlSigners(): Promise<Address[]> {
       query: gql(query),
     });
 
-    if (!res.data || !res.data.signers) {
+    if (!res?.data?.signers) {
       return [];
     }
 

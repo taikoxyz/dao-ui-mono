@@ -3,6 +3,7 @@ import { Card, Tag, Button, Icon, IconType, Tabs } from "@aragon/ods";
 import { Tabs as RadixTabsRoot } from "@radix-ui/react-tabs";
 import dayjs from "dayjs";
 import { VotesDataList } from "@/components/proposalVoting/votesDataList/votesDataList";
+import { SignersPopover } from "./signers-popover";
 import type { IVote } from "@/utils/types";
 
 interface SecurityCouncilApprovalStageProps {
@@ -121,8 +122,9 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
               <div className="flex flex-col gap-3">
                 <div className="flex items-baseline justify-between">
                   <span className="font-medium text-sm text-neutral-700">Approval Progress</span>
-                  <span className="text-xs text-neutral-500">
+                  <span className="flex items-center gap-1.5 text-xs text-neutral-500">
                     {approvals} / {requiredApprovals} required
+                    <SignersPopover votes={votes} />
                   </span>
                 </div>
 
