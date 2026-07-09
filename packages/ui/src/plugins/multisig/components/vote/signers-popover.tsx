@@ -21,8 +21,10 @@ interface SignersPopoverProps {
  * switching to the Approvals tab. Rows link to the block explorer, matching the
  * Approvals tab.
  *
- * The full roster comes from the signer list; if it can't be loaded we fall back
- * to listing just the approvers.
+ * The full roster comes from the signer list. If it can't be loaded we fall back
+ * to listing just the approvers, and drop the "N/N" and pending framing — an
+ * approver subset must never be presented as a complete council with everyone
+ * signed.
  */
 export const SignersPopover: FC<SignersPopoverProps> = ({ votes }) => {
   const { address } = useAccount();
@@ -56,16 +58,20 @@ export const SignersPopover: FC<SignersPopoverProps> = ({ votes }) => {
   // Set of addresses that have approved (lower-cased for case-insensitive lookup).
   const approverSet = useMemo(() => new Set(votes.map((vote) => vote.address.toLowerCase())), [votes]);
 
-  // Full roster: the signer list when available, otherwise just the approvers.
-  // Signed members are listed first, then pending ones.
+  // Whether we actually know the council roster. When the signer list is
+  // unavailable we can only show the approvers, and must not imply that they
+  // are the whole council (which would read as "everyone has signed").
+  const hasRoster = (signerList?.length ?? 0) > 0;
+
+  // Full roster when known, otherwise just the approvers. Signed members first.
   const members = useMemo(() => {
-    const roster: Address[] = signerList?.length ? signerList : votes.map((vote) => vote.address);
+    const roster: Address[] = hasRoster ? signerList! : votes.map((vote) => vote.address);
     return [...roster].sort((a, b) => {
       const aSigned = approverSet.has(a.toLowerCase());
       const bSigned = approverSet.has(b.toLowerCase());
       return aSigned === bSigned ? 0 : aSigned ? -1 : 1;
     });
-  }, [signerList, votes, approverSet]);
+  }, [hasRoster, signerList, votes, approverSet]);
 
   const signedCount = useMemo(
     () => members.filter((member) => approverSet.has(member.toLowerCase())).length,
@@ -105,7 +111,7 @@ export const SignersPopover: FC<SignersPopoverProps> = ({ votes }) => {
           className="absolute right-0 top-6 z-20 flex w-64 flex-col gap-1 rounded-xl border border-neutral-100 bg-neutral-0 p-2 shadow-neutral-sm"
         >
           <p className="px-2 py-1 text-xs font-semibold text-neutral-500">
-            Signers · {signedCount}/{members.length}
+            {hasRoster ? `Signers · ${signedCount}/${members.length}` : `Approved by ${members.length}`}
           </p>
           <ul className="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
             {members.map((member, index) => {
