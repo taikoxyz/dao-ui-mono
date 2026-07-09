@@ -4,7 +4,7 @@ import { Tabs as RadixTabsRoot } from "@radix-ui/react-tabs";
 import dayjs from "dayjs";
 import { VotesDataList } from "@/components/proposalVoting/votesDataList/votesDataList";
 import { SignersPopover } from "./signers-popover";
-import { useSignerList } from "@/plugins/security-council/hooks/useSignerList";
+import { useSignerListLength } from "@/plugins/security-council/hooks/useSignerList";
 import type { IVote } from "@/utils/types";
 
 interface SecurityCouncilApprovalStageProps {
@@ -47,11 +47,12 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
   const progressPercentage = (approvals / requiredApprovals) * 100;
   const thresholdReached = approvals >= requiredApprovals;
 
-  // Council size comes from the signer list rather than a hardcoded constant, so
-  // the share of members the threshold represents stays correct as the council
-  // changes size. Undefined while loading, in which case the share is omitted.
-  const { data: signerList } = useSignerList();
-  const totalMembers = signerList?.length ?? 0;
+  // Council size is read from the chain at the proposal's snapshot block, not
+  // from a hardcoded constant and not from the (lagging) subgraph. requiredApprovals
+  // is the snapshot-time minApprovals, so the denominator must be the council as
+  // it was at that same block. Undefined while loading; the share is then omitted.
+  const { data: councilSize } = useSignerListLength(snapshotBlock ? BigInt(snapshotBlock) : undefined);
+  const totalMembers = councilSize !== undefined ? Number(councilSize) : 0;
   const thresholdShare =
     totalMembers > 0 ? Math.round((requiredApprovals / totalMembers) * 1000) / 10 : undefined;
 
