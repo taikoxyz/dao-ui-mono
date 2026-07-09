@@ -29,7 +29,9 @@ export async function getGqlProposalMultiple(
     }
     return res.data.proposalMixins as IGqlProposalMixin[];
   } catch (e) {
+    // Rethrow so callers can tell an unreachable subgraph from an empty result.
     console.error("GQL Error:", GQL_GET_PROPOSAL_MULTIPLE, e);
+    throw e;
   }
 }
 
@@ -65,7 +67,10 @@ export async function getGqlProposalSingle(
 
     return res.data.proposalMixins[0] as IGqlProposalMixin;
   } catch (e) {
+    // Rethrow so callers can tell an unreachable subgraph from a genuine
+    // not-found; both previously rendered as an indistinguishable empty state.
     console.error("GQL Error:", e);
+    throw e;
   }
 }
 
@@ -99,6 +104,9 @@ export async function getRelatedProposalTo(
 
     return res.data.proposalMixins[0] as IGqlProposalMixin;
   } catch (e) {
+    // Rethrow so callers can tell an unreachable subgraph from a genuine
+    // not-found; both previously rendered as an indistinguishable empty state.
     console.error("GQL Error:", e);
+    throw e;
   }
 }
