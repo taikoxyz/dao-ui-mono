@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { AlertInline, Button, Spinner } from "@aragon/ods";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
-import { decodeFunctionData, type Hex } from "viem";
+import { type Hex } from "viem";
 import { useAccount, useSwitchChain } from "wagmi";
 import { PUB_TAIKO_BRIDGE_ADDRESS, TAIKO_L2_CHAIN_ID } from "@/constants";
 import { useWalletChainPolicy } from "@/context/WalletChainPolicy";
 import { useL2AnchorSync } from "@/hooks/useL2AnchorSync";
 import { useL2LegExecution } from "@/hooks/useL2LegExecution";
-import { shouldRenderL2ExecutionCard } from "@/utils/l2-execution";
+import { hasL2LegFromActions, shouldRenderL2ExecutionCard } from "@/utils/l2-execution";
 import { type RawAction } from "@/utils/types";
 
 interface ProposalL2ExecutionProps {
@@ -15,58 +15,6 @@ interface ProposalL2ExecutionProps {
   executed: boolean;
   executorTxHash?: string;
   executionBlockNumber?: number;
-}
-
-// The Taiko bridge `Message` struct, mirrored from the MessageSent event so the
-// derived `sendMessage` selector matches on-chain calldata exactly.
-const bridgeMessageComponents = [
-  { name: "id", type: "uint64" },
-  { name: "fee", type: "uint64" },
-  { name: "gasLimit", type: "uint32" },
-  { name: "from", type: "address" },
-  { name: "srcChainId", type: "uint64" },
-  { name: "srcOwner", type: "address" },
-  { name: "destChainId", type: "uint64" },
-  { name: "destOwner", type: "address" },
-  { name: "to", type: "address" },
-  { name: "value", type: "uint256" },
-  { name: "data", type: "bytes" },
-] as const;
-
-const bridgeSendMessageAbi = [
-  {
-    type: "function",
-    name: "sendMessage",
-    stateMutability: "payable",
-    inputs: [{ name: "_message", type: "tuple", components: bridgeMessageComponents }],
-    outputs: [
-      { name: "msgHash_", type: "bytes32" },
-      { name: "message_", type: "tuple", components: bridgeMessageComponents },
-    ],
-  },
-] as const;
-
-// A cross-chain L2 leg is specifically a `sendMessage` call to the bridge
-// destined for Taiko L2 — the thing that emits MessageSent and needs a follow-up
-// L2 execution. Merely targeting the bridge (e.g. L1-only governance on the
-// bridge itself) or having the bridge address appear somewhere in calldata does
-// NOT require an L2 execution, so those must not be flagged.
-function isBridgeL2Send(action: RawAction): boolean {
-  if (!PUB_TAIKO_BRIDGE_ADDRESS) return false;
-  if (action.to.toLowerCase() !== PUB_TAIKO_BRIDGE_ADDRESS.toLowerCase()) return false;
-  try {
-    const { functionName, args } = decodeFunctionData({ abi: bridgeSendMessageAbi, data: action.data });
-    if (functionName !== "sendMessage") return false;
-    const message = args[0] as { destChainId: bigint };
-    return Number(message.destChainId) === TAIKO_L2_CHAIN_ID;
-  } catch {
-    // Not a sendMessage call (e.g. a governance call on the bridge) — no L2 leg.
-    return false;
-  }
-}
-
-function hasL2LegFromActions(actions: RawAction[]): boolean {
-  return actions.some(isBridgeL2Send);
 }
 
 export function ProposalL2Execution({
@@ -83,8 +31,8 @@ export function ProposalL2Execution({
   const l1BlockNumber = executionBlockNumber ? BigInt(executionBlockNumber) : undefined;
   const l1TxHash = executorTxHash as Hex | undefined;
 
-  // Pre-execution detection: check action data for bridge address
-  const detectedFromActions = hasL2LegFromActions(actions);
+  // Pre-execution detection: a real sendMessage(...) call to the bridge, bound for Taiko L2
+  const detectedFromActions = hasL2LegFromActions(actions, PUB_TAIKO_BRIDGE_ADDRESS, TAIKO_L2_CHAIN_ID);
 
   // For executed proposals, always try anchor sync + message extraction
   // (actions may be cleared from the contract after execution)
