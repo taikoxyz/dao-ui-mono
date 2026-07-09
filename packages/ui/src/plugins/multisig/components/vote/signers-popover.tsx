@@ -29,7 +29,7 @@ export const SignersPopover: FC<SignersPopoverProps> = ({ votes }) => {
   const { data: signerList } = useSignerList();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Dismiss on outside pointer / Escape — needed for the tap-to-open (mobile) path.
   useEffect(() => {
