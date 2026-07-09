@@ -29,8 +29,15 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal, 
     isTimelockPeriod,
     l2GracePeriodEnd,
     timelockPeriodEnd,
+    governanceSettingsLoaded,
   } = useProposalStatus(proposal);
-  const phaseTag = getPhaseTag({ status: proposalStatus, isEmergency, isL2GracePeriod, isTimelockPeriod });
+  const phaseTag = getPhaseTag({
+    status: proposalStatus,
+    isEmergency,
+    isL2GracePeriod,
+    isTimelockPeriod,
+    governanceSettingsLoaded,
+  });
 
   const breadcrumbs: IBreadcrumbsLink[] = [{ label: "Proposals", href: "#/" }, { label: proposalIdx.toString() }];
 
