@@ -1,11 +1,10 @@
 import { AvatarIcon, Breadcrumbs, Heading, IBreadcrumbsLink, IconType, ProposalStatus, Tag } from "@aragon/ods";
 import { OptimisticProposal } from "@/plugins/optimistic-proposals/utils/types";
 import { useProposalStatus } from "@/plugins/optimistic-proposals/hooks/useProposalVariantStatus";
+import { getPhaseTag } from "@/plugins/optimistic-proposals/utils/proposal-phase-tag";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { getShortTimeDiffFrom } from "@/utils/dates";
 import { HeaderSection } from "@/components/layout/header-section";
-import { getTagVariantFromStatus } from "@/utils/ui-variants";
-import { capitalizeFirstLetter } from "@/utils/text";
 import { Publisher } from "@/components/publisher";
 import { Address, isAddressEqual } from "viem";
 import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
@@ -30,8 +29,15 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal, 
     isTimelockPeriod,
     l2GracePeriodEnd,
     timelockPeriodEnd,
+    governanceSettingsLoaded,
   } = useProposalStatus(proposal);
-  const tagVariant = getTagVariantFromStatus(proposalStatus);
+  const phaseTag = getPhaseTag({
+    status: proposalStatus,
+    isEmergency,
+    isL2GracePeriod,
+    isTimelockPeriod,
+    governanceSettingsLoaded,
+  });
 
   const breadcrumbs: IBreadcrumbsLink[] = [{ label: "Proposals", href: "#/" }, { label: proposalIdx.toString() }];
 
@@ -52,7 +58,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal, 
         <div className="flex w-full flex-col gap-y-2">
           <div className="flex w-full items-center gap-x-4">
             <Heading size="h1">{proposal.title ?? DEFAULT_PROPOSAL_TITLE}</Heading>
-            {proposalStatus && <Tag label={capitalizeFirstLetter(proposalStatus)} variant={tagVariant} />}
+            {proposalStatus && <Tag label={phaseTag.label} variant={phaseTag.variant} />}
           </div>
           <div className="flex w-full items-center gap-x-4">
             {isEmergency && <Tag label="Emergency Proposal" variant="critical" />}
@@ -94,7 +100,7 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal, 
                   <span className="text-neutral-500">The veto period is over</span>
                 </ElseIf>
                 <Else>
-                  <span className="text-neutral-500">Active for </span>
+                  <span className="text-neutral-500">Voting ends in </span>
                   <span className="text-neutral-800">
                     {getShortTimeDiffFrom(proposal.parameters.vetoEndDate * 1000n)}
                   </span>

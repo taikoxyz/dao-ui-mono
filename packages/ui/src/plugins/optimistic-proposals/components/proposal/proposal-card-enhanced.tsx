@@ -3,6 +3,7 @@ import { useProposalVeto } from "@/plugins/optimistic-proposals/hooks/useProposa
 import { Card, ProposalStatus, Tag, Icon, IconType } from "@aragon/ods";
 import { PleaseWaitSpinner } from "@/components/please-wait";
 import { useProposalStatus } from "../../hooks/useProposalVariantStatus";
+import { getPhaseIcon, getPhaseTag } from "../../utils/proposal-phase-tag";
 import { isAddressEqual, zeroAddress } from "viem";
 import { usePastSupply } from "../../hooks/usePastSupply";
 import { PUB_EMERGENCY_MULTISIG_PLUGIN_ADDRESS, PUB_MULTISIG_PLUGIN_ADDRESS } from "@/constants";
@@ -26,7 +27,21 @@ export default function EnhancedProposalCard(props: ProposalInputs) {
 
   const pastSupply = usePastSupply(proposal?.parameters.snapshotTimestamp ?? BigInt(0));
 
-  const { status: proposalStatus } = useProposalStatus(proposal);
+  const {
+    status: proposalStatus,
+    isEmergency: isZeroVetoWindow,
+    isL2GracePeriod,
+    isTimelockPeriod,
+    governanceSettingsLoaded,
+  } = useProposalStatus(proposal);
+  const phaseTag = getPhaseTag({
+    status: proposalStatus,
+    isEmergency: isZeroVetoWindow,
+    isL2GracePeriod,
+    isTimelockPeriod,
+    governanceSettingsLoaded,
+  });
+  const phaseIcon = getPhaseIcon(phaseTag.variant);
   const showLoading = getShowProposalLoading(proposal, proposalFetchStatus);
   const prefix = props.linkPrefix ? props.linkPrefix + "/" : "";
 
@@ -74,21 +89,6 @@ export default function EnhancedProposalCard(props: ProposalInputs) {
     return null;
   };
 
-  const getStatusIcon = () => {
-    switch (proposalStatus) {
-      case ProposalStatus.VETOED:
-        return <Icon icon={IconType.CLOSE} size="sm" className="text-critical-600" />;
-      case ProposalStatus.ACCEPTED:
-        return <Icon icon={IconType.CHECKMARK} size="sm" className="text-success-600" />;
-      case ProposalStatus.EXECUTED:
-        return <Icon icon={IconType.CHECKMARK} size="sm" className="text-neutral-600" />;
-      case ProposalStatus.ACTIVE:
-        return <Icon icon={IconType.CLOCK} size="sm" className="text-primary-600" />;
-      default:
-        return <Icon icon={IconType.CLOCK} size="sm" className="text-neutral-400" />;
-    }
-  };
-
   const endDate = proposal?.parameters.vetoEndDate ? Number(proposal.parameters.vetoEndDate) * 1000 : undefined;
   const timeRemaining = endDate && proposalStatus === ProposalStatus.ACTIVE ? dayjs(endDate).fromNow(true) : null;
 
@@ -122,31 +122,8 @@ export default function EnhancedProposalCard(props: ProposalInputs) {
               <span className="text-sm text-neutral-500">#{props.proposalIndex}</span>
             </div>
             <div className="flex items-center gap-2">
-              {getStatusIcon()}
-              <Tag
-                variant={
-                  proposalStatus === ProposalStatus.VETOED
-                    ? "critical"
-                    : proposalStatus === ProposalStatus.ACCEPTED
-                      ? "success"
-                      : proposalStatus === ProposalStatus.EXECUTED
-                        ? "neutral"
-                        : proposalStatus === ProposalStatus.ACTIVE
-                          ? "primary"
-                          : "neutral"
-                }
-                label={
-                  proposalStatus === ProposalStatus.VETOED
-                    ? "Vetoed"
-                    : proposalStatus === ProposalStatus.ACCEPTED
-                      ? "Passed"
-                      : proposalStatus === ProposalStatus.EXECUTED
-                        ? "Executed"
-                        : proposalStatus === ProposalStatus.ACTIVE
-                          ? "Active"
-                          : "Pending"
-                }
-              />
+              <Icon icon={phaseIcon.icon} size="sm" className={phaseIcon.className} />
+              <Tag variant={phaseTag.variant} label={phaseTag.label} />
             </div>
           </div>
         </div>
