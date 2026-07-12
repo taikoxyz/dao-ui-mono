@@ -1,6 +1,6 @@
 import { type useProposal } from "@/plugins/multisig/hooks/useProposal";
 import ProposalHeader from "@/plugins/multisig/components/proposal/header";
-import { PleaseWaitSpinner } from "@/components/please-wait";
+import { Spinner } from "@aragon/ods";
 import { useProposalApprove } from "@/plugins/multisig/hooks/useProposalApprove";
 import { useProposalExecute } from "@/plugins/multisig/hooks/useProposalExecute";
 import { BodySection } from "@/components/proposal/proposalBodySection";
@@ -123,8 +123,9 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
 
   if (!proposal || showProposalLoading) {
     return (
-      <section className="justify-left items-left flex w-screen min-w-full max-w-full">
-        <PleaseWaitSpinner />
+      <section className="flex min-h-[60vh] w-full flex-col items-center justify-center gap-y-4">
+        <Spinner size="xl" variant="neutral" />
+        <p className="text-neutral-500">Loading proposal…</p>
       </section>
     );
   }

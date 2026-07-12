@@ -24,11 +24,14 @@ export async function getGqlProposalMultiple(
     });
 
     if (!res.data || !res.data.proposalMixins || !res.data.proposalMixins.length) {
-      throw new Error("No proposalMixins found");
+      // Empty result is a valid "no proposals" state, not an error.
+      return [];
     }
     return res.data.proposalMixins as IGqlProposalMixin[];
   } catch (e) {
+    // Rethrow so callers can tell an unreachable subgraph from an empty result.
     console.error("GQL Error:", GQL_GET_PROPOSAL_MULTIPLE, e);
+    throw e;
   }
 }
 
@@ -55,12 +58,19 @@ export async function getGqlProposalSingle(
     });
 
     if (!res.data || !res.data.proposalMixins || !res.data.proposalMixins.length) {
-      throw new Error("No proposalMixins found");
+      // No match is a normal "not found" state (e.g. a nonexistent proposal id,
+      // or an optimistic proposal with no related Security Council proposal),
+      // not an error. Return undefined so callers can render a not-found state
+      // instead of surfacing a runtime error.
+      return undefined;
     }
 
     return res.data.proposalMixins[0] as IGqlProposalMixin;
   } catch (e) {
+    // Rethrow so callers can tell an unreachable subgraph from a genuine
+    // not-found; both previously rendered as an indistinguishable empty state.
     console.error("GQL Error:", e);
+    throw e;
   }
 }
 
@@ -85,11 +95,18 @@ export async function getRelatedProposalTo(
     });
 
     if (!res.data || !res.data.proposalMixins || !res.data.proposalMixins.length) {
-      throw new Error("No proposalMixins found");
+      // No match is a normal "not found" state (e.g. a nonexistent proposal id,
+      // or an optimistic proposal with no related Security Council proposal),
+      // not an error. Return undefined so callers can render a not-found state
+      // instead of surfacing a runtime error.
+      return undefined;
     }
 
     return res.data.proposalMixins[0] as IGqlProposalMixin;
   } catch (e) {
+    // Rethrow so callers can tell an unreachable subgraph from a genuine
+    // not-found; both previously rendered as an indistinguishable empty state.
     console.error("GQL Error:", e);
+    throw e;
   }
 }
