@@ -24,16 +24,10 @@ export function useUserCanApprove(proposalId: string | bigint | number) {
   });
 
   useEffect(() => {
-    // refetch() bypasses `enabled`, so without this guard a disconnected visitor
-    // fires a read with an undefined address every other block, which always errors
-    if (!address) return;
     if (Number(blockNumber) % 2 === 0) {
       refetch();
     }
-  }, [address, blockNumber, refetch]);
-
-  // No wallet is a settled "cannot approve", not an undetermined eligibility
-  if (!address) return { canApprove: false, isFetching: false, error: null, refetch };
+  }, [blockNumber, refetch]);
 
   return { canApprove, isFetching, error, refetch };
 }
