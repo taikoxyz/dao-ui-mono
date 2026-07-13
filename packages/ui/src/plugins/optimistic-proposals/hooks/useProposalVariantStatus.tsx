@@ -91,6 +91,12 @@ export const useProposalStatus = (proposal: OptimisticProposal | null) => {
   const isEmergency = !!proposal && proposal.parameters.vetoStartDate === proposal.parameters.vetoEndDate;
   const isPastEndDate = !!proposal && proposal.parameters.vetoEndDate * 1000n < Date.now();
 
+  // Both periods come from the same contract read, so they resolve together.
+  // Until they do, the window booleans below collapse to false and callers must
+  // not read that as "past the timelock" — see getPhaseTag.
+  const governanceSettingsLoaded =
+    governanceSettings.timelockPeriod !== undefined && governanceSettings.l2AggregationGracePeriod !== undefined;
+
   let isL2GracePeriod = false;
   let isTimelockPeriod = false;
   let l2GracePeriodEnd = 0n;
@@ -129,5 +135,6 @@ export const useProposalStatus = (proposal: OptimisticProposal | null) => {
     isPastEndDate,
     l2GracePeriodEnd,
     timelockPeriodEnd,
+    governanceSettingsLoaded,
   };
 };

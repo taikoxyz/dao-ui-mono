@@ -20,10 +20,9 @@ export function useGqlProposalMultiple({
 
     try {
       const result = await getGqlProposalMultiple(isStandard, isEmergency, isOptimistic);
-      if (!result || result.length === 0) {
-        throw new Error("No proposals found");
-      }
-      setData(result);
+      // An empty list is a valid "no proposals" state, not an error. A genuine
+      // subgraph failure now rejects and is caught below.
+      setData(result ?? []);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       setError(errorMessage);
