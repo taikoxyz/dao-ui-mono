@@ -120,4 +120,21 @@ describe("fetchIpfsAsJson client-side verification", () => {
     expect(data.title).toBe("big proposal");
     expect(calledUrls).toHaveLength(1);
   });
+
+  test("does not trust public-gateway fallbacks for dag-pb roots", async () => {
+    const dagPbCid = "bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi";
+    const calledUrls: string[] = [];
+    setIpfsEndpointsForTests(["/api/ipfs", "https://gateway.example/ipfs"]);
+    globalThis.fetch = (async (input: unknown) => {
+      calledUrls.push(String(input));
+      return calledUrls.length === 1
+        ? new Response(null, { status: 502 })
+        : jsonResponse(JSON.stringify({ title: "unverified" }));
+    }) as unknown as typeof fetch;
+
+    await expect(fetchIpfsAsJson(`ipfs://${dagPbCid}`)).rejects.toThrow(
+      "Could not connect to any of the IPFS endpoints"
+    );
+    expect(calledUrls).toEqual([`/api/ipfs/${dagPbCid}`]);
+  });
 });

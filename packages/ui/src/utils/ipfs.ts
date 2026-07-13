@@ -8,8 +8,9 @@ import { sha256 } from "multiformats/hashes/sha2";
 // Read endpoints, tried in order: the same-origin /api/ipfs proxy (Blob + CDN
 // backed) first, then any public-gateway prefixes from NEXT_PUBLIC_IPFS_ENDPOINTS
 // as a last-resort fallback for the rare case our origin is unavailable.
+const SAME_ORIGIN_IPFS_ENDPOINT = "/api/ipfs";
 const IPFS_ENDPOINTS = [
-  "/api/ipfs",
+  SAME_ORIGIN_IPFS_ENDPOINT,
   ...PUB_IPFS_ENDPOINTS.split(",")
     .map((endpoint) => endpoint.trim())
     .filter(Boolean),
@@ -107,6 +108,11 @@ async function fetchRawIpfs(ipfsUri: string): Promise<Response> {
   const deadline = Date.now() + IPFS_TOTAL_TIMEOUT;
 
   for (const uriPrefix of endpointsOverrideForTests ?? IPFS_ENDPOINTS) {
+    // The browser can verify bare raw sha2-256 CIDs itself. Other shapes must
+    // come from our same-origin proxy, which verifies every block server-side;
+    // never trust unverifiable bytes from a public gateway fallback.
+    if (!verifiableCid && uriPrefix !== SAME_ORIGIN_IPFS_ENDPOINT) continue;
+
     const remaining = deadline - Date.now();
     if (remaining <= 0) break; // overall budget spent — don't start another endpoint
 

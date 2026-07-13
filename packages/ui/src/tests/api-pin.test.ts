@@ -2,17 +2,20 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
-import handler from "../pages/api/pin";
+import handler, { config } from "../pages/api/pin";
 import {
   createMemoryIpfsCacheStorage,
   getCachedIpfs,
   parseIpfsPath,
   setIpfsCacheStorageForTests,
 } from "../server/ipfs/mirror";
+import { resetRateLimitForTests } from "../server/rate-limit";
 
 type MockRes = {
   statusCode: number;
   body: unknown;
+  headers: Record<string, string>;
+  setHeader: (name: string, value: string) => MockRes;
   status: (code: number) => MockRes;
   json: (payload: unknown) => MockRes;
 };
@@ -21,6 +24,11 @@ function mockRes(): MockRes {
   return {
     statusCode: 200,
     body: undefined,
+    headers: {},
+    setHeader(name: string, value: string) {
+      this.headers[name.toLowerCase()] = value;
+      return this;
+    },
     status(code: number) {
       this.statusCode = code;
       return this;
@@ -61,6 +69,7 @@ describe("/api/pin", () => {
 
   beforeEach(() => {
     setIpfsCacheStorageForTests(createMemoryIpfsCacheStorage());
+    resetRateLimitForTests();
   });
 
   afterEach(() => {
@@ -68,6 +77,15 @@ describe("/api/pin", () => {
     globalThis.fetch = originalFetch;
     if (originalJwt === undefined) delete process.env.PINATA_JWT;
     else process.env.PINATA_JWT = originalJwt;
+  });
+
+  test("allows the JSON-escaped worst case at the metadata size limit", () => {
+    const maxMetadataBytes = 2 * 1024 * 1024;
+    const serializedBytes = Buffer.byteLength(JSON.stringify({ body: "\0".repeat(maxMetadataBytes) }), "utf8");
+    const parserLimit = config.api.bodyParser.sizeLimit;
+    const parserLimitBytes = Number.parseInt(parserLimit, 10) * 1024 * 1024;
+
+    expect(parserLimitBytes).toBeGreaterThanOrEqual(serializedBytes);
   });
 
   test("attaches the server-only JWT, relays the CID, and pre-warms the durable cache", async () => {
@@ -172,6 +190,23 @@ describe("/api/pin", () => {
     await call(mockReq({ headers: { origin: "https://evil.example" } }), res);
     expect(res.statusCode).toBe(403);
     expect((res.body as { error: { reason: string } }).error.reason).toBe("FORBIDDEN");
+  });
+
+  test("rate-limits pin attempts by client IP", async () => {
+    process.env.PINATA_JWT = "server-secret-jwt";
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const res = mockRes();
+      await call(mockReq({ body: {} }), res);
+      expect(res.statusCode).toBe(400);
+    }
+
+    const res = mockRes();
+    await call(mockReq({ body: {} }), res);
+
+    expect(res.statusCode).toBe(429);
+    expect(res.headers["retry-after"]).toBe("60");
+    expect((res.body as { error: { reason: string } }).error.reason).toBe("RATE_LIMITED");
   });
 
   test("rejects requests with no Origin or Referer", async () => {

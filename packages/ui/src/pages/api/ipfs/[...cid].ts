@@ -13,8 +13,8 @@ import { clientIp, rateLimit } from "../../../server/rate-limit";
 
 // On a cold miss we race public gateways server-side; 30s is ample headroom over
 // the ~8s gateway-race cap. Warm reads come from Blob/CDN and return in well
-// under a second. The durable write runs in the background (see below), so it
-// never competes with this budget for the user-facing response.
+// under a second. Cold misses are verified and served without writing to the
+// durable cache, so they only spend this request's gateway-fetch budget.
 export const config = { maxDuration: 30 };
 
 // This endpoint is public and unauthenticated, and its cold-miss path is
