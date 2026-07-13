@@ -43,11 +43,14 @@ export function resetRateLimitForTests() {
   windows.clear();
 }
 
-// Best-effort client IP. On Vercel `x-forwarded-for` is set by the platform edge
-// and its first entry is the real client; fall back to other proxy headers, then
-// the socket. A spoofed header only lets an attacker share/rotate their own
-// bucket, which does not weaken the per-instance concurrency ceiling this guards.
+// Prefer Vercel's platform-set client IP header. Unlike `x-forwarded-for`, it is
+// not replaced by a proxy in front of Vercel and cannot be rotated by a client.
+// Keep standard proxy headers and the socket as local/non-Vercel fallbacks.
 export function clientIp(req: NextApiRequest): string {
+  const vercelForwarded = req.headers["x-vercel-forwarded-for"];
+  const vercelIp = Array.isArray(vercelForwarded) ? vercelForwarded[0] : vercelForwarded;
+  if (vercelIp) return vercelIp.split(",")[0].trim();
+
   const forwarded = req.headers["x-forwarded-for"];
   const first = Array.isArray(forwarded) ? forwarded[0] : forwarded;
   if (first) return first.split(",")[0].trim();

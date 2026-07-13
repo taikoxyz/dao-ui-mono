@@ -372,25 +372,32 @@ describe("/api/ipfs/[...cid]", () => {
     expect(res.headers["cache-control"]).toBe(IMMUTABLE_CACHE);
   });
 
-  test("rate-limits a single IP after the per-window budget is exhausted", async () => {
+  test("rate-limits the Vercel client IP even when x-forwarded-for is spoofed", async () => {
     // Keep fetch off the real network; the exact gateway outcome is irrelevant —
     // the rate limiter runs before any parse/cache/gateway work.
     mockGateway(new TextEncoder().encode("x"), "application/json");
-    const headers = { "x-forwarded-for": "203.0.113.7" };
 
     let last = mockRes();
-    // The limit is 60/min; drive well past it from one IP.
+    // The limit is 60/min. Keep Vercel's platform-set IP stable while rotating
+    // the client-controlled XFF value; all requests must share one bucket.
     for (let i = 0; i < 65; i++) {
       last = mockRes();
-      await call(mockReq({ headers }), last);
+      await call(
+        mockReq({
+          headers: {
+            "x-vercel-forwarded-for": "203.0.113.7",
+            "x-forwarded-for": `198.51.100.${i}`,
+          },
+        }),
+        last
+      );
     }
     expect(last.statusCode).toBe(429);
     expect(last.headers["retry-after"]).toBeDefined();
 
     // A different IP is unaffected.
     const other = mockRes();
-    await call(mockReq({ headers: { "x-forwarded-for": "203.0.113.8" } }), other);
+    await call(mockReq({ headers: { "x-vercel-forwarded-for": "203.0.113.8" } }), other);
     expect(other.statusCode).not.toBe(429);
   });
 });
-
