@@ -3,7 +3,6 @@ import { equals as bytesEqual } from "multiformats/bytes";
 import * as rawCodec from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
 import { head, put } from "@vercel/blob";
-import { waitUntil } from "@vercel/functions";
 
 // Public gateways raced on a cold miss. Pinata's own gateway is first: it has
 // every proposal's metadata pinned, so it resolves fast. The CID is only ever
@@ -251,74 +250,6 @@ async function verifiesRawCid(parsed: ParsedIpfsPath, body: Buffer): Promise<boo
 }
 
 // ---------------------------------------------------------------------------
-// Pin-list gate for durable writes.
-// ---------------------------------------------------------------------------
-
-const PINATA_PIN_LIST_URL = "https://api.pinata.cloud/data/pinList";
-const PIN_CHECK_TIMEOUT = 5_000;
-const PIN_CHECK_TTL_MS = 60_000;
-
-let pinnedCidCheckOverride: ((rootCid: string) => Promise<boolean>) | null = null;
-
-// Short-TTL memo of pin-list results (both hits AND misses). The read route
-// calls isPinnedCid on every verifiable cold miss, and query-string cache
-// busting (`/api/ipfs/<cid>?n=1,2,3`) bypasses the CDN, so without this a single
-// unpinned CID could be replayed to fire one authenticated Pinata pin-list call
-// per request and drain the shared account's quota. Memoizing collapses repeats
-// to one call per CID per TTL window.
-const pinnedCidMemo = new Map<string, { value: boolean; expiresAt: number }>();
-
-export function setPinnedCidCheckForTests(check: ((rootCid: string) => Promise<boolean>) | null) {
-  pinnedCidCheckOverride = check;
-}
-
-export function clearPinnedCidMemoForTests() {
-  pinnedCidMemo.clear();
-}
-
-// True only for CIDs pinned on the project's own Pinata account (i.e. real
-// proposal metadata). The read route uses this to gate lazy Blob writes:
-// verification alone proves bytes match the CID, but any attacker-pinned IPFS
-// object matches its own CID — without this gate an anonymous GET could mirror
-// arbitrary content into our public Blob store. Fails closed (not pinned) on
-// missing credentials or Pinata errors: we just skip the durable write.
-export async function isPinnedCid(rootCid: string): Promise<boolean> {
-  if (pinnedCidCheckOverride) return pinnedCidCheckOverride(rootCid);
-
-  const cached = pinnedCidMemo.get(rootCid);
-  if (cached && cached.expiresAt > Date.now()) return cached.value;
-
-  const value = await queryPinataPinned(rootCid);
-  pinnedCidMemo.set(rootCid, { value, expiresAt: Date.now() + PIN_CHECK_TTL_MS });
-  return value;
-}
-
-async function queryPinataPinned(rootCid: string): Promise<boolean> {
-  const jwt = process.env.PINATA_JWT;
-  if (!jwt) return false;
-
-  try {
-    const url = `${PINATA_PIN_LIST_URL}?status=pinned&hashContains=${encodeURIComponent(rootCid)}&pageLimit=10`;
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${jwt}` },
-      signal: AbortSignal.timeout(PIN_CHECK_TIMEOUT),
-    });
-    if (!response.ok) return false;
-    const data: unknown = await response.json();
-    const rows =
-      data && typeof data === "object" && "rows" in data && Array.isArray((data as { rows: unknown }).rows)
-        ? (data as { rows: unknown[] }).rows
-        : [];
-    // hashContains is a substring match on Pinata's side; require an exact hit.
-    return rows.some(
-      (row) => row && typeof row === "object" && (row as { ipfs_pin_hash?: unknown }).ipfs_pin_hash === rootCid
-    );
-  } catch {
-    return false;
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Gateway fetch (raced) + bounded read.
 // ---------------------------------------------------------------------------
 
@@ -371,10 +302,17 @@ export function setVerifiedFetchForTests(fn: VerifiedFetchFn | null) {
 
 // Lazy so the Helia dependency tree is only loaded (and its gateway sessions
 // only created) on the first multi-block cold miss, not on every function boot.
+// A failed construction must NOT stay memoized: caching the rejected promise
+// would make one transient import/session error permanently disable multi-block
+// reads for the whole life of the instance, so drop it and let the next request
+// retry.
 function verifiedFetch(): Promise<VerifiedFetchFn> {
-  verifiedFetchPromise ??= import("@helia/verified-fetch").then(({ createVerifiedFetch }) =>
-    createVerifiedFetch({ gateways: TRUSTLESS_GATEWAYS })
-  );
+  verifiedFetchPromise ??= import("@helia/verified-fetch")
+    .then(({ createVerifiedFetch }) => createVerifiedFetch({ gateways: TRUSTLESS_GATEWAYS }))
+    .catch((err) => {
+      verifiedFetchPromise = null;
+      throw err;
+    });
   return verifiedFetchPromise;
 }
 
@@ -472,54 +410,20 @@ export async function getCachedIpfs(parsed: ParsedIpfsPath): Promise<CachedObjec
 }
 
 // Verify + store a raw CID in the durable cache. Idempotent: a CID already
-// cached is skipped. `bytes` must already be in hand — the pin-time upload, or
-// the read route's just-fetched gateway bytes — and are re-verified against the
-// CID before the write, so a body that does not hash to its CID can never be
-// persisted.
+// cached is skipped. `bytes` must already be in hand — they come from the
+// pin-time upload, the ONLY caller — and are re-verified against the CID before
+// the write, so a body that does not hash to its CID can never be persisted.
+//
+// The read route deliberately does NOT write here. It once lazily mirrored any
+// verified cold-miss bytes, gated on the CID being on our Pinata pin list, but
+// that gate assumed only we can pin to our own account — and /api/pin accepts
+// unauthenticated pins, so an attacker could pin content, request it, and have
+// us mirror it into our public Blob store. Writes now happen only on the pin
+// path; reads rely on the immutable CDN cache instead.
 export async function warmToCache(parsed: ParsedIpfsPath, bytes: Buffer, contentType?: string): Promise<void> {
   if (!isRawSha256(parsed)) throw new Error(`CID ${parsed.cidPath} is not a directly verifiable raw sha2-256 object`);
   if (await getCachedIpfs(parsed)) return;
   if (!(await verifiesRawCid(parsed, bytes))) throw new Error(`provided bytes do not match CID ${parsed.rootCid}`);
 
   await storage().put(blobKey(parsed.rootCid), bytes, safeContentType(contentType ?? "application/octet-stream").value);
-}
-
-// ---------------------------------------------------------------------------
-// Background work: run a best-effort task (the durable write-through) AFTER the
-// response is sent, so it never adds latency to the user's read or risks a
-// maxDuration timeout with the bytes already in hand.
-// ---------------------------------------------------------------------------
-
-let backgroundCollectorForTests: Promise<unknown>[] | null = null;
-
-// Tests drive the handler directly (no Vercel request context, so `waitUntil`
-// is unavailable). Collect background tasks instead so a test can await them and
-// assert the write-through landed. Call before invoking the handler.
-export function collectBackgroundTasksForTests() {
-  backgroundCollectorForTests = [];
-}
-
-export async function flushBackgroundTasksForTests(): Promise<void> {
-  const pending = backgroundCollectorForTests ?? [];
-  backgroundCollectorForTests = [];
-  await Promise.allSettled(pending);
-}
-
-export function runInBackground(task: Promise<unknown>): void {
-  // Swallow errors so a best-effort warm failure can never surface as an
-  // unhandled rejection (which would crash the runtime, or fail a test that
-  // never awaited it).
-  const guarded = task.catch(() => undefined);
-  if (backgroundCollectorForTests) {
-    backgroundCollectorForTests.push(guarded);
-    return;
-  }
-  // Hand the task to Vercel's waitUntil to keep the function alive until it
-  // settles, without delaying the response that was already sent.
-  try {
-    waitUntil(guarded);
-  } catch {
-    // Outside a Vercel request context (local dev): plain fire-and-forget.
-    void guarded;
-  }
 }

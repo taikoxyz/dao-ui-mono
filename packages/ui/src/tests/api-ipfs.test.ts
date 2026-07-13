@@ -4,16 +4,11 @@ import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
 import handler from "../pages/api/ipfs/[...cid]";
 import {
-  clearPinnedCidMemoForTests,
-  collectBackgroundTasksForTests,
   createMemoryIpfsCacheStorage,
   FAILURE_CACHE,
-  flushBackgroundTasksForTests,
   IMMUTABLE_CACHE,
-  isPinnedCid,
   parseIpfsPath,
   setIpfsCacheStorageForTests,
-  setPinnedCidCheckForTests,
   setVerifiedFetchForTests,
   warmToCache,
 } from "../server/ipfs/mirror";
@@ -94,12 +89,6 @@ describe("/api/ipfs/[...cid]", () => {
 
   beforeEach(() => {
     setIpfsCacheStorageForTests(createMemoryIpfsCacheStorage());
-    // Durable writes are gated on the CID being pinned on our Pinata account;
-    // default to "pinned" so the write-through tests exercise the happy path.
-    setPinnedCidCheckForTests(async () => true);
-    // The write-through now runs in the background; collect the tasks so tests
-    // can await them before asserting the durable cache landed.
-    collectBackgroundTasksForTests();
     // Fail loudly if a test reaches the multi-block path without mocking it —
     // the real implementation would dial live trustless gateways.
     setVerifiedFetchForTests(async () => {
@@ -110,9 +99,7 @@ describe("/api/ipfs/[...cid]", () => {
 
   afterEach(() => {
     setIpfsCacheStorageForTests(null);
-    setPinnedCidCheckForTests(null);
     setVerifiedFetchForTests(null);
-    clearPinnedCidMemoForTests();
     resetRateLimitForTests();
     globalThis.fetch = originalFetch;
   });
@@ -138,47 +125,52 @@ describe("/api/ipfs/[...cid]", () => {
     expect((res.body as Buffer).toString("utf8")).toBe(payload);
   });
 
-  test("on a cold miss, races gateways, serves, and writes through so the next read is cached", async () => {
+  test("on a cold miss, races the gateways and serves the verified bytes", async () => {
     const payload = JSON.stringify({ hello: "world" });
     const body = new TextEncoder().encode(payload);
     const cid = await cidForBytes(body);
     const gatewayCalls = mockGateway(body, "application/json");
 
-    const first = mockRes();
-    await call(mockReq({ cid }), first);
-    expect(first.statusCode).toBe(200);
-    expect(first.headers["cache-control"]).toBe(IMMUTABLE_CACHE);
-    expect((first.body as Buffer).toString("utf8")).toBe(payload);
-    expect(gatewayCalls()).toBeGreaterThan(0);
-    // Let the background write-through complete before the next read.
-    await flushBackgroundTasksForTests();
+    const res = mockRes();
+    await call(mockReq({ cid }), res);
 
-    // Second read is served from the durable cache — no further gateway calls.
-    const callsAfterFirst = gatewayCalls();
-    const second = mockRes();
-    await call(mockReq({ cid }), second);
-    expect(second.statusCode).toBe(200);
-    expect(gatewayCalls()).toBe(callsAfterFirst);
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["cache-control"]).toBe(IMMUTABLE_CACHE);
+    expect((res.body as Buffer).toString("utf8")).toBe(payload);
+    expect(gatewayCalls()).toBeGreaterThan(0);
   });
 
-  test("serves an unpinned CID but never writes it to the durable cache", async () => {
-    setPinnedCidCheckForTests(async () => false);
+  test("a GET never writes to the durable cache, so anonymous reads cannot mirror bytes into Blob", async () => {
+    // The read route is read-only. It once lazily warmed Blob on a cold miss,
+    // gated on the CID being on our Pinata pin list — but /api/pin takes
+    // unauthenticated pins, so an attacker could pin their own content and then
+    // GET it to have us persist it. Writes now happen only on the pin path.
     const body = new TextEncoder().encode(JSON.stringify({ attacker: "pinned this themselves" }));
     const cid = await cidForBytes(body);
     const gatewayCalls = mockGateway(body, "application/json");
 
+    let writes = 0;
+    const memory = createMemoryIpfsCacheStorage();
+    setIpfsCacheStorageForTests({
+      get: (key) => memory.get(key),
+      put: (key, value, contentType) => {
+        writes++;
+        return memory.put(key, value, contentType);
+      },
+    });
+
     const first = mockRes();
     await call(mockReq({ cid }), first);
     expect(first.statusCode).toBe(200);
-    // Drain the background warm attempt (a no-op here, since the CID is unpinned).
-    await flushBackgroundTasksForTests();
-    const callsAfterFirst = gatewayCalls();
+    expect(writes).toBe(0);
 
-    // Not persisted: the second read must hit the gateways again.
+    // Nothing was persisted, so a second read must hit the gateways again.
+    const callsAfterFirst = gatewayCalls();
     const second = mockRes();
     await call(mockReq({ cid }), second);
     expect(second.statusCode).toBe(200);
     expect(gatewayCalls()).toBeGreaterThan(callsAfterFirst);
+    expect(writes).toBe(0);
   });
 
   test("serves a multi-block (dag-pb) CID through verified-fetch with the immutable header", async () => {
@@ -249,7 +241,6 @@ describe("/api/ipfs/[...cid]", () => {
     });
 
     await call(mockReq({ cid: dagPbCid }), mockRes());
-    await flushBackgroundTasksForTests();
 
     // A second read must fetch again: nothing was persisted to Blob (file
     // bytes of a dag-pb object cannot be re-verified on read).
@@ -403,77 +394,3 @@ describe("/api/ipfs/[...cid]", () => {
   });
 });
 
-describe("isPinnedCid (Pinata pin-list gate)", () => {
-  const originalFetch = globalThis.fetch;
-  const originalJwt = process.env.PINATA_JWT;
-
-  beforeEach(() => {
-    // Exercise the REAL implementation, not the test override.
-    setPinnedCidCheckForTests(null);
-    clearPinnedCidMemoForTests();
-    process.env.PINATA_JWT = "test-jwt";
-  });
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-    clearPinnedCidMemoForTests();
-    if (originalJwt === undefined) delete process.env.PINATA_JWT;
-    else process.env.PINATA_JWT = originalJwt;
-  });
-
-  function mockPinList(rows: unknown[], status = 200) {
-    globalThis.fetch = (async () =>
-      new Response(JSON.stringify({ rows }), {
-        status,
-        headers: { "content-type": "application/json" },
-      })) as unknown as typeof fetch;
-  }
-
-  test("true only on an exact ipfs_pin_hash match", async () => {
-    mockPinList([{ ipfs_pin_hash: VALID_CID }]);
-    expect(await isPinnedCid(VALID_CID)).toBe(true);
-  });
-
-  test("false when only a substring matches (Pinata hashContains is a substring search)", async () => {
-    mockPinList([{ ipfs_pin_hash: `${VALID_CID}extrasuffix` }]);
-    expect(await isPinnedCid(VALID_CID)).toBe(false);
-  });
-
-  test("fails closed on a non-200 response", async () => {
-    mockPinList([{ ipfs_pin_hash: VALID_CID }], 500);
-    expect(await isPinnedCid(VALID_CID)).toBe(false);
-  });
-
-  test("fails closed when the request throws", async () => {
-    globalThis.fetch = (async () => {
-      throw new Error("network down");
-    }) as unknown as typeof fetch;
-    expect(await isPinnedCid(VALID_CID)).toBe(false);
-  });
-
-  test("false when PINATA_JWT is not configured", async () => {
-    delete process.env.PINATA_JWT;
-    let fetched = false;
-    globalThis.fetch = (async () => {
-      fetched = true;
-      return new Response("{}", { status: 200 });
-    }) as unknown as typeof fetch;
-    expect(await isPinnedCid(VALID_CID)).toBe(false);
-    expect(fetched).toBe(false);
-  });
-
-  test("memoizes within the TTL so repeat lookups make one Pinata call", async () => {
-    let calls = 0;
-    globalThis.fetch = (async () => {
-      calls++;
-      return new Response(JSON.stringify({ rows: [{ ipfs_pin_hash: VALID_CID }] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as unknown as typeof fetch;
-
-    expect(await isPinnedCid(VALID_CID)).toBe(true);
-    expect(await isPinnedCid(VALID_CID)).toBe(true);
-    expect(calls).toBe(1);
-  });
-});

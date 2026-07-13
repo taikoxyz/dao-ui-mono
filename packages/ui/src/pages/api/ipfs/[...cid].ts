@@ -5,13 +5,9 @@ import {
   FAILURE_CACHE,
   getCachedIpfs,
   ipfsResponseHeaders,
-  isPinnedCid,
   isRawSha256,
   parseIpfsPath,
-  runInBackground,
-  warmToCache,
   type CachedObject,
-  type ParsedIpfsPath,
 } from "../../../server/ipfs/mirror";
 import { clientIp, rateLimit } from "../../../server/rate-limit";
 
@@ -39,14 +35,17 @@ const IPFS_RATE_WINDOW_MS = 60_000;
  *    content (dag-pb DAGs, subpaths) goes through verified-fetch, which checks
  *    every block of the DAG. Either way the response earns the 1-year immutable
  *    header. A fetch that cannot be verified fails closed with a 502.
- * 3. Write verified raw bytes back to the durable cache (lazy self-heal) — but
- *    only for CIDs pinned on the project's Pinata account, so anonymous GETs
- *    cannot mirror arbitrary attacker-pinned IPFS content into our public Blob
- *    store. (Multi-block content is not durably cached: its file bytes cannot
- *    be re-verified on read, so it relies on the CDN instead.)
  *
- * New proposals are pre-warmed at pin time, so a cold miss here is the rare
- * fallback, not the common path.
+ * This route is READ-ONLY: it never writes to the durable Blob cache. It used to
+ * mirror verified cold-miss bytes back, gated on the CID appearing on our Pinata
+ * pin list — but /api/pin accepts unauthenticated pins, so that gate did not
+ * actually prove we chose the content: an attacker could pin their own bytes via
+ * /api/pin, GET them here, and have us persist them into our public Blob store.
+ * Durable writes now happen only on the (authenticated-by-nothing-yet, but
+ * deliberate) pin path; a cold miss here simply serves verified bytes and leans
+ * on the immutable CDN cache, which already collapses repeat reads.
+ *
+ * New proposals are pre-warmed at pin time, so a cold miss is the rare fallback.
  */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET" && req.method !== "HEAD") {
@@ -82,26 +81,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const rawBlock = isRawSha256(parsed);
-    const fetched = rawBlock ? await fetchFromGateways(parsed) : await fetchVerifiedDag(parsed);
-
-    // Serve the bytes we already have in hand immediately. Persisting them so the
-    // next read (any user, any region) hits Blob/CDN instead of a gateway is
-    // genuinely best-effort — it runs AFTER the response, so a slow pin-check or
-    // Blob write can never delay the user or push us past maxDuration with the
-    // bytes unserved. Gated to CIDs our Pinata account actually pinned, so
-    // anonymous GETs cannot mirror attacker-pinned content into our Blob store.
+    const fetched = isRawSha256(parsed) ? await fetchFromGateways(parsed) : await fetchVerifiedDag(parsed);
     serve(req, res, fetched);
-    if (rawBlock) runInBackground(warmIfPinned(parsed, fetched));
   } catch {
     res.setHeader("Cache-Control", FAILURE_CACHE);
     res.status(502).json({ error: { reason: "IPFS_UNAVAILABLE", details: "Could not retrieve content from IPFS" } });
-  }
-}
-
-async function warmIfPinned(parsed: ParsedIpfsPath, fetched: CachedObject): Promise<void> {
-  if (await isPinnedCid(parsed.rootCid)) {
-    await warmToCache(parsed, fetched.body, fetched.contentType);
   }
 }
 
