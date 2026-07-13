@@ -217,7 +217,7 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                       <Button
                         size="md"
                         variant="primary"
-                        disabled={approvalButtonState !== "approve"}
+                        disabled={approvalButtonState !== ApprovalButtonState.APPROVE}
                         onClick={onApprove}
                         isLoading={isApproveLoading}
                         className="w-full"
