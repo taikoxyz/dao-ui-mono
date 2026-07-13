@@ -3,6 +3,9 @@ import { Card, Tag, Button, Icon, IconType, Tabs } from "@aragon/ods";
 import { Tabs as RadixTabsRoot } from "@radix-ui/react-tabs";
 import dayjs from "dayjs";
 import { VotesDataList } from "@/components/proposalVoting/votesDataList/votesDataList";
+import { SignersPopover } from "./signers-popover";
+import { useSignerListLength } from "@/plugins/security-council/hooks/useSignerList";
+import { ApprovalButtonState, getApprovalButtonState } from "@/utils/approval-eligibility";
 import type { IVote } from "@/utils/types";
 
 interface SecurityCouncilApprovalStageProps {
@@ -10,7 +13,11 @@ interface SecurityCouncilApprovalStageProps {
   approvals: number;
   requiredApprovals: number;
   votes?: IVote[];
+  // undefined = eligibility not yet determined (read in flight, errored, or never ran)
   canApprove?: boolean;
+  canApproveFetching?: boolean;
+  canApproveError?: boolean;
+  onRetryCanApprove?: () => void;
   onApprove?: () => void;
   isApproveLoading?: boolean;
   canExecute?: boolean;
@@ -29,7 +36,10 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
   approvals,
   requiredApprovals,
   votes = [],
-  canApprove = false,
+  canApprove,
+  canApproveFetching = false,
+  canApproveError = false,
+  onRetryCanApprove,
   onApprove,
   isApproveLoading = false,
   canExecute = false,
@@ -44,6 +54,20 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
 }) => {
   const progressPercentage = (approvals / requiredApprovals) * 100;
   const thresholdReached = approvals >= requiredApprovals;
+  const approvalButtonState = getApprovalButtonState({
+    canApprove,
+    isFetching: canApproveFetching,
+    hasError: canApproveError,
+  });
+
+  // Council size is read from the chain at the proposal's snapshot block, not
+  // from a hardcoded constant and not from the (lagging) subgraph. requiredApprovals
+  // is the snapshot-time minApprovals, so the denominator must be the council as
+  // it was at that same block. Undefined while loading; the share is then omitted.
+  const { data: councilSize } = useSignerListLength(snapshotBlock ? BigInt(snapshotBlock) : undefined);
+  const totalMembers = councilSize !== undefined ? Number(councilSize) : 0;
+  const thresholdShare =
+    totalMembers > 0 ? Math.round((requiredApprovals / totalMembers) * 1000) / 10 : undefined;
 
   const getStatusIcon = () => {
     if (executed) return <Icon icon={IconType.CHECKMARK} size="md" className="text-success-600" />;
@@ -121,8 +145,9 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
               <div className="flex flex-col gap-3">
                 <div className="flex items-baseline justify-between">
                   <span className="font-medium text-sm text-neutral-700">Approval Progress</span>
-                  <span className="text-xs text-neutral-500">
+                  <span className="flex items-center gap-1.5 text-xs text-neutral-500">
                     {approvals} / {requiredApprovals} required
+                    <SignersPopover votes={votes} />
                   </span>
                 </div>
 
@@ -163,7 +188,9 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                   <div className="rounded-lg bg-neutral-50 p-3">
                     <p className="mb-1 text-xs text-neutral-500">Required Threshold</p>
                     <p className="text-lg font-semibold text-neutral-900">{requiredApprovals}</p>
-                    <p className="text-xs text-neutral-600">{isEmergency ? "75% majority" : "62.5% majority"}</p>
+                    <p className="text-xs text-neutral-600">
+                      {thresholdShare !== undefined ? `${thresholdShare}% of members` : "Security Council members"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -171,18 +198,33 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
               {/* Action buttons */}
               {!executed && (
                 <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4">
-                  {!thresholdReached && !hasApproved && (
-                    <Button
-                      size="md"
-                      variant="primary"
-                      disabled={!canApprove}
-                      onClick={onApprove}
-                      isLoading={isApproveLoading}
-                      className="w-full"
-                    >
-                      {canApprove ? "Approve Proposal" : "Unable to Approve"}
+                  {!thresholdReached && !hasApproved && approvalButtonState === ApprovalButtonState.CHECKING && (
+                    <Button size="md" variant="primary" disabled={true} isLoading={true} className="w-full">
+                      Checking eligibility…
                     </Button>
                   )}
+
+                  {!thresholdReached && !hasApproved && approvalButtonState === ApprovalButtonState.RETRY && (
+                    <Button size="md" variant="tertiary" onClick={onRetryCanApprove} className="w-full">
+                      Couldn&apos;t verify eligibility — retry
+                    </Button>
+                  )}
+
+                  {!thresholdReached &&
+                    !hasApproved &&
+                    (approvalButtonState === ApprovalButtonState.APPROVE ||
+                      approvalButtonState === ApprovalButtonState.UNABLE) && (
+                      <Button
+                        size="md"
+                        variant="primary"
+                        disabled={approvalButtonState !== ApprovalButtonState.APPROVE}
+                        onClick={onApprove}
+                        isLoading={isApproveLoading}
+                        className="w-full"
+                      >
+                        {approvalButtonState === ApprovalButtonState.APPROVE ? "Approve Proposal" : "Unable to Approve"}
+                      </Button>
+                    )}
 
                   {thresholdReached && (
                     <Button
@@ -204,7 +246,7 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                     </div>
                   )}
 
-                  {!canApprove && !hasApproved && !thresholdReached && (
+                  {approvalButtonState === ApprovalButtonState.UNABLE && !hasApproved && !thresholdReached && (
                     <p className="text-xs text-neutral-500">Only Security Council members can approve proposals</p>
                   )}
                 </div>
@@ -215,13 +257,15 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                 <p className="text-xs text-primary-800">
                   {isEmergency ? (
                     <>
-                      <strong>Emergency proposals</strong> require approval from 6 or 75% of Security Council members
-                      and are executed directly by the DAO upon approval.
+                      <strong>Emergency proposals</strong> require approval from at least {requiredApprovals}
+                      {totalMembers > 0 && <> of the {totalMembers}</>} Security Council members and are executed
+                      directly by the DAO upon approval.
                     </>
                   ) : (
                     <>
-                      <strong>Standard proposals</strong> require approval from 5 or 62.5% of Security Council members
-                      before being sent to the optimistic approval stage.
+                      <strong>Standard proposals</strong> require approval from at least {requiredApprovals}
+                      {totalMembers > 0 && <> of the {totalMembers}</>} Security Council members before being sent to
+                      the optimistic approval stage.
                     </>
                   )}
                 </p>
@@ -246,7 +290,9 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
               <div>
                 <dt className="text-sm text-neutral-500">Required Approvals</dt>
                 <dd className="font-medium text-sm text-neutral-800">
-                  {requiredApprovals} out of {isEmergency ? 8 : 8} members ({isEmergency ? "75%" : "62.5%"})
+                  {totalMembers > 0
+                    ? `${requiredApprovals} out of ${totalMembers} members (${thresholdShare}%)`
+                    : `${requiredApprovals} members`}
                 </dd>
               </div>
               {snapshotBlock && (

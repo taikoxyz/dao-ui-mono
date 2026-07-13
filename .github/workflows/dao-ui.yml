@@ -19,37 +19,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-    checks:
+    test:
         # Fork guard matches repo--vercel-deploy.yml: this runs PR code on
         # self-hosted runners, so untrusted fork PRs must never trigger it.
-        if: ${{ github.event.pull_request.draft == false && !startsWith(github.head_ref, 'release-please') && github.actor != 'dependabot' && github.event.pull_request.head.repo.fork == false }}
+        # Tag pushes must still run so production deploys can depend on this job.
+        if: ${{ github.event_name == 'push' || (github.event.pull_request.draft == false && !startsWith(github.head_ref, 'release-please') && github.actor != 'dependabot' && github.event.pull_request.head.repo.fork == false) }}
         runs-on: [arc-runner-set]
-        defaults:
-            run:
-                working-directory: packages/ui
         steps:
+            - name: Install Git
+              run: sudo apt-get update && sudo apt-get install -y git
+
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            - name: Install dependencies
+            - name: Install pnpm dependencies
               uses: ./.github/actions/install-pnpm-dependencies
 
-            - name: Set up Bun
-              uses: oven-sh/setup-bun@v2
-              with:
-                  bun-version: latest
+            - name: Lint
+              run: pnpm --filter dao-ui lint
 
             - name: Type-check
-              run: bun run type-check
+              run: pnpm --filter dao-ui type-check
 
-            - name: Test
-              run: bun test
-
-            - name: Prettier
-              run: bun run format:check
-              continue-on-error: true
+            - name: Run tests
+              run: pnpm --filter dao-ui test
 
     deploy_ui_mainnet_preview:
+        needs: test
         if: ${{ github.event.pull_request.draft == false  && !startsWith(github.head_ref, 'release-please') }}
         uses: ./.github/workflows/repo--vercel-deploy.yml
         with:
@@ -61,6 +57,7 @@ jobs:
             vercel_token: ${{ secrets.VERCEL_TOKEN }}
 
     deploy_ui_mainnet_production:
+        needs: test
         if: ${{ startsWith(github.ref, 'refs/tags/dao-ui-v') }}
         uses: ./.github/workflows/repo--vercel-deploy.yml
         with:

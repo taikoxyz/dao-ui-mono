@@ -1,6 +1,5 @@
 import type { useProposal } from "@/plugins/optimistic-proposals/hooks/useProposal";
 import ProposalHeader from "@/plugins/optimistic-proposals/components/proposal/header";
-import { PleaseWaitSpinner } from "@/components/please-wait";
 import { useProposalVeto } from "@/plugins/optimistic-proposals/hooks/useProposalVeto";
 import { useProposalExecute } from "@/plugins/optimistic-proposals/hooks/useProposalExecute";
 import { BodySection } from "@/components/proposal/proposalBodySection";
@@ -12,7 +11,7 @@ import { Address } from "viem";
 import { useToken } from "../hooks/useToken";
 import { usePastSupply } from "../hooks/usePastSupply";
 import { ElseIf, If, Then } from "@/components/if";
-import { AlertCard, ProposalStatus, Heading, Button } from "@aragon/ods";
+import { AlertCard, ProposalStatus, Heading, Button, Spinner } from "@aragon/ods";
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { useTokenVotes } from "@/hooks/useTokenVotes";
@@ -102,8 +101,9 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
 
   if (!proposal || showProposalLoading) {
     return (
-      <section className="justify-left items-left flex w-screen min-w-full max-w-full">
-        <PleaseWaitSpinner />
+      <section className="flex min-h-[60vh] w-full flex-col items-center justify-center gap-y-4">
+        <Spinner size="xl" variant="neutral" />
+        <p className="text-neutral-500">Loading proposal…</p>
       </section>
     );
   }
@@ -223,7 +223,10 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
                 </div>
               </>
             )}
-            <ProposalActions actions={proposal.actions} />
+            <ProposalActions
+              actions={proposal.actions}
+              executionTxHash={proposal.executed ? gqlProposal?.executor?.txHash : undefined}
+            />
           </div>
           <div className="flex flex-col gap-y-6 md:w-[33%]">
             <CardResources

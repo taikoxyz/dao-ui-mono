@@ -11,8 +11,14 @@ import { Address, isAddressEqual } from "viem";
 
 export const AccountList: React.FC = () => {
   const [searchValue, setSearchValue] = useState<string>();
-  const { data: accounts, isLoading: isLoading1 } = useSignerList();
+  const { data: accounts, isLoading: isLoading1, error: signerListError } = useSignerList();
   const { data: encryptionAccounts, isLoading: isLoading2, error } = useEncryptionAccounts();
+
+  // The signer list now surfaces subgraph failures instead of silently
+  // resolving to []; without this the spinner below would never resolve.
+  if (signerListError) {
+    return <NoSignersView title="Could not fetch" message={signerListError.message} />;
+  }
 
   if ((!encryptionAccounts || !accounts) ?? isLoading1 ?? isLoading2) {
     return <PleaseWaitSpinner fullMessage="Please wait, loading accounts" />;

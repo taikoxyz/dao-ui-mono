@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { QueryClient } from "@tanstack/react-query";
 import { config } from "@/context/Web3Modal";
 import { createWeb3Modal } from "@web3modal/wagmi/react";
+import { taiko } from "@/utils/chains";
 import { WagmiProvider, deserialize, serialize } from "wagmi";
 import { PUB_WALLET_CONNECT_PROJECT_ID } from "@/constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,14 +28,22 @@ const persister = createAsyncStoragePersister({
   deserialize,
 });
 
+// Auto-bumped per build (see next.config.js NEXT_PUBLIC_BUILD_ID) so any
+// decoding/shape change invalidates the persisted cache without manual edits.
+const PERSIST_CACHE_BUSTER = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
+
 // Create modal
 createWeb3Modal({
   wagmiConfig: config as any,
   projectId: PUB_WALLET_CONNECT_PROJECT_ID,
   enableAnalytics: false, // Optional - defaults to your Cloud configuration
-  enableOnramp: true, // Optional
+  enableOnramp: false, // Disable "Buy crypto" — not relevant for a DAO governance app
   themeMode: "light",
   allWallets: "SHOW",
+  chainImages: {
+    // Web3Modal has no built-in icon for Taiko; use the official Taiko mark
+    [taiko.id]: "/chain-taiko.svg",
+  },
   featuredWalletIds: [
     "c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96",
     "1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369",
@@ -52,7 +61,7 @@ export function RootContextProvider({ children }: { children: ReactNode }) {
         coreProviderValues={odsCoreProviderValues}
         values={{ copy: customModulesCopy }}
       >
-        <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+        <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, buster: PERSIST_CACHE_BUSTER }}>
           <AlertProvider>
             <WalletChainPolicyProvider>
               <UseDerivedWalletProvider>{children}</UseDerivedWalletProvider>

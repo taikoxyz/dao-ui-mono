@@ -111,7 +111,7 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <div className="divider" />
             <Heading size="h4">Voting Requirements</Heading>
             <ul className="list-inside list-disc">
-              <li>Approved by the lesser of at least 6 or 75% of Security Council Members</li>
+              <li>Approved by the lesser of at least 7 or 75% of Security Council Members</li>
             </ul>
           </ElseIf>
           <ElseIf condition={toggleValue === "community-proposals"}>

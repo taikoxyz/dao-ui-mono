@@ -7,7 +7,7 @@ import { PUB_TAIKO_BRIDGE_ADDRESS, TAIKO_L2_CHAIN_ID } from "@/constants";
 import { useWalletChainPolicy } from "@/context/WalletChainPolicy";
 import { useL2AnchorSync } from "@/hooks/useL2AnchorSync";
 import { useL2LegExecution } from "@/hooks/useL2LegExecution";
-import { shouldRenderL2ExecutionCard } from "@/utils/l2-execution";
+import { hasL2LegFromActions, shouldRenderL2ExecutionCard } from "@/utils/l2-execution";
 import { type RawAction } from "@/utils/types";
 
 interface ProposalL2ExecutionProps {
@@ -15,19 +15,6 @@ interface ProposalL2ExecutionProps {
   executed: boolean;
   executorTxHash?: string;
   executionBlockNumber?: number;
-}
-
-function hasL2LegFromActions(actions: RawAction[]): boolean {
-  if (!PUB_TAIKO_BRIDGE_ADDRESS || !actions.length) return false;
-  const bridgeAddrLower = PUB_TAIKO_BRIDGE_ADDRESS.toLowerCase().replace("0x", "");
-  return actions.some((action) => {
-    // Direct target: action calls the bridge
-    if (action.to.toLowerCase() === PUB_TAIKO_BRIDGE_ADDRESS.toLowerCase()) return true;
-    // Nested target: bridge address encoded inside the action data
-    // (e.g. DAO.execute wrapping inner actions that include a bridge call)
-    if (action.data.toLowerCase().includes(bridgeAddrLower)) return true;
-    return false;
-  });
 }
 
 export function ProposalL2Execution({
@@ -44,8 +31,8 @@ export function ProposalL2Execution({
   const l1BlockNumber = executionBlockNumber ? BigInt(executionBlockNumber) : undefined;
   const l1TxHash = executorTxHash as Hex | undefined;
 
-  // Pre-execution detection: check action data for bridge address
-  const detectedFromActions = hasL2LegFromActions(actions);
+  // Pre-execution detection: a real sendMessage(...) call to the bridge, bound for Taiko L2
+  const detectedFromActions = hasL2LegFromActions(actions, PUB_TAIKO_BRIDGE_ADDRESS, TAIKO_L2_CHAIN_ID);
 
   // For executed proposals, always try anchor sync + message extraction
   // (actions may be cleared from the contract after execution)

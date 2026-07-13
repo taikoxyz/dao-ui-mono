@@ -1,6 +1,6 @@
 import { type useProposal } from "@/plugins/multisig/hooks/useProposal";
 import ProposalHeader from "@/plugins/multisig/components/proposal/header";
-import { PleaseWaitSpinner } from "@/components/please-wait";
+import { Spinner } from "@aragon/ods";
 import { useProposalApprove } from "@/plugins/multisig/hooks/useProposalApprove";
 import { useProposalExecute } from "@/plugins/multisig/hooks/useProposalExecute";
 import { BodySection } from "@/components/proposal/proposalBodySection";
@@ -31,6 +31,9 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
     proposal,
     proposalFetchStatus,
     canApprove,
+    canApproveFetching,
+    canApproveError,
+    refetchCanApprove,
     approvals,
     isConfirming: isConfirmingApproval,
     approveProposal,
@@ -54,8 +57,10 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
   // The subgraph data is more reliable as event log fetching can fail or return empty
   const approvalVotes: IVote[] =
     (gqlProposal?.approvers?.length ?? 0) > 0
-      ? gqlProposal!.approvers.map(({ address: approverAddress }) => ({ address: approverAddress, variant: "approve" }) as IVote)
-      : approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? [];
+      ? gqlProposal!.approvers.map(
+          ({ address: approverAddress }) => ({ address: approverAddress, variant: "approve" }) as IVote
+        )
+      : (approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? []);
 
   // Check if current user has already approved - check both subgraph and event data
   const hasApproved =
@@ -118,8 +123,9 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
 
   if (!proposal || showProposalLoading) {
     return (
-      <section className="justify-left items-left flex w-screen min-w-full max-w-full">
-        <PleaseWaitSpinner />
+      <section className="flex min-h-[60vh] w-full flex-col items-center justify-center gap-y-4">
+        <Spinner size="xl" variant="neutral" />
+        <p className="text-neutral-500">Loading proposal…</p>
       </section>
     );
   }
@@ -150,6 +156,9 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
                 requiredApprovals={proposal?.parameters.minApprovals ?? 0}
                 votes={approvalVotes}
                 canApprove={canApprove}
+                canApproveFetching={canApproveFetching}
+                canApproveError={!!canApproveError}
+                onRetryCanApprove={refetchCanApprove}
                 onApprove={approveProposal}
                 isApproveLoading={isConfirmingApproval}
                 canExecute={canExecute}
