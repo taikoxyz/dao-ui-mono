@@ -8,6 +8,8 @@ import { isAddressEqual } from "viem";
 import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import { IGqlProposalMixin } from "@/utils/gql/types";
 
+const SHORT_ADDRESS = /^(.{6}).*(.{4})$/;
+
 interface ICardResourcesProps {
   displayLink?: boolean;
   resources?: IProposalResource[];
@@ -49,12 +51,20 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
   const vetoes = gqlProposal?.vetoes ?? relatedProposal?.vetoes ?? [];
 
   const hideExecutionTx =
+    // not executed yet, so there is no execution tx to link to
+    !executor ||
     // if vetoed, no execution
     (vetoes.length && gqlProposal?.executor === null) ||
     // if std and still active, no execution
     (relatedProposal?.isStandard && gqlProposal?.isOptimistic && gqlProposal?.executor === null);
 
-  if (!props.gqlProposal || !props.gqlProposal.creationTxHash || !relatedProposal) {
+  // A related proposal only exists for proposals that carry over to another stage; emergency
+  // and standard ones are self-contained, so fall back to the proposal's own creation data.
+  const creationTxHash = relatedProposal?.creationTxHash ?? gqlProposal?.creationTxHash;
+  const creatorLabel =
+    creatorProfile?.name || getSecurityCouncilMemberData(creator).name || creator.replace(SHORT_ADDRESS, "$1...$2");
+
+  if (!props.gqlProposal || !creationTxHash) {
     return <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">Loading tx info...</Card>;
   }
   return (
@@ -67,14 +77,14 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
           </tr>
           <tr>
             <td>
-              <Link target="_blank" href={`https://etherscan.io/address/${relatedProposal.creator}`} variant="primary">
-                {creatorProfile?.name}
+              <Link target="_blank" href={`https://etherscan.io/address/${creator}`} variant="primary">
+                {creatorLabel}
               </Link>
             </td>
             <td>
               <Link
                 target="_blank"
-                href={`https://etherscan.io/tx/${relatedProposal.creationTxHash}`}
+                href={`https://etherscan.io/tx/${creationTxHash}`}
                 variant="primary"
                 iconRight={IconType.LINK_EXTERNAL}
               >
@@ -123,7 +133,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
               {" "}
               <td>
                 <Link target="_blank" href={`https://etherscan.io/address/${vetoer.address}`} variant="primary" key={i}>
-                  {vetoer.address.replace(/^(.{6}).*(.{4})$/, "$1...$2")}
+                  {vetoer.address.replace(SHORT_ADDRESS, "$1...$2")}
                 </Link>
               </td>
               <td>
