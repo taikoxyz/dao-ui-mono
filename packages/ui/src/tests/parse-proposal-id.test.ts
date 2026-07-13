@@ -1,5 +1,5 @@
 import { parseProposalId } from "@/plugins/optimistic-proposals/utils/proposal-id";
-import { expect, test, describe } from "bun:test";
+import { expect, test, describe } from "vitest";
 
 describe("Optimistic proposal ID", () => {
   test("Parses the index and the timestamps 1", () => {

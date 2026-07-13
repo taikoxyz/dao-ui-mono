@@ -5,12 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "test": "bun test src/tests",
     "start": "next start",
     "lint": "next lint .",
     "format": "prettier -w . --list-different",
     "prepare": "husky",
-    "clean": "rm -rf node_modules && rm -rf .next"
+    "clean": "rm -rf node_modules && rm -rf .next",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit"
   },
   "lint-staged": {
     "*.{js, jsx,ts,tsx}": [
@@ -68,12 +70,15 @@
     "eslint-config-next": "^15.0.3",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^9.0.11",
+    "jsdom": "^25.0.1",
     "lint-staged": "^15.2.2",
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.13",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.8",
+    "vite-tsconfig-paths": "^5.1.4"
   },
   "prettier": {
     "printWidth": 120,

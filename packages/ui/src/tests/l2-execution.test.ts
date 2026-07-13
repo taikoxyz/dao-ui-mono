@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { encodeFunctionData, toFunctionSelector, type Address, type Hex } from "viem";
 import {
   bridgeSendMessageAbi,

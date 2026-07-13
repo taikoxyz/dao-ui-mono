@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { ProposalStatus } from "@aragon/ods";
 import { getPhaseTag } from "../plugins/optimistic-proposals/utils/proposal-phase-tag";
 

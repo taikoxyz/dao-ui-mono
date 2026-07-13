@@ -1,4 +1,4 @@
-import { expect, test, describe, beforeAll } from "bun:test";
+import { expect, test, describe, beforeAll } from "vitest";
 import { decryptBytes, decryptString, encrypt, generateSymmetricKey } from "../utils/encryption/symmetric";
 import libsodium from "libsodium-wrappers";
 

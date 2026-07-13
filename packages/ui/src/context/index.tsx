@@ -28,6 +28,10 @@ const persister = createAsyncStoragePersister({
   deserialize,
 });
 
+// Auto-bumped per build (see next.config.js NEXT_PUBLIC_BUILD_ID) so any
+// decoding/shape change invalidates the persisted cache without manual edits.
+const PERSIST_CACHE_BUSTER = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
+
 // Create modal
 createWeb3Modal({
   wagmiConfig: config as any,
@@ -57,7 +61,7 @@ export function RootContextProvider({ children }: { children: ReactNode }) {
         coreProviderValues={odsCoreProviderValues}
         values={{ copy: customModulesCopy }}
       >
-        <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+        <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, buster: PERSIST_CACHE_BUSTER }}>
           <AlertProvider>
             <WalletChainPolicyProvider>
               <UseDerivedWalletProvider>{children}</UseDerivedWalletProvider>
