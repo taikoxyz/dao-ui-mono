@@ -7,7 +7,12 @@ export function useUserCanApprove(proposalId: string | bigint | number) {
   const { address } = useAccount();
   const { data: blockNumber } = useBlockNumber({ watch: true });
 
-  const { data: canApprove, refetch } = useReadContract({
+  const {
+    data: canApprove,
+    isFetching,
+    error,
+    refetch,
+  } = useReadContract({
     chainId: PUB_CHAIN.id,
     address: PUB_MULTISIG_PLUGIN_ADDRESS,
     abi: MultisigPluginAbi,
@@ -24,5 +29,5 @@ export function useUserCanApprove(proposalId: string | bigint | number) {
     }
   }, [blockNumber, refetch]);
 
-  return { canApprove, refetch };
+  return { canApprove, isFetching, error, refetch };
 }

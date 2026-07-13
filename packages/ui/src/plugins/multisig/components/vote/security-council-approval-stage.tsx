@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import { VotesDataList } from "@/components/proposalVoting/votesDataList/votesDataList";
 import { SignersPopover } from "./signers-popover";
 import { useSignerListLength } from "@/plugins/security-council/hooks/useSignerList";
+import { ApprovalButtonState, getApprovalButtonState } from "@/utils/approval-eligibility";
 import type { IVote } from "@/utils/types";
 
 interface SecurityCouncilApprovalStageProps {
@@ -12,7 +13,11 @@ interface SecurityCouncilApprovalStageProps {
   approvals: number;
   requiredApprovals: number;
   votes?: IVote[];
+  // undefined = eligibility not yet determined (read in flight, errored, or never ran)
   canApprove?: boolean;
+  canApproveFetching?: boolean;
+  canApproveError?: boolean;
+  onRetryCanApprove?: () => void;
   onApprove?: () => void;
   isApproveLoading?: boolean;
   canExecute?: boolean;
@@ -31,7 +36,10 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
   approvals,
   requiredApprovals,
   votes = [],
-  canApprove = false,
+  canApprove,
+  canApproveFetching = false,
+  canApproveError = false,
+  onRetryCanApprove,
   onApprove,
   isApproveLoading = false,
   canExecute = false,
@@ -46,6 +54,11 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
 }) => {
   const progressPercentage = (approvals / requiredApprovals) * 100;
   const thresholdReached = approvals >= requiredApprovals;
+  const approvalButtonState = getApprovalButtonState({
+    canApprove,
+    isFetching: canApproveFetching,
+    hasError: canApproveError,
+  });
 
   // Council size is read from the chain at the proposal's snapshot block, not
   // from a hardcoded constant and not from the (lagging) subgraph. requiredApprovals
@@ -185,18 +198,33 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
               {/* Action buttons */}
               {!executed && (
                 <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4">
-                  {!thresholdReached && !hasApproved && (
-                    <Button
-                      size="md"
-                      variant="primary"
-                      disabled={!canApprove}
-                      onClick={onApprove}
-                      isLoading={isApproveLoading}
-                      className="w-full"
-                    >
-                      {canApprove ? "Approve Proposal" : "Unable to Approve"}
+                  {!thresholdReached && !hasApproved && approvalButtonState === ApprovalButtonState.CHECKING && (
+                    <Button size="md" variant="primary" disabled={true} isLoading={true} className="w-full">
+                      Checking eligibility…
                     </Button>
                   )}
+
+                  {!thresholdReached && !hasApproved && approvalButtonState === ApprovalButtonState.RETRY && (
+                    <Button size="md" variant="tertiary" onClick={onRetryCanApprove} className="w-full">
+                      Couldn&apos;t verify eligibility — retry
+                    </Button>
+                  )}
+
+                  {!thresholdReached &&
+                    !hasApproved &&
+                    (approvalButtonState === ApprovalButtonState.APPROVE ||
+                      approvalButtonState === ApprovalButtonState.UNABLE) && (
+                      <Button
+                        size="md"
+                        variant="primary"
+                        disabled={approvalButtonState !== ApprovalButtonState.APPROVE}
+                        onClick={onApprove}
+                        isLoading={isApproveLoading}
+                        className="w-full"
+                      >
+                        {approvalButtonState === ApprovalButtonState.APPROVE ? "Approve Proposal" : "Unable to Approve"}
+                      </Button>
+                    )}
 
                   {thresholdReached && (
                     <Button
@@ -218,7 +246,7 @@ export const SecurityCouncilApprovalStage: FC<SecurityCouncilApprovalStageProps>
                     </div>
                   )}
 
-                  {!canApprove && !hasApproved && !thresholdReached && (
+                  {approvalButtonState === ApprovalButtonState.UNABLE && !hasApproved && !thresholdReached && (
                     <p className="text-xs text-neutral-500">Only Security Council members can approve proposals</p>
                   )}
                 </div>
