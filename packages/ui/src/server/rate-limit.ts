@@ -20,7 +20,16 @@ export function rateLimit(key: string, limit: number, windowMs: number, now: num
   const existing = windows.get(key);
 
   if (!existing || existing.resetAt <= now) {
-    if (windows.size > MAX_TRACKED_KEYS) sweep(now);
+    if (windows.size >= MAX_TRACKED_KEYS) {
+      sweep(now);
+      // Map iteration is insertion-ordered. If every tracked window is still
+      // live, evict the oldest one before admitting a new key so the per-
+      // instance memory bound remains real even under rotating-IP traffic.
+      if (windows.size >= MAX_TRACKED_KEYS) {
+        const oldestKey = windows.keys().next().value;
+        if (oldestKey !== undefined) windows.delete(oldestKey);
+      }
+    }
     windows.set(key, { count: 1, resetAt: now + windowMs });
     return { allowed: true, retryAfterSeconds: 0 };
   }

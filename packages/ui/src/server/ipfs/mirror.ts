@@ -1,6 +1,8 @@
 import { CID } from "multiformats/cid";
 import { equals as bytesEqual } from "multiformats/bytes";
 import * as rawCodec from "multiformats/codecs/raw";
+import * as dagPbCodec from "@ipld/dag-pb";
+import { importer } from "ipfs-unixfs-importer";
 import { sha256 } from "multiformats/hashes/sha2";
 import { head, put } from "@vercel/blob";
 
@@ -249,6 +251,26 @@ async function verifiesRawCid(parsed: ParsedIpfsPath, body: Buffer): Promise<boo
   return bytesEqual(digest.bytes, parsed.cid.multihash.bytes);
 }
 
+async function verifiesPinnedFileCid(parsed: ParsedIpfsPath, body: Buffer): Promise<boolean> {
+  if (isRawSha256(parsed)) return verifiesRawCid(parsed, body);
+  if (parsed.hasSubpath || parsed.cid.code !== dagPbCodec.code || parsed.cid.multihash.code !== sha256.code)
+    return false;
+
+  // Pinata's pinFileToIPFS endpoint imports files as the classic UnixFS
+  // dag-pb profile. Recreate that deterministic DAG locally so the uploaded
+  // bytes can be checked against Pinata's returned root before being cached.
+  let rootBytes: Uint8Array | undefined;
+  const sink: Parameters<typeof importer>[1] = {
+    async put(cid) {
+      return cid;
+    },
+  };
+  for await (const entry of importer([{ content: body }], sink, { cidVersion: 1, rawLeaves: false })) {
+    rootBytes = entry.cid.bytes;
+  }
+  return rootBytes ? bytesEqual(rootBytes, parsed.cid.bytes) : false;
+}
+
 // ---------------------------------------------------------------------------
 // Gateway fetch (raced) + bounded read.
 // ---------------------------------------------------------------------------
@@ -399,20 +421,19 @@ async function readBounded(response: Response, max: number): Promise<Buffer> {
 // Cache read / write-through. One helper, shared by the read route and /api/pin.
 // ---------------------------------------------------------------------------
 
-// Returns the durably-cached object for a raw CID, re-verifying the bytes
-// against the requested CID on every read (so a tampered Blob can't be served).
+// Returns a durably-cached pin-time object, re-verifying raw blocks directly or
+// rebuilding Pinata's UnixFS dag-pb root (so a tampered Blob can't be served).
 export async function getCachedIpfs(parsed: ParsedIpfsPath): Promise<CachedObject | null> {
-  if (!isRawSha256(parsed)) return null;
   const object = await storage().get(blobKey(parsed.rootCid));
   if (!object) return null;
-  if (!(await verifiesRawCid(parsed, object.body))) return null;
+  if (!(await verifiesPinnedFileCid(parsed, object.body))) return null;
   return object;
 }
 
-// Verify + store a raw CID in the durable cache. Idempotent: a CID already
-// cached is skipped. `bytes` must already be in hand — they come from the
-// pin-time upload, the ONLY caller — and are re-verified against the CID before
-// the write, so a body that does not hash to its CID can never be persisted.
+// Verify + store a raw or Pinata UnixFS file CID in the durable cache.
+// Idempotent: a CID already cached is skipped. `bytes` must already be in hand
+// from the pin-time upload (the ONLY caller), and are re-verified against the
+// CID before the write, so mismatched content can never be persisted.
 //
 // The read route deliberately does NOT write here. It once lazily mirrored any
 // verified cold-miss bytes, gated on the CID being on our Pinata pin list, but
@@ -421,9 +442,9 @@ export async function getCachedIpfs(parsed: ParsedIpfsPath): Promise<CachedObjec
 // us mirror it into our public Blob store. Writes now happen only on the pin
 // path; reads rely on the immutable CDN cache instead.
 export async function warmToCache(parsed: ParsedIpfsPath, bytes: Buffer, contentType?: string): Promise<void> {
-  if (!isRawSha256(parsed)) throw new Error(`CID ${parsed.cidPath} is not a directly verifiable raw sha2-256 object`);
   if (await getCachedIpfs(parsed)) return;
-  if (!(await verifiesRawCid(parsed, bytes))) throw new Error(`provided bytes do not match CID ${parsed.rootCid}`);
+  if (!(await verifiesPinnedFileCid(parsed, bytes)))
+    throw new Error(`provided bytes do not match CID ${parsed.rootCid}`);
 
   await storage().put(blobKey(parsed.rootCid), bytes, safeContentType(contentType ?? "application/octet-stream").value);
 }

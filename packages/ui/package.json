@@ -28,6 +28,7 @@
     "@aragon/ods": "workspace:*",
     "@helia/verified-fetch": "^8.0.1",
     "@hookform/resolvers": "^3.9.0",
+    "@ipld/dag-pb": "^4.1.7",
     "@radix-ui/react-tabs": "^1.1.2",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@shazow/whatsabi": "^0.21.0",
@@ -46,6 +47,7 @@
     "dompurify": "^3.0.11",
     "glin-profanity": "^2.0.0",
     "graphql": "^16.11.0",
+    "ipfs-unixfs-importer": "^17.0.1",
     "libsodium-wrappers": "^0.7.13",
     "multiformats": "^13.1.1",
     "next": "^15.5.18",
@@ -81,8 +83,8 @@
     "prettier-plugin-tailwindcss": "^0.5.13",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.8.3",
-    "vitest": "^2.1.8",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.8"
   },
   "prettier": {
     "printWidth": 120,

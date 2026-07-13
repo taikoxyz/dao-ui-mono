@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
+import { importer } from "ipfs-unixfs-importer";
 import { sha256 } from "multiformats/hashes/sha2";
 import handler, { config } from "../pages/api/pin";
 import {
@@ -9,7 +10,7 @@ import {
   parseIpfsPath,
   setIpfsCacheStorageForTests,
 } from "../server/ipfs/mirror";
-import { resetRateLimitForTests } from "../server/rate-limit";
+import { rateLimit, resetRateLimitForTests } from "../server/rate-limit";
 
 type MockRes = {
   statusCode: number;
@@ -61,6 +62,20 @@ async function cidForBody(body: string) {
   const bytes = Buffer.from(body, "utf8");
   const hash = await sha256.digest(bytes);
   return CID.create(1, raw.code, hash).toString();
+}
+
+async function unixfsCidForBody(body: string) {
+  let cid: { toString(): string } | undefined;
+  const sink: Parameters<typeof importer>[1] = {
+    async put(key) {
+      return key;
+    },
+  };
+  for await (const entry of importer([{ content: Buffer.from(body) }], sink, { cidVersion: 1, rawLeaves: false })) {
+    cid = entry.cid;
+  }
+  if (!cid) throw new Error("UnixFS importer returned no CID");
+  return cid.toString();
 }
 
 describe("/api/pin", () => {
@@ -122,6 +137,25 @@ describe("/api/pin", () => {
     const form = sentBody as FormData;
     expect(form.get("file")).toBeInstanceOf(Blob);
     expect(String(form.get("pinataMetadata"))).toContain("taiko.json");
+  });
+
+  test("pre-warms the durable cache for Pinata's dag-pb UnixFS CID", async () => {
+    process.env.PINATA_JWT = "server-secret-jwt";
+    const metadata = JSON.stringify({ title: "unixfs" });
+    const cid = await unixfsCidForBody(metadata);
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ IpfsHash: cid }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+
+    const res = mockRes();
+    await call(mockReq({ body: { body: metadata } }), res);
+
+    expect(res.statusCode).toBe(200);
+    const parsed = parseIpfsPath(cid);
+    if (!parsed) throw new Error("test CID did not parse");
+    expect((await getCachedIpfs(parsed))?.body.toString("utf8")).toBe(metadata);
   });
 
   test("relays Pinata error status and body unchanged", async () => {
@@ -207,6 +241,18 @@ describe("/api/pin", () => {
     expect(res.statusCode).toBe(429);
     expect(res.headers["retry-after"]).toBe("60");
     expect((res.body as { error: { reason: string } }).error.reason).toBe("RATE_LIMITED");
+  });
+
+  test("keeps the in-memory limiter bounded when all tracked windows are live", () => {
+    const now = 1_000;
+    rateLimit("oldest", 1, 60_000, now);
+    for (let index = 1; index < 10_000; index += 1) rateLimit(`key-${index}`, 1, 60_000, now);
+
+    rateLimit("new-key", 1, 60_000, now);
+
+    // The oldest live key was evicted to make room, so it starts a fresh
+    // window instead of retaining an eleventh-thousandth map entry.
+    expect(rateLimit("oldest", 1, 60_000, now).allowed).toBe(true);
   });
 
   test("rejects requests with no Origin or Referer", async () => {

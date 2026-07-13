@@ -144,17 +144,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Pre-warm the durable cache with the bytes we just pinned: verify + one Blob
   // PUT (a few hundred ms), so the first viewer never pays a cold gateway fetch.
-  // Best-effort — a non-raw CID or a transient Blob error must never fail
+  // Best-effort — an unexpected CID shape or transient Blob error must never fail
   // proposal creation, and the read path warms lazily on first fetch anyway.
   try {
     await warmToCache(parsedIpfsPath, Buffer.from(strBody, "utf8"), inferMetadataContentType(strBody));
   } catch (err) {
     // The pin succeeded, which is what gates creation — so we never fail here.
-    // But log instead of silently swallowing: the durable cache only holds raw
-    // single-block (<=256 KiB) sha2-256 CIDs, so a larger proposal pinned as a
-    // multi-block dag-pb CID lands here every time, and a silent swallow would
-    // hide that the durable cache is being bypassed for exactly the biggest,
-    // slowest reads.
+    // But log instead of silently swallowing so cache compatibility or service
+    // failures remain visible without blocking proposal creation.
     console.warn(
       `[pin] durable pre-warm skipped for ${parsedIpfsPath.rootCid}: ${err instanceof Error ? err.message : String(err)}`
     );
