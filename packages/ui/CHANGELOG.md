@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.3.2...dao-ui-v0.4.0) (2026-07-14)
+
+
+### Features
+
+* **dao-ui:** cache IPFS proposal metadata in a Vercel Blob store ([#190](https://github.com/taikoxyz/dao-ui-mono/issues/190)) ([9fe08ba](https://github.com/taikoxyz/dao-ui-mono/commit/9fe08ba1f33c72fab24b09baeb8fc92d32c71d42))
+* **dao-ui:** recursive proposal-action calldata decoder with trust tiers ([#189](https://github.com/taikoxyz/dao-ui-mono/issues/189)) ([6128774](https://github.com/taikoxyz/dao-ui-mono/commit/612877454788cc9fc9fd97c7e70c560545d958e7))
+
+
+### Bug Fixes
+
+* **dao-ui:** assorted UI fixes, proposal phase clarity and signer visibility ([#192](https://github.com/taikoxyz/dao-ui-mono/issues/192)) ([0e88e88](https://github.com/taikoxyz/dao-ui-mono/commit/0e88e88d2a662bd1f603f6bd2c113959fed0809c))
+* **dao-ui:** distinguish eligibility loading/error from denial in emergency approval ([#191](https://github.com/taikoxyz/dao-ui-mono/issues/191)) ([2c5b2cb](https://github.com/taikoxyz/dao-ui-mono/commit/2c5b2cba204d7080766bc3c8528760d2c3b35e95))
+
 ## [0.3.2](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.3.1...dao-ui-v0.3.2) (2026-05-18)
 
 
