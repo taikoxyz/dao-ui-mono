@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
-import { importer } from "ipfs-unixfs-importer";
+import * as dagPb from "@ipld/dag-pb";
 import { sha256 } from "multiformats/hashes/sha2";
 import handler, { config } from "../pages/api/pin";
 import {
@@ -11,6 +11,7 @@ import {
   setIpfsCacheStorageForTests,
 } from "../server/ipfs/mirror";
 import { rateLimit, resetRateLimitForTests } from "../server/rate-limit";
+import { getPinataFileCid } from "../utils/ipfs-cid";
 
 type MockRes = {
   statusCode: number;
@@ -62,20 +63,6 @@ async function cidForBody(body: string) {
   const bytes = Buffer.from(body, "utf8");
   const hash = await sha256.digest(bytes);
   return CID.create(1, raw.code, hash).toString();
-}
-
-async function unixfsCidForBody(body: string) {
-  let cid: { toString(): string } | undefined;
-  const sink: Parameters<typeof importer>[1] = {
-    async put(key) {
-      return key;
-    },
-  };
-  for await (const entry of importer([{ content: Buffer.from(body) }], sink, { cidVersion: 1, rawLeaves: false })) {
-    cid = entry.cid;
-  }
-  if (!cid) throw new Error("UnixFS importer returned no CID");
-  return cid.toString();
 }
 
 describe("/api/pin", () => {
@@ -141,8 +128,11 @@ describe("/api/pin", () => {
 
   test("pre-warms the durable cache for Pinata's dag-pb UnixFS CID", async () => {
     process.env.PINATA_JWT = "server-secret-jwt";
-    const metadata = JSON.stringify({ title: "unixfs" });
-    const cid = await unixfsCidForBody(metadata);
+    // Larger than the UnixFS chunk size, so Pinata produces a dag-pb root over
+    // multiple raw leaves rather than a single raw CID.
+    const metadata = JSON.stringify({ description: "x".repeat(300_000) });
+    const cid = await getPinataFileCid(metadata);
+    expect(CID.parse(cid).code).toBe(dagPb.code);
     globalThis.fetch = (async () =>
       new Response(JSON.stringify({ IpfsHash: cid }), {
         status: 200,

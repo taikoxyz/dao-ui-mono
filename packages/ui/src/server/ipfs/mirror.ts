@@ -2,9 +2,9 @@ import { CID } from "multiformats/cid";
 import { equals as bytesEqual } from "multiformats/bytes";
 import * as rawCodec from "multiformats/codecs/raw";
 import * as dagPbCodec from "@ipld/dag-pb";
-import { importer } from "ipfs-unixfs-importer";
 import { sha256 } from "multiformats/hashes/sha2";
 import { head, put } from "@vercel/blob";
+import { getPinataFileCid } from "../../utils/ipfs-cid";
 
 // Public gateways raced on a cold miss. Pinata's own gateway is first: it has
 // every proposal's metadata pinned, so it resolves fast. The CID is only ever
@@ -256,19 +256,7 @@ async function verifiesPinnedFileCid(parsed: ParsedIpfsPath, body: Buffer): Prom
   if (parsed.hasSubpath || parsed.cid.code !== dagPbCodec.code || parsed.cid.multihash.code !== sha256.code)
     return false;
 
-  // Pinata's pinFileToIPFS endpoint imports files as the classic UnixFS
-  // dag-pb profile. Recreate that deterministic DAG locally so the uploaded
-  // bytes can be checked against Pinata's returned root before being cached.
-  let rootBytes: Uint8Array | undefined;
-  const sink: Parameters<typeof importer>[1] = {
-    async put(cid) {
-      return cid;
-    },
-  };
-  for await (const entry of importer([{ content: body }], sink, { cidVersion: 1, rawLeaves: false })) {
-    rootBytes = entry.cid.bytes;
-  }
-  return rootBytes ? bytesEqual(rootBytes, parsed.cid.bytes) : false;
+  return (await getPinataFileCid(body)) === parsed.rootCid;
 }
 
 // ---------------------------------------------------------------------------

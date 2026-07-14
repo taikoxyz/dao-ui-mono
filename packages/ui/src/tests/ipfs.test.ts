@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
-import { fetchIpfsAsJson, setIpfsEndpointsForTests, uploadToPinata } from "../utils/ipfs";
+import { fetchIpfsAsJson, getContentCid, setIpfsEndpointsForTests, uploadToPinata } from "../utils/ipfs";
 
 describe("uploadToPinata", () => {
   const originalFetch = globalThis.fetch;
@@ -51,6 +51,16 @@ describe("uploadToPinata", () => {
     // The browser must never carry a Pinata credential
     const headers = new Headers(calledInit?.headers);
     expect(headers.get("authorization")).toBeNull();
+  });
+});
+
+describe("getContentCid", () => {
+  test("matches Pinata's CIDv1 UnixFS profile for multi-block metadata", async () => {
+    const metadata = JSON.stringify({ description: "x".repeat(300_000) });
+
+    // Fixed independently with Pinata's documented cidVersion=1/rawLeaves=true
+    // importer profile so this catches accidental profile changes.
+    expect(await getContentCid(metadata)).toBe("ipfs://bafybeibti27fstdqzncgyim5vwjjm5bps5a4kps4cwhjldscpz4cskm2hi");
   });
 });
 

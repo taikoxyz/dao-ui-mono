@@ -1,9 +1,10 @@
 import { PUB_IPFS_ENDPOINTS } from "@/constants";
-import { Hex, fromHex, toBytes } from "viem";
+import { Hex, fromHex } from "viem";
 import { equals as bytesEqual } from "multiformats/bytes";
 import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
+import { getPinataFileCid } from "./ipfs-cid";
 
 // Read endpoints, tried in order: the same-origin /api/ipfs proxy (Blob + CDN
 // backed) first, then any public-gateway prefixes from NEXT_PUBLIC_IPFS_ENDPOINTS
@@ -59,10 +60,7 @@ export async function uploadToPinata(strBody: string) {
 }
 
 export async function getContentCid(strMetadata: string) {
-  const bytes = raw.encode(toBytes(strMetadata));
-  const hash = await sha256.digest(bytes);
-  const cid = CID.create(1, raw.code, hash);
-  return "ipfs://" + cid.toV1().toString();
+  return "ipfs://" + (await getPinataFileCid(strMetadata));
 }
 
 // Internal helpers
