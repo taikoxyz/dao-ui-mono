@@ -312,13 +312,20 @@ export function setVerifiedFetchForTests(fn: VerifiedFetchFn | null) {
 
 // Lazy so the Helia dependency tree is only loaded (and its gateway sessions
 // only created) on the first multi-block cold miss, not on every function boot.
+// Use HTTP-only Helia: createVerifiedFetch's default constructor also starts a
+// full libp2p/WebRTC node, whose native workers can keep a server process busy
+// after the request has completed. This endpoint only uses the fixed trustless
+// HTTP gateways above, so peer-to-peer transports add risk without capability.
 // A failed construction must NOT stay memoized: caching the rejected promise
 // would make one transient import/session error permanently disable multi-block
 // reads for the whole life of the instance, so drop it and let the next request
 // retry.
 function verifiedFetch(): Promise<VerifiedFetchFn> {
-  verifiedFetchPromise ??= import("@helia/verified-fetch")
-    .then(({ createVerifiedFetch }) => createVerifiedFetch({ gateways: TRUSTLESS_GATEWAYS }))
+  verifiedFetchPromise ??= Promise.all([import("@helia/verified-fetch"), import("@helia/http"), import("helia")])
+    .then(async ([{ createVerifiedFetch }, { withHTTP }, { createHeliaLight }]) => {
+      const helia = await withHTTP(createHeliaLight(), { recursiveGateways: TRUSTLESS_GATEWAYS }).start();
+      return createVerifiedFetch(helia);
+    })
     .catch((err) => {
       verifiedFetchPromise = null;
       throw err;

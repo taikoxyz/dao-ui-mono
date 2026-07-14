@@ -387,6 +387,9 @@ importers:
       '@aragon/ods':
         specifier: workspace:*
         version: link:../aragon-ods-fork
+      '@helia/http':
+        specifier: ^4.0.5
+        version: 4.0.5
       '@helia/verified-fetch':
         specifier: ^8.0.1
         version: 8.0.1(bufferutil@4.0.9)(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@19.0.8)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
@@ -450,6 +453,9 @@ importers:
       graphql:
         specifier: ^16.11.0
         version: 16.11.0
+      helia:
+        specifier: ^7.1.0
+        version: 7.1.0(bufferutil@4.0.9)(react-native@0.77.0(@babel/core@7.26.7)(@babel/preset-env@7.26.7(@babel/core@7.26.7))(@types/react@19.0.8)(bufferutil@4.0.9)(react@18.3.1)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
       ipfs-unixfs-importer:
         specifier: ^17.0.1
         version: 17.0.1

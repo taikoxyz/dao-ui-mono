@@ -26,6 +26,7 @@
   "dependencies": {
     "@apollo/client": "^3.13.8",
     "@aragon/ods": "workspace:*",
+    "@helia/http": "^4.0.5",
     "@helia/verified-fetch": "^8.0.1",
     "@hookform/resolvers": "^3.9.0",
     "@ipld/dag-pb": "^4.1.7",
@@ -47,6 +48,7 @@
     "dompurify": "^3.0.11",
     "glin-profanity": "^2.0.0",
     "graphql": "^16.11.0",
+    "helia": "^7.1.0",
     "ipfs-unixfs-importer": "^17.0.1",
     "libsodium-wrappers": "^0.7.13",
     "multiformats": "^13.1.1",
