@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint .",
     "format": "prettier -w . --list-different",
+    "format:check": "prettier --check .",
     "prepare": "husky",
     "clean": "rm -rf node_modules && rm -rf .next",
     "test": "vitest run",
@@ -25,7 +26,10 @@
   "dependencies": {
     "@apollo/client": "^3.13.8",
     "@aragon/ods": "workspace:*",
+    "@helia/http": "^4.0.5",
+    "@helia/verified-fetch": "^8.0.1",
     "@hookform/resolvers": "^3.9.0",
+    "@ipld/dag-pb": "^4.1.7",
     "@radix-ui/react-tabs": "^1.1.2",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@shazow/whatsabi": "^0.21.0",
@@ -34,6 +38,8 @@
     "@tanstack/react-query": "^5.51.11",
     "@tanstack/react-query-persist-client": "^5.51.11",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@vercel/blob": "^2.5.0",
+    "@vercel/functions": "^3.7.5",
     "@wagmi/core": "^2.16.3",
     "@web3modal/wagmi": "^4.1.9",
     "abitype": "^1.0.8",
@@ -42,6 +48,8 @@
     "dompurify": "^3.0.11",
     "glin-profanity": "^2.0.0",
     "graphql": "^16.11.0",
+    "helia": "^7.1.0",
+    "ipfs-unixfs-importer": "^17.0.1",
     "libsodium-wrappers": "^0.7.13",
     "multiformats": "^13.1.1",
     "next": "^15.5.18",
@@ -77,8 +85,8 @@
     "prettier-plugin-tailwindcss": "^0.5.13",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.8.3",
-    "vitest": "^2.1.8",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.8"
   },
   "prettier": {
     "printWidth": 120,

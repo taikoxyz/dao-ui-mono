@@ -63,6 +63,13 @@ export const PUB_ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY ?
 
 export const PUB_WALLET_CONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ?? "";
 
+// Single public IPFS gateway origin, reused by the client-side read fallback and
+// ENS avatar resolution so swapping the public gateway is a one-line change.
+export const PUB_IPFS_IO_GATEWAY = "https://ipfs.io";
+
+// Optional public-gateway fallbacks tried after the same-origin /api/ipfs
+// proxy (see utils/ipfs.ts). Comma-separated URL prefixes, e.g.
+// "https://ipfs.io/ipfs".
 export const PUB_IPFS_ENDPOINTS = process.env.NEXT_PUBLIC_IPFS_ENDPOINTS ?? "";
 // NOTE: The Pinata credential is intentionally NOT exposed here. It is a
 // server-only secret (process.env.PINATA_JWT) read by src/pages/api/pin.ts.

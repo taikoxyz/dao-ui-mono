@@ -10,7 +10,11 @@ export function useMetadata<T = JsonValue>(ipfsUri?: string) {
 
       return fetchIpfsAsJson(ipfsUri);
     },
-    retry: true,
+    // Bounded, not infinite: the /api/ipfs proxy already races several gateways
+    // server-side, so a single client retry is enough. A genuinely missing CID
+    // settles to the "(metadata not available)" state quickly instead of
+    // stacking many multi-second endpoint timeouts before it gives up.
+    retry: 1,
     refetchOnMount: false,
     refetchOnReconnect: false,
     retryOnMount: true,
