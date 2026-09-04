@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.4.0...dao-ui-v0.4.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **dao-ui:** update Standard Proposal cycle copy for 10-day veto ([#195](https://github.com/taikoxyz/dao-ui-mono/issues/195)) ([5b59b49](https://github.com/taikoxyz/dao-ui-mono/commit/5b59b49816c1f6b69925ea8f36c8962db55c0a96))
+
 ## [0.4.0](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.3.2...dao-ui-v0.4.0) (2026-07-14)
 
 
