@@ -1,8 +1,4 @@
-import {
-  SECONDS_PER_DAY,
-  STANDARD_PROPOSAL_TIMELOCK_DAYS,
-  STANDARD_PROPOSAL_VETO_PERIOD_DAYS,
-} from "@/constants";
+import { SECONDS_PER_DAY, STANDARD_PROPOSAL_TIMELOCK_DAYS, STANDARD_PROPOSAL_VETO_PERIOD_DAYS } from "@/constants";
 
 export type StandardProposalCycleDays = {
   vetoDays: number;
@@ -10,12 +6,13 @@ export type StandardProposalCycleDays = {
   totalCycleDays: number;
 };
 
-/** Convert a positive duration in seconds to whole days; otherwise undefined. */
+/** Convert a duration in seconds to whole days, or undefined if it isn't at least a day. */
 export function secondsToWholeDays(seconds: number | bigint | undefined): number | undefined {
   if (seconds === undefined) return undefined;
   const value = Number(seconds);
   if (!Number.isFinite(value) || value <= 0) return undefined;
-  return Math.round(value / SECONDS_PER_DAY);
+  const days = Math.round(value / SECONDS_PER_DAY);
+  return days > 0 ? days : undefined;
 }
 
 /**
@@ -37,17 +34,17 @@ export function getStandardProposalCycleDays(params: {
   };
 }
 
-/** Format a proposal's veto window from millisecond timestamps (historical-safe). */
-export function formatVetoDurationLabel(
-  startDateMs?: number,
-  endDateMs?: number,
-  fallbackDays: number = STANDARD_PROPOSAL_VETO_PERIOD_DAYS
-): string {
-  if (startDateMs && endDateMs && endDateMs > startDateMs) {
-    const days = Math.round((endDateMs - startDateMs) / 1000 / SECONDS_PER_DAY);
-    if (days > 0) {
-      return `${days} day${days === 1 ? "" : "s"}`;
-    }
-  }
-  return `${fallbackDays} day${fallbackDays === 1 ? "" : "s"}`;
+/**
+ * Format a proposal's veto window from millisecond timestamps (historical-safe).
+ * Returns undefined when the proposal has no veto window — emergency proposals
+ * share this plugin with vetoStartDate === vetoEndDate — so callers omit the
+ * row rather than asserting a duration the proposal never had.
+ */
+export function formatVetoDurationLabel(startDateMs?: number, endDateMs?: number): string | undefined {
+  if (!startDateMs || !endDateMs || endDateMs <= startDateMs) return undefined;
+
+  const days = Math.round((endDateMs - startDateMs) / 1000 / SECONDS_PER_DAY);
+  if (days <= 0) return undefined;
+
+  return `${days} day${days === 1 ? "" : "s"}`;
 }
