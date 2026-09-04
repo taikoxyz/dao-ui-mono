@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { VotesDataList } from "@/components/proposalVoting/votesDataList/votesDataList";
 import type { IVote } from "@/utils/types";
+import { formatVetoDurationLabel } from "@/plugins/optimistic-proposals/utils/standard-proposal-cycle";
 
 dayjs.extend(relativeTime);
 
@@ -41,6 +42,8 @@ export const CommunityVetoStage: FC<CommunityVetoStageProps> = ({
   votes = [],
   snapshotBlock,
 }) => {
+  const durationLabel = formatVetoDurationLabel(startDate, endDate);
+
   const vetoPercentage = totalSupply > 0n ? Number((10000n * vetoCount) / totalSupply) / 100 : 0;
   const thresholdPercentage = threshold * 100;
   const thresholdReached = vetoPercentage >= thresholdPercentage;
@@ -267,10 +270,12 @@ export const CommunityVetoStage: FC<CommunityVetoStageProps> = ({
                   <dd className="font-medium text-sm text-neutral-800">#{snapshotBlock}</dd>
                 </div>
               )}
-              <div>
-                <dt className="text-sm text-neutral-500">Duration</dt>
-                <dd className="font-medium text-sm text-neutral-800">21 days</dd>
-              </div>
+              {durationLabel && (
+                <div>
+                  <dt className="text-sm text-neutral-500">Duration</dt>
+                  <dd className="font-medium text-sm text-neutral-800">{durationLabel}</dd>
+                </div>
+              )}
               <div>
                 <dt className="text-sm text-neutral-500">Token</dt>
                 <dd className="font-medium text-sm text-neutral-800">{tokenSymbol}</dd>
