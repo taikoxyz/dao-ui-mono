@@ -78,6 +78,13 @@ export const PUB_IPFS_ENDPOINTS = process.env.NEXT_PUBLIC_IPFS_ENDPOINTS ?? "";
 export const DETERMINISTIC_EMERGENCY_PAYLOAD =
   "This text is used to generate an encryption key to be used on private proposals targetting the Taiko DAO.\n\nSign this message ONLY if you are about to create, approve or execute a emergency proposal using the official Taiko app.";
 
+// Standard proposal cycle defaults.
+// Plugin governanceSettings.minDuration is 0 on mainnet (the floor lives in
+// StandardProposalCondition); use these when on-chain duration is unavailable.
+export const SECONDS_PER_DAY = 86_400;
+export const STANDARD_PROPOSAL_VETO_PERIOD_DAYS = 10;
+export const STANDARD_PROPOSAL_TIMELOCK_DAYS = 7;
+
 // General
 export const PUB_APP_NAME = "Taiko";
 export const PUB_APP_DESCRIPTION = "Taiko's official UI to interact with the DAO smart contract";

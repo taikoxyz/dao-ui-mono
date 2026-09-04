@@ -20,6 +20,8 @@ import { useTokenVotes } from "@/hooks/useTokenVotes";
 import { AddressText } from "@/components/text/address";
 import { Address } from "viem";
 import { useGqlProposalMultiple } from "@/utils/gql/hooks/useGetGqlProposalMultiple";
+import { useGovernanceSettings } from "@/plugins/optimistic-proposals/hooks/useGovernanceSettings";
+import { getStandardProposalCycleDays } from "@/plugins/optimistic-proposals/utils/standard-proposal-cycle";
 const DEFAULT_PAGE_SIZE = 6;
 
 export function PublicProposals() {
@@ -174,6 +176,12 @@ export default function ProposalList() {
 }
 
 function AsideSection() {
+  const { governanceSettings } = useGovernanceSettings();
+  const { vetoDays, timelockDays, totalCycleDays } = getStandardProposalCycleDays({
+    minDuration: governanceSettings.minDuration,
+    timelockPeriod: governanceSettings.timelockPeriod,
+  });
+
   return (
     <aside className="flex w-full flex-col gap-y-4 lg:max-w-[280px] lg:gap-y-6">
       <div className="flex flex-col gap-y-3">
@@ -196,7 +204,10 @@ function AsideSection() {
         <b>(Visible following creation)</b>
         <ul className="list-inside list-disc">
           <li>Available for public community voting following approval from 5 or 62.5% of Security Council Members </li>
-          <li>Executed if the proposal is not vetoed within 21 days</li>
+          <li>
+            Community veto period is {vetoDays} days. If not vetoed, a {timelockDays} day timelock follows (
+            {totalCycleDays} days total) before execution.
+          </li>
           <li>10% vote from token holders is required to veto a Standard Proposal</li>
           <li>Relates to any topics/issues that do not fall within the scope of Emergency Proposals</li>
         </ul>
