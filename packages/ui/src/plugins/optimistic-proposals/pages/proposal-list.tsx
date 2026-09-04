@@ -21,7 +21,11 @@ import { AddressText } from "@/components/text/address";
 import { Address } from "viem";
 import { useGqlProposalMultiple } from "@/utils/gql/hooks/useGetGqlProposalMultiple";
 import { useGovernanceSettings } from "@/plugins/optimistic-proposals/hooks/useGovernanceSettings";
-import { getStandardProposalCycleDays } from "@/plugins/optimistic-proposals/utils/standard-proposal-cycle";
+import {
+  formatDays,
+  formatTimelockClause,
+  getStandardProposalCycleDays,
+} from "@/plugins/optimistic-proposals/utils/standard-proposal-cycle";
 const DEFAULT_PAGE_SIZE = 6;
 
 export function PublicProposals() {
@@ -177,7 +181,7 @@ export default function ProposalList() {
 
 function AsideSection() {
   const { governanceSettings } = useGovernanceSettings();
-  const { vetoDays, timelockDays, totalCycleDays } = getStandardProposalCycleDays({
+  const cycle = getStandardProposalCycleDays({
     minDuration: governanceSettings.minDuration,
     timelockPeriod: governanceSettings.timelockPeriod,
   });
@@ -205,8 +209,7 @@ function AsideSection() {
         <ul className="list-inside list-disc">
           <li>Available for public community voting following approval from 5 or 62.5% of Security Council Members </li>
           <li>
-            Community veto period is {vetoDays} days. If not vetoed, a {timelockDays} day timelock follows (
-            {totalCycleDays} days total) before execution.
+            Community veto period is {formatDays(cycle.vetoDays)}. {formatTimelockClause(cycle)}
           </li>
           <li>10% vote from token holders is required to veto a Standard Proposal</li>
           <li>Relates to any topics/issues that do not fall within the scope of Emergency Proposals</li>

@@ -1,4 +1,5 @@
 import {
+  formatTimelockClause,
   formatVetoDurationLabel,
   getStandardProposalCycleDays,
   secondsToWholeDays,
@@ -82,5 +83,35 @@ describe("standard proposal cycle helpers", () => {
     expect(formatVetoDurationLabel(start, start + 3600 * 1000)).toBeUndefined();
     expect(formatVetoDurationLabel(undefined, undefined)).toBeUndefined();
     expect(formatVetoDurationLabel(0, 0)).toBeUndefined();
+  });
+
+  test("getStandardProposalCycleDays preserves a configured zero timelock", () => {
+    // A zero timelock is a real setting, not a missing read: useProposalVariantStatus
+    // treats it as no delay, so the copy must not advertise the 7-day fallback.
+    expect(getStandardProposalCycleDays({ minDuration: 0, timelockPeriod: 0 })).toEqual({
+      vetoDays: 10,
+      timelockDays: 0,
+      totalCycleDays: 10,
+    });
+  });
+
+  test("getStandardProposalCycleDays only falls back for an unresolved timelock", () => {
+    expect(getStandardProposalCycleDays({ minDuration: 0, timelockPeriod: undefined }).timelockDays).toBe(7);
+    expect(getStandardProposalCycleDays({ minDuration: 0, timelockPeriod: 0n }).timelockDays).toBe(0);
+  });
+
+  test("formatTimelockClause collapses when there is no timelock", () => {
+    expect(formatTimelockClause({ vetoDays: 10, timelockDays: 0, totalCycleDays: 10 })).toBe(
+      "If not vetoed, it can be executed as soon as the veto period ends."
+    );
+  });
+
+  test("formatTimelockClause describes the wait when there is one", () => {
+    expect(formatTimelockClause({ vetoDays: 10, timelockDays: 7, totalCycleDays: 17 })).toBe(
+      "If not vetoed, a 7-day timelock follows (17 days total) before it can be executed."
+    );
+    expect(formatTimelockClause({ vetoDays: 10, timelockDays: 1, totalCycleDays: 11 })).toBe(
+      "If not vetoed, a 1-day timelock follows (11 days total) before it can be executed."
+    );
   });
 });

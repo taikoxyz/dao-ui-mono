@@ -17,21 +17,46 @@ export function secondsToWholeDays(seconds: number | bigint | undefined): number
 
 /**
  * Explainer-copy cycle lengths for Standard Proposals.
- * Plugin minDuration is 0 on mainnet, so veto days fall back to
- * STANDARD_PROPOSAL_VETO_PERIOD_DAYS unless a positive on-chain value exists.
+ *
+ * The two settings need different treatment. minDuration is a *floor*, not the
+ * window itself, and it reads 0 on mainnet — "no floor" is indistinguishable
+ * from unset, so it falls back to STANDARD_PROPOSAL_VETO_PERIOD_DAYS.
+ * timelockPeriod is the real value, so a configured 0 means "no timelock" and
+ * is preserved; only an unresolved read falls back. useProposalVariantStatus
+ * treats a zero timelock as no delay, and this copy must not contradict it.
  */
 export function getStandardProposalCycleDays(params: {
   minDuration?: number | bigint;
   timelockPeriod?: number | bigint;
 }): StandardProposalCycleDays {
   const vetoDays = secondsToWholeDays(params.minDuration) ?? STANDARD_PROPOSAL_VETO_PERIOD_DAYS;
-  const timelockDays = secondsToWholeDays(params.timelockPeriod) ?? STANDARD_PROPOSAL_TIMELOCK_DAYS;
+  const timelockDays =
+    params.timelockPeriod === undefined
+      ? STANDARD_PROPOSAL_TIMELOCK_DAYS
+      : (secondsToWholeDays(params.timelockPeriod) ?? 0);
 
   return {
     vetoDays,
     timelockDays,
     totalCycleDays: vetoDays + timelockDays,
   };
+}
+
+/** Pluralize a whole number of days. */
+export function formatDays(days: number): string {
+  return `${days} day${days === 1 ? "" : "s"}`;
+}
+
+/**
+ * The clause both Standard Proposal asides use to describe what follows the
+ * veto window. Collapses when there is no timelock to wait out. Execution is
+ * a manual call, so the copy says "can be executed", not "is executed".
+ */
+export function formatTimelockClause({ timelockDays, totalCycleDays }: StandardProposalCycleDays): string {
+  if (timelockDays <= 0) {
+    return "If not vetoed, it can be executed as soon as the veto period ends.";
+  }
+  return `If not vetoed, a ${timelockDays}-day timelock follows (${formatDays(totalCycleDays)} total) before it can be executed.`;
 }
 
 /**
@@ -46,5 +71,5 @@ export function formatVetoDurationLabel(startDateMs?: number, endDateMs?: number
   const days = Math.round((endDateMs - startDateMs) / 1000 / SECONDS_PER_DAY);
   if (days <= 0) return undefined;
 
-  return `${days} day${days === 1 ? "" : "s"}`;
+  return formatDays(days);
 }

@@ -17,7 +17,10 @@ import RegularProposalList from "../../multisig/pages/proposal-list";
 import { useCanCreateProposal } from "@/plugins/emergency-multisig/hooks/useCanCreateProposal";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useGovernanceSettings } from "@/plugins/optimistic-proposals/hooks/useGovernanceSettings";
-import { getStandardProposalCycleDays } from "@/plugins/optimistic-proposals/utils/standard-proposal-cycle";
+import {
+  formatTimelockClause,
+  getStandardProposalCycleDays,
+} from "@/plugins/optimistic-proposals/utils/standard-proposal-cycle";
 
 export default function EncryptionPage() {
   const [toggleValue, setToggleValue] = useState<"members" | "community-proposals" | "emergency-proposals">("members");
@@ -73,7 +76,7 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
   const { isConnected } = useAccount();
   const { canCreate } = useCanCreateProposal();
   const { governanceSettings } = useGovernanceSettings();
-  const { vetoDays, timelockDays, totalCycleDays } = getStandardProposalCycleDays({
+  const cycle = getStandardProposalCycleDays({
     minDuration: governanceSettings.minDuration,
     timelockPeriod: governanceSettings.timelockPeriod,
   });
@@ -125,8 +128,8 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <Heading size="h3">Standard Proposals</Heading>
             <p className="text-neutral-500">
               Standard Proposals are created by the Security Council. Following approval by the Security Council
-              Members, the proposal is open to a {vetoDays} day public voting period. If not vetoed, a {timelockDays}{" "}
-              day timelock follows ({totalCycleDays} days total) before execution.
+              Members, the proposal is open to a {cycle.vetoDays}-day public voting period.{" "}
+              {formatTimelockClause(cycle)}
             </p>
 
             <If condition={isConnected && canCreate}>
@@ -142,7 +145,7 @@ function AsideSection({ toggleValue }: { toggleValue: string }) {
             <ul className="list-inside list-disc">
               <li>
                 Approved by the lesser of at least 5 or 62.5% of Security Council Members, prior to entering a{" "}
-                {vetoDays} day public voting period
+                {cycle.vetoDays}-day public voting period
               </li>
               <li>10% of community votes are required to veto a Standard Proposal</li>
               <li>Standard Proposal are passed if there is no veto within the public voting period</li>
