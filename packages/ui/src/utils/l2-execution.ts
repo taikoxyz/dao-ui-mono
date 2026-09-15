@@ -84,7 +84,7 @@ export function getConfirmedL2MessageOutcome(messageStatus?: number) {
  * situation where the error is worth showing — checking the bail-out first
  * swallowed it and rendered nothing at all.
  */
-export type L2ExtractionView = "error" | "no-message" | "hidden" | "ready";
+export type L2ExtractionView = "error" | "no-message" | "waiting" | "hidden" | "ready";
 
 export function getL2ExtractionView({
   extractError,
@@ -106,5 +106,9 @@ export function getL2ExtractionView({
   // transaction emitted no MessageSent — there is nothing to prove on L2.
   if (noMessageFound && detectedFromActions) return "no-message";
   if (!detectedFromActions) return "hidden";
-  return "ready";
+  // The actions declare an L2 leg but extraction has produced neither a message
+  // nor a verdict yet. Never "ready": that renders the execute card around a
+  // null message, and executeL2 no-ops on !message — the dead button this
+  // helper exists to prevent.
+  return "waiting";
 }

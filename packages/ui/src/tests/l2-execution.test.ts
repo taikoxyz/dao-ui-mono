@@ -171,8 +171,10 @@ describe("getL2ExtractionView", () => {
     expect(getL2ExtractionView({ ...settled, hasMessage: true })).toBe("ready");
   });
 
-  test("is ready when the actions declare an L2 leg and extraction found nothing yet", () => {
-    expect(getL2ExtractionView({ ...settled, detectedFromActions: true })).toBe("ready");
+  test("waits, never readies, while a declared L2 leg has no message or verdict yet", () => {
+    // "ready" here would render the execute card around a null message, whose
+    // executeL2 no-ops — the dead button this helper exists to prevent.
+    expect(getL2ExtractionView({ ...settled, detectedFromActions: true })).toBe("waiting");
   });
 
   test("an extracted message outranks a stale noMessageFound flag", () => {

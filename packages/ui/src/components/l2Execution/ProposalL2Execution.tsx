@@ -151,11 +151,13 @@ export function ProposalL2Execution({
   // Reading the L1 receipt failed. Reported before the "no L2 leg" bail-out
   // below, which would otherwise swallow it: an executed proposal has its
   // actions cleared, so detectedFromActions is false exactly here.
-  if (extractionView === "error") {
+  // The `&& extractError` is redundant with the view (getL2ExtractionView only
+  // returns "error" when it is set) but narrows string | null for AlertInline.
+  if (extractionView === "error" && extractError) {
     return (
       <div className="mt-4">
         <AlertInline
-          message={`Failed to read the L1 transaction: ${extractError}`}
+          message={extractError}
           variant="critical"
         />
       </div>
@@ -177,6 +179,18 @@ export function ProposalL2Execution({
 
   // No MessageSent found after extraction — not an L2 proposal
   if (extractionView === "hidden") return null;
+
+  // Extraction has not settled yet (the effect has not run for this hash, or a
+  // retry is pending). Show the spinner rather than an execute button that
+  // cannot do anything without a message.
+  if (extractionView === "waiting") {
+    return (
+      <div className="mt-4 flex items-center gap-2">
+        <Spinner size="sm" />
+        <span className="text-sm text-neutral-500">Extracting bridge message from L1 transaction...</span>
+      </div>
+    );
+  }
 
   // Check if on correct network
   const isOnTaikoL2 = chain?.id === TAIKO_L2_CHAIN_ID;
