@@ -33,9 +33,19 @@ export function isContract(address: Address, publicClient: PublicClient) {
 }
 
 /**
+ * Fetches every matching log emitted by `targetContract` between `fromBlock`
+ * and the current head, paging through the range in fixed-size windows so no
+ * single eth_getLogs call exceeds provider block-range limits.
+ *
+ * Windows are inclusive on both ends and never overlap: [from, from + N - 1],
+ * then [from + N, from + 2N - 1], and so on, with the last window clamped to
+ * the head observed at the start of the scan. Overlapping windows would
+ * return the logs of every shared boundary block twice, which surfaced as
+ * duplicated approvers/vetoers in the lists built from these events.
  *
  * @param targetContract
  * @param event
+ * @param args
  * @param publicClient
  * @param fromBlock
  * @returns
@@ -49,20 +59,21 @@ export async function getLogsUntilNow<T extends AbiEvent>(
 ) {
   let result: Awaited<ReturnType<typeof publicClient.getLogs<T>>> = [];
   const currentBlock = await publicClient.getBlockNumber();
+  const windowSize = BigInt(GET_LOGS_BLOCK_COUNT);
 
-  do {
+  for (let windowStart = fromBlock; windowStart <= currentBlock; windowStart += windowSize) {
+    const windowEnd = windowStart + windowSize - BigInt(1);
+
     const logs = await publicClient.getLogs<T>({
       address: targetContract,
       event,
       args,
-      fromBlock,
-      toBlock: fromBlock + BigInt(GET_LOGS_BLOCK_COUNT),
+      fromBlock: windowStart,
+      toBlock: windowEnd < currentBlock ? windowEnd : currentBlock,
     });
 
     result = result.concat(logs);
-
-    fromBlock += BigInt(GET_LOGS_BLOCK_COUNT);
-  } while (fromBlock < currentBlock);
+  }
 
   return result;
 }
