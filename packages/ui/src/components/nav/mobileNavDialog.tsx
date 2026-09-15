@@ -30,7 +30,7 @@ export const MobileNavDialog: React.FC<IMobileNavDialogProps> = (props) => {
       <Dialog.Content className="flex flex-col gap-y-6 px-3 py-7">
         <ul className="flex w-full flex-col gap-y-1">
           {navLinks
-            .filter((link) => isSigner || (!link.hiddenIfNotSigner && !link.hideFromMenu))
+            .filter((link) => !link.hideFromMenu && (isSigner || !link.hiddenIfNotSigner))
             .map((navLink) => (
               <NavLink {...navLink} key={navLink.id} onClick={() => dialogRootProps.onOpenChange?.(false)} />
             ))}
