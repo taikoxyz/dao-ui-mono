@@ -174,4 +174,20 @@ describe("getL2ExtractionView", () => {
   test("is ready when the actions declare an L2 leg and extraction found nothing yet", () => {
     expect(getL2ExtractionView({ ...settled, detectedFromActions: true })).toBe("ready");
   });
+
+  test("an extracted message outranks a stale noMessageFound flag", () => {
+    // The reset effect keys on l1TxHash alone, but extraction also re-runs when
+    // the viem client changes (a wallet chain switch). A verdict left over from
+    // the earlier attempt must not hide a message the retry actually found.
+    expect(
+      getL2ExtractionView({
+        ...settled,
+        hasMessage: true,
+        noMessageFound: true,
+        detectedFromActions: true,
+      })
+    ).toBe("ready");
+
+    expect(getL2ExtractionView({ ...settled, hasMessage: true, noMessageFound: true })).toBe("ready");
+  });
 });

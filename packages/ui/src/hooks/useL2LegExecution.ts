@@ -88,7 +88,14 @@ export function useL2LegExecution(
 
     let cancelled = false;
 
+    // Clear any verdict from a previous attempt for this same hash. The reset
+    // effect above only fires on l1TxHash, but this effect also re-runs when
+    // l1Client changes (a wallet chain switch, which this card itself triggers),
+    // and a stale extractError/noMessageFound would otherwise outlive a retry
+    // that succeeds.
     setIsExtracting(true);
+    setExtractError(null);
+    setNoMessageFound(false);
     l1Client
       .getTransactionReceipt({ hash: l1TxHash })
       .then((receipt) => {
