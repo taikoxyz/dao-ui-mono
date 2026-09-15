@@ -9,6 +9,12 @@ import { parseProposalId } from "./proposal-id";
  * its index in the plugin's `proposalIds` array. The on-chain proposal id
  * encodes the index in its low 64 bits, so decode that instead of trusting the
  * array position.
+ *
+ * Assumes the caller's query is scoped to a single plugin — the index alone is
+ * only unique within one. `GQL_GET_PROPOSAL_MULTIPLE` is filtered on
+ * `isOptimistic`, which the one optimistic plugin satisfies. Reusing this for a
+ * broader `proposalMixins` query would let equal indexes from different plugins
+ * collide, and the first entry would silently win.
  */
 export function groupGqlProposalsByIndex(
   proposals: IGqlProposalMixin[] | null | undefined
@@ -21,7 +27,12 @@ export function groupGqlProposalsByIndex(
   const skipped: string[] = [];
 
   for (const proposal of proposals) {
-    if (!proposal?.proposalId) continue;
+    if (!proposal?.proposalId) {
+      // An entry with no proposalId is malformed subgraph data too, so it
+      // belongs in the same report rather than vanishing silently.
+      if (proposal) skipped.push(`(no proposalId, entity id ${proposal.id || "unknown"})`);
+      continue;
+    }
 
     let index: number;
     try {

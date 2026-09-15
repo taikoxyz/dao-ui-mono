@@ -65,6 +65,18 @@ describe("groupGqlProposalsByIndex", () => {
     expect(byIndex.get(0)).toBe(usable);
   });
 
+  test("holds the safe-integer boundary exactly", () => {
+    // 2^53 - 1 is Number.MAX_SAFE_INTEGER and survives the round trip; one above
+    // it does not (Number(2n ** 53n + 1n) rounds down to 2^53), so it is dropped.
+    const atBoundary = gqlProposal((2n ** 53n - 1n).toString(), "0x1111111111111111111111111111111111111111");
+    const pastBoundary = gqlProposal((2n ** 53n + 1n).toString(), "0x2222222222222222222222222222222222222222");
+
+    const byIndex = groupGqlProposalsByIndex([atBoundary, pastBoundary]);
+
+    expect(byIndex.size).toBe(1);
+    expect(byIndex.get(Number.MAX_SAFE_INTEGER)).toBe(atBoundary);
+  });
+
   test("keeps the first entry when an index repeats", () => {
     const first = gqlProposal(ID_INDEX_0, "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     const duplicate = gqlProposal(ID_INDEX_0, "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
