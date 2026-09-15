@@ -25,7 +25,10 @@ export function groupGqlProposalsByIndex(
     } catch {
       // A proposal id the subgraph could not express as an integer tells us
       // nothing about which proposal it belongs to. Skipping it renders the
-      // card without subgraph data, which is what a missing entry already does.
+      // card without subgraph data, which is what a missing entry already does
+      // — but log it, so malformed subgraph data is distinguishable from a
+      // proposal the subgraph simply has not indexed.
+      console.warn(`Skipping subgraph proposal with an unparseable proposalId: ${proposal.proposalId}`);
       continue;
     }
 
