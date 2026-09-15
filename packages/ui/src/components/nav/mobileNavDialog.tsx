@@ -3,6 +3,7 @@ import Link from "next/link";
 import { NavLink, type INavLink } from "./navLink";
 import { useApproverWalletList, useSignerList } from "@/plugins/security-council/hooks/useSignerList";
 import { useAccount } from "wagmi";
+import { equalAddresses } from "@/utils/evm";
 import Image from "next/image";
 
 interface IMobileNavDialogProps extends IDialogRootProps {
@@ -14,15 +15,22 @@ export const MobileNavDialog: React.FC<IMobileNavDialogProps> = (props) => {
   const { address } = useAccount();
   const { data: listedSigners } = useSignerList();
   const { data: listedOrAppointedSigners } = useApproverWalletList();
-  // If the address is a listed signer (by being an owner or by being appointed by an owner)
-  const showAllLinks = address && (listedSigners?.includes(address) ?? listedOrAppointedSigners?.includes(address));
+  // If the address is a listed signer (by being an owner or by being appointed by an owner).
+  // Both lists must be consulted: `??` never fell through to the appointed agents
+  // because `includes` returns a boolean, not a nullish value. The comparison is
+  // case-insensitive because the signer list comes from the subgraph (lowercase
+  // ids) while the wallet address is checksummed.
+  const isSigner =
+    !!address &&
+    ((listedSigners ?? []).some((signer) => equalAddresses(signer, address)) ||
+      (listedOrAppointedSigners ?? []).some((signer) => equalAddresses(signer, address)));
 
   return (
     <Dialog.Root {...dialogRootProps}>
       <Dialog.Content className="flex flex-col gap-y-6 px-3 py-7">
         <ul className="flex w-full flex-col gap-y-1">
           {navLinks
-            .filter((link) => showAllLinks ?? !link.hiddenIfNotSigner ?? !link.hideFromMenu)
+            .filter((link) => isSigner || (!link.hiddenIfNotSigner && !link.hideFromMenu))
             .map((navLink) => (
               <NavLink {...navLink} key={navLink.id} onClick={() => dialogRootProps.onOpenChange?.(false)} />
             ))}
