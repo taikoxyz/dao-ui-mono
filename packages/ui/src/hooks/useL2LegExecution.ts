@@ -68,12 +68,18 @@ export function useL2LegExecution(
   const [msgHash, setMsgHash] = useState<Hex | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
+  // Distinct from extractError: the receipt was read fine, it just carried no
+  // MessageSent log. That is the normal shape of an executed L1-only proposal,
+  // not a failure.
+  const [noMessageFound, setNoMessageFound] = useState(false);
 
   // Reset extraction state when the tx hash changes (e.g. navigating between proposals)
   useEffect(() => {
     setMessage(null);
     setMsgHash(null);
     setExtractError(null);
+    setNoMessageFound(false);
+    setIsExtracting(false);
   }, [l1TxHash]);
 
   // Step 1: Extract message from L1 tx receipt
@@ -108,13 +114,13 @@ export function useL2LegExecution(
           }
         }
         if (!found) {
-          setExtractError("No bridge message found in this transaction");
+          setNoMessageFound(true);
         }
         setIsExtracting(false);
       })
       .catch(() => {
         if (cancelled) return;
-        setExtractError("Failed to read L1 transaction");
+        setExtractError("The transaction receipt could not be fetched");
         setIsExtracting(false);
       });
 
@@ -293,6 +299,7 @@ export function useL2LegExecution(
     msgHash,
     isExtracting,
     extractError,
+    noMessageFound,
     executeL2,
     isL2Confirming: writeStatus === "pending" || isL2Confirming,
     isL2Confirmed: isMessageDone,

@@ -74,3 +74,33 @@ export function getConfirmedL2MessageOutcome(messageStatus?: number) {
 
   return "pending";
 }
+
+/**
+ * What the L2 execution card should render once extraction has settled.
+ *
+ * Order matters: a failure to read the L1 receipt must be reported before the
+ * "this proposal has no L2 leg" bail-out. An executed proposal has its actions
+ * cleared from the contract, so `detectedFromActions` is false in exactly the
+ * situation where the error is worth showing — checking the bail-out first
+ * swallowed it and rendered nothing at all.
+ */
+export type L2ExtractionView = "error" | "no-message" | "hidden" | "ready";
+
+export function getL2ExtractionView({
+  extractError,
+  noMessageFound,
+  hasMessage,
+  detectedFromActions,
+}: {
+  extractError: string | null;
+  noMessageFound: boolean;
+  hasMessage: boolean;
+  detectedFromActions: boolean;
+}): L2ExtractionView {
+  if (extractError) return "error";
+  // The actions promised a bridge sendMessage bound for L2, but the executed
+  // transaction emitted no MessageSent — there is nothing to prove on L2.
+  if (noMessageFound && detectedFromActions) return "no-message";
+  if (!hasMessage && !detectedFromActions) return "hidden";
+  return "ready";
+}

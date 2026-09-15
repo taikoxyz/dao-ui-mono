@@ -7,7 +7,7 @@ import { PUB_TAIKO_BRIDGE_ADDRESS, TAIKO_L2_CHAIN_ID } from "@/constants";
 import { useWalletChainPolicy } from "@/context/WalletChainPolicy";
 import { useL2AnchorSync } from "@/hooks/useL2AnchorSync";
 import { useL2LegExecution } from "@/hooks/useL2LegExecution";
-import { hasL2LegFromActions, shouldRenderL2ExecutionCard } from "@/utils/l2-execution";
+import { getL2ExtractionView, hasL2LegFromActions, shouldRenderL2ExecutionCard } from "@/utils/l2-execution";
 import { type RawAction } from "@/utils/types";
 
 interface ProposalL2ExecutionProps {
@@ -46,6 +46,7 @@ export function ProposalL2Execution({
     message,
     isExtracting,
     extractError,
+    noMessageFound,
     executeL2,
     isL2Confirming,
     isL2Confirmed,
@@ -140,20 +141,42 @@ export function ProposalL2Execution({
     );
   }
 
-  // No MessageSent found after extraction — not an L2 proposal
-  if (!message && !detectedFromActions) return null;
+  const extractionView = getL2ExtractionView({
+    extractError,
+    noMessageFound,
+    hasMessage: !!message,
+    detectedFromActions,
+  });
 
-  // Extract error
-  if (extractError) {
+  // Reading the L1 receipt failed. Reported before the "no L2 leg" bail-out
+  // below, which would otherwise swallow it: an executed proposal has its
+  // actions cleared, so detectedFromActions is false exactly here.
+  if (extractionView === "error") {
     return (
       <div className="mt-4">
         <AlertInline
-          message={`Failed to read L1 transaction: ${extractError}`}
+          message={`Failed to read the L1 transaction: ${extractError}`}
           variant="critical"
         />
       </div>
     );
   }
+
+  // The actions include a bridge sendMessage bound for L2, but the executed
+  // transaction emitted no MessageSent log.
+  if (extractionView === "no-message") {
+    return (
+      <div className="mt-4">
+        <AlertInline
+          message="No bridge message was found in the L1 execution transaction."
+          variant="critical"
+        />
+      </div>
+    );
+  }
+
+  // No MessageSent found after extraction — not an L2 proposal
+  if (extractionView === "hidden") return null;
 
   // Check if on correct network
   const isOnTaikoL2 = chain?.id === TAIKO_L2_CHAIN_ID;
