@@ -16,6 +16,10 @@ export function groupGqlProposalsByIndex(
   const byIndex = new Map<number, IGqlProposalMixin>();
   if (!proposals) return byIndex;
 
+  // Collected rather than warned one by one: a subgraph returning many bad
+  // records would otherwise flood the console with a line per entry.
+  const skipped: string[] = [];
+
   for (const proposal of proposals) {
     if (!proposal?.proposalId) continue;
 
@@ -24,17 +28,30 @@ export function groupGqlProposalsByIndex(
       index = parseProposalId(BigInt(proposal.proposalId)).index;
     } catch {
       // A proposal id the subgraph could not express as an integer tells us
-      // nothing about which proposal it belongs to. Skipping it renders the
-      // card without subgraph data, which is what a missing entry already does
-      // — but log it, so malformed subgraph data is distinguishable from a
-      // proposal the subgraph simply has not indexed.
-      console.warn(`Skipping subgraph proposal with an unparseable proposalId: ${proposal.proposalId}`);
+      // nothing about which proposal it belongs to.
+      skipped.push(proposal.proposalId);
+      continue;
+    }
+
+    // parseProposalId narrows the low 64 bits to a JS number, which is lossy
+    // above 2^53. A real index never gets close, but a corrupt id could decode
+    // to a value where distinct ids collapse onto the same key — exactly the
+    // misattribution this map exists to prevent. Drop it instead.
+    if (!Number.isSafeInteger(index)) {
+      skipped.push(proposal.proposalId);
       continue;
     }
 
     // The subgraph is the source of truth for a given id, so the first entry
     // wins; a duplicate would be the same proposal.
     if (!byIndex.has(index)) byIndex.set(index, proposal);
+  }
+
+  // Skipping renders the card without subgraph data, which is what a missing
+  // entry already does — but say so, or malformed subgraph data is
+  // indistinguishable from a proposal the subgraph has not indexed.
+  if (skipped.length > 0) {
+    console.warn(`Skipped ${skipped.length} subgraph proposal(s) with an unusable proposalId: ${skipped.join(", ")}`);
   }
 
   return byIndex;

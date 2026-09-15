@@ -53,6 +53,18 @@ describe("groupGqlProposalsByIndex", () => {
     expect(byIndex.get(0)).toBe(usable);
   });
 
+  test("skips an id whose decoded index is not a safe integer", () => {
+    // 2^60 decodes to an index above Number.MAX_SAFE_INTEGER, where distinct
+    // ids can collapse onto one key — the misattribution this map prevents.
+    const unsafe = gqlProposal((2n ** 60n).toString(), "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+    const usable = gqlProposal(ID_INDEX_0, "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+
+    const byIndex = groupGqlProposalsByIndex([unsafe, usable]);
+
+    expect(byIndex.size).toBe(1);
+    expect(byIndex.get(0)).toBe(usable);
+  });
+
   test("keeps the first entry when an index repeats", () => {
     const first = gqlProposal(ID_INDEX_0, "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     const duplicate = gqlProposal(ID_INDEX_0, "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
