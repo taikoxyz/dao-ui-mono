@@ -9,6 +9,11 @@ on:
       flags:
         type: string
         required: true
+      project_name:
+        description: "Vercel project name. When set, pull request runs get a comment linking to the preview deployment."
+        type: string
+        required: false
+        default: ""
     secrets:
       vercel_project_id:
         description: "Vercel Project ID"
@@ -51,5 +56,65 @@ jobs:
       - name: Build Project Artifacts
         run: vercel build ${{ inputs.flags }} --token=${{ secrets.vercel_token }}
 
+      # A deploy authenticated with a token is not attributed to the Vercel
+      # GitHub App, so Vercel posts no commit status or PR comment for it and
+      # the URL would otherwise only exist in this log. The CLI prints it on
+      # stdout; capture it so the steps below can surface it.
       - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt ${{ inputs.flags }} --force --token=${{ secrets.vercel_token }}
+        id: deploy
+        shell: bash
+        run: |
+          set -eo pipefail
+          vercel deploy --prebuilt ${{ inputs.flags }} --force --token=${{ secrets.vercel_token }} \
+            | tee "$RUNNER_TEMP/vercel-deploy.log"
+          url="$(grep -Eo 'https://[^[:space:]]+' "$RUNNER_TEMP/vercel-deploy.log" | tail -n1)"
+          if [ -z "$url" ]; then
+            echo "::error::No deployment URL found in the Vercel CLI output"
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          {
+            echo "### ${{ inputs.environment }} deployment"
+            echo ""
+            echo "$url"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment preview URL on the pull request
+        if: ${{ github.event_name == 'pull_request' && inputs.project_name != '' }}
+        uses: actions/github-script@v7
+        env:
+          PROJECT_NAME: ${{ inputs.project_name }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const { PROJECT_NAME, PREVIEW_URL, HEAD_SHA, RUN_URL } = process.env;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            // Keyed per project so each one keeps its own comment instead of
+            // fighting over a shared one, and so repeat pushes edit in place.
+            const marker = `<!-- vercel-preview-url:${PROJECT_NAME} -->`;
+            const body = [
+              marker,
+              "| Project | Deployment | Commit |",
+              "| :--- | :--- | :--- |",
+              `| ${PROJECT_NAME} | [Visit Preview](${PREVIEW_URL}) | \`${HEAD_SHA.slice(0, 7)}\` |`,
+              "",
+              `Deployed by [this workflow run](${RUN_URL}).`,
+            ].join("\n");
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }

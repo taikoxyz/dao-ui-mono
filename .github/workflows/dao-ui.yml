@@ -47,10 +47,16 @@ jobs:
     deploy_ui_mainnet_preview:
         needs: test
         if: ${{ github.event.pull_request.draft == false  && !startsWith(github.head_ref, 'release-please') }}
+        # The called workflow inherits these and cannot raise them. It needs
+        # pull-requests: write to post the preview URL back onto the PR.
+        permissions:
+            contents: read
+            pull-requests: write
         uses: ./.github/workflows/repo--vercel-deploy.yml
         with:
             environment: "preview"
             flags: ""
+            project_name: "dao-mainnet"
         secrets:
             vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID_DAO_MAINNET }}
             vercel_org_id: ${{ secrets.VERCEL_ORG_ID }}
