@@ -11,7 +11,9 @@ export function getTagVariantFromStatus(status: ProposalStatus | undefined): Tag
     case ProposalStatus.DRAFT:
       return "neutral";
     case ProposalStatus.EXECUTED:
-      return "success";
+      // Taiko pink — executed is the DAO's terminal success state and gets the
+      // brand colour rather than the generic green used for "passing" states.
+      return "primary";
     case ProposalStatus.EXPIRED:
       return "critical";
     case ProposalStatus.FAILED:

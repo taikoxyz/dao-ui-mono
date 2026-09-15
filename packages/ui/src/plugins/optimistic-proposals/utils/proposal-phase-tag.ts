@@ -45,7 +45,8 @@ export function getPhaseTag({
 
   // Terminal states.
   if (status === ProposalStatus.VETOED) return { label: "Vetoed", variant: "critical" };
-  if (status === ProposalStatus.EXECUTED) return { label: "Executed", variant: "success" };
+  // Taiko pink ("primary"), not the generic green shared with Accepted/Executable.
+  if (status === ProposalStatus.EXECUTED) return { label: "Executed", variant: "primary" };
 
   // Emergency (fast-tracked) proposals have no veto/timelock windows.
   if (isEmergency) {
@@ -81,6 +82,8 @@ export function getPhaseIcon(variant: TagVariant): { icon: IconType; className: 
       return { icon: IconType.CLOCK, className: "text-warning-600" };
     case "success":
       return { icon: IconType.CHECKMARK, className: "text-success-600" };
+    case "primary":
+      return { icon: IconType.CHECKMARK, className: "text-primary-400" };
     case "info":
       return { icon: IconType.CLOCK, className: "text-primary-600" };
     default:
