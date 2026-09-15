@@ -1,6 +1,6 @@
 import { groupGqlProposalsByIndex } from "@/plugins/optimistic-proposals/utils/gql-proposal-index";
 import { type IGqlProposalMixin } from "@/utils/gql/types";
-import { expect, test, describe } from "vitest";
+import { afterAll, beforeAll, expect, test, describe, vi } from "vitest";
 
 // Real-shaped proposal ids: the low 64 bits carry the on-chain index.
 // 585286874342463589627155947503667611999762644992n -> index 0
@@ -25,6 +25,15 @@ function gqlProposal(proposalId: string, creator: string): IGqlProposalMixin {
 }
 
 describe("groupGqlProposalsByIndex", () => {
+  // The skip paths warn by design; keep that out of the test output. Installed
+  // in beforeAll rather than the describe body so it lands after vitest has set
+  // up its own console capture.
+  let warn: ReturnType<typeof vi.spyOn>;
+  beforeAll(() => {
+    warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterAll(() => warn.mockRestore());
+
   test("keys proposals by the index encoded in the proposal id, not by array position", () => {
     const first = gqlProposal(ID_INDEX_1234, "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     const second = gqlProposal(ID_INDEX_0, "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");

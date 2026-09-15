@@ -17,7 +17,7 @@ import { parseProposalId } from "./proposal-id";
  * collide, and the first entry would silently win.
  */
 export function groupGqlProposalsByIndex(
-  proposals: IGqlProposalMixin[] | null | undefined
+  proposals: readonly IGqlProposalMixin[] | null | undefined
 ): Map<number, IGqlProposalMixin> {
   const byIndex = new Map<number, IGqlProposalMixin>();
   if (!proposals) return byIndex;
@@ -27,10 +27,15 @@ export function groupGqlProposalsByIndex(
   const skipped: string[] = [];
 
   for (const proposal of proposals) {
-    if (!proposal?.proposalId) {
-      // An entry with no proposalId is malformed subgraph data too, so it
-      // belongs in the same report rather than vanishing silently.
-      if (proposal) skipped.push(`(no proposalId, entity id ${proposal.id || "unknown"})`);
+    // Both of these are malformed subgraph data and belong in the same report
+    // rather than vanishing silently. A null element is not expressible in the
+    // declared type, but GraphQL can put one in a list, so count it.
+    if (!proposal) {
+      skipped.push("(null entry)");
+      continue;
+    }
+    if (!proposal.proposalId) {
+      skipped.push(`(no proposalId, entity id ${proposal.id || "unknown"})`);
       continue;
     }
 
