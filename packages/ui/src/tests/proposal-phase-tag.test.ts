@@ -66,7 +66,7 @@ describe("getPhaseTag — terminal and degenerate states", () => {
   test("an executed proposal reads as Executed", () => {
     expect(getPhaseTag({ ...base, status: ProposalStatus.EXECUTED })).toEqual({
       label: "Executed",
-      variant: "primary",
+      variant: "primaryStrong",
     });
   });
 
@@ -103,7 +103,7 @@ describe("getPhaseIcon — the icon never contradicts its pill", () => {
 
     expect(getPhaseIcon(executed.variant)).toEqual({
       icon: IconType.CHECKMARK,
-      className: "text-primary-400",
+      className: "text-primary-600",
     });
   });
 });

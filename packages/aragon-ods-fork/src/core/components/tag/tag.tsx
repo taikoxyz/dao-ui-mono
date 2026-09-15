@@ -1,6 +1,6 @@
 import classNames from 'classnames';
 
-export type TagVariant = 'neutral' | 'info' | 'warning' | 'critical' | 'success' | 'primary';
+export type TagVariant = 'neutral' | 'info' | 'warning' | 'critical' | 'success' | 'primary' | 'primaryStrong';
 
 export interface ITagProps {
     /**
@@ -25,6 +25,9 @@ const variantToClassName: Record<TagVariant, string> = {
     critical: 'bg-critical-200 text-critical-800',
     success: 'bg-success-200 text-success-800',
     primary: 'bg-primary-50 text-primary-400',
+    // Same 200/800 weighting as the other status variants, for tags that carry a
+    // terminal state rather than an in-progress one.
+    primaryStrong: 'bg-primary-200 text-primary-800',
 };
 
 export const Tag: React.FC<ITagProps> = (props) => {
