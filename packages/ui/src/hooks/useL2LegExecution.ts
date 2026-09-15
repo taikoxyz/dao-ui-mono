@@ -91,6 +91,15 @@ export function useL2LegExecution(
       // on `if (cancelled) return` before their own setIsExtracting(false),
       // which otherwise left the spinner up for good.
       setIsExtracting(false);
+      if (message) {
+        // A completed extraction makes any earlier verdict stale by definition.
+        // Clearing it here means correctness does not rest on getL2ExtractionView
+        // happening to check hasMessage first. Deliberately not cleared when the
+        // hash or client is simply absent: a real error would vanish and the card
+        // would fall back to a spinner that nothing can resolve.
+        setExtractError(null);
+        setNoMessageFound(false);
+      }
       return;
     }
 
@@ -133,8 +142,11 @@ export function useL2LegExecution(
         }
         setIsExtracting(false);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
+        // Keep the underlying reason in the console; the alert only carries the
+        // user-facing sentence.
+        console.error("Could not read the L1 transaction receipt", err);
         setExtractError("Could not read the L1 transaction receipt.");
         setIsExtracting(false);
       });

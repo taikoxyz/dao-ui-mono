@@ -98,9 +98,11 @@ export function getL2ExtractionView({
   detectedFromActions: boolean;
 }): L2ExtractionView {
   if (extractError) return "error";
-  // A message that was actually extracted outranks every remaining flag: a
-  // stale noMessageFound from an earlier attempt must never hide a message we
-  // now hold.
+  // Checked after extractError and ahead of everything below it: a message that
+  // was actually extracted outranks noMessageFound, so a stale flag from an
+  // earlier attempt can never hide a message we now hold. extractError keeps
+  // priority because the two cannot coexist — the extraction effect clears both
+  // when it starts an attempt and again once one produces a message.
   if (hasMessage) return "ready";
   // The actions promised a bridge sendMessage bound for L2, but the executed
   // transaction emitted no MessageSent — there is nothing to prove on L2.
