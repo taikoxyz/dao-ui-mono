@@ -16,6 +16,7 @@ import { Else, ElseIf, If, Then } from "@/components/if";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { CardEmptyState } from "@aragon/ods";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
+import { equalAddresses } from "@/utils/evm";
 import { ProposalL2Execution } from "@/components/l2Execution/ProposalL2Execution";
 
 export default function ProposalDetail({ id: proposalId }: { id: string }) {
@@ -57,10 +58,12 @@ export default function ProposalDetail({ id: proposalId }: { id: string }) {
         )
       : (approvals?.map(({ approver }) => ({ address: approver, variant: "approve" }) as IVote) ?? []);
 
-  // Check if current user has already approved - check both subgraph and event data
+  // Check if current user has already approved - check both subgraph and event data.
+  // The subgraph returns lowercase hex ids while the connected wallet address is
+  // checksummed, so these must be compared case-insensitively.
   const hasApproved =
-    gqlProposal?.approvers?.some((approver) => approver.address === address) ||
-    approvals?.some((approval) => approval.approver === address) ||
+    gqlProposal?.approvers?.some((approver) => equalAddresses(approver.address, address)) ||
+    approvals?.some((approval) => equalAddresses(approval.approver, address)) ||
     false;
 
   // Determine status
