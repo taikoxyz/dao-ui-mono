@@ -2,51 +2,73 @@
   {
     "address": "0xb47fE76aC588101BFBdA9E68F66433bA51E8029a",
     "name": "Taiko Labs",
-    "description": ""
+    "description": "",
+    "order": 1
   },
   {
-    "address": "0x436a1075099A145417EBFc74BBaC9605e3e4f1A7",
-    "name": "Chainbound",
-    "description": ""
+    "address": "0xF74F2bBaEd41e3e4AbAcbA24563a5Ce5aB071C8A",
+    "name": "Daniel Wang",
+    "description": "Taiko co-founder. Listed as an EOA.",
+    "order": 2
   },
   {
     "address": "0xf1cF63589A1e012F9124182c9eAa36B5333e5f06",
-    "name": "L2BEAT",
-    "description": ""
+    "name": "Sebastian Kugler",
+    "description": "Serving in an individual capacity. Inherited the L2BEAT seat.",
+    "order": 3
   },
   {
     "address": "0xb284810536C0dAB6A8e48153B58588A9B9e0F701",
     "name": "Aragon",
-    "description": ""
+    "description": "",
+    "order": 4
+  },
+  {
+    "address": "0xe63E61BbB3aa1b82d44471AbcAb490102C17c986",
+    "name": "Gustavo Gonzalez",
+    "description": "Serving in an individual capacity. Listed as an EOA.",
+    "order": 5
+  },
+  {
+    "address": "0x436a1075099A145417EBFc74BBaC9605e3e4f1A7",
+    "name": "Chainbound",
+    "description": "",
+    "order": 6
   },
   {
     "address": "0x0F40268Ec0Dc8D88CF2f22E227A29a0b478b6351",
     "name": "Halborn",
-    "description": ""
+    "description": "",
+    "order": 7
   },
   {
     "address": "0x5353c607e6eca6C63FEC5c6C0F5CC3a5348d5c95",
     "name": "Nethermind",
-    "description": ""
+    "description": "",
+    "order": 8
   },
   {
     "address": "0x25d3E89bAcE2040Ed3aF7c4c7B505cfBB72fD6f1",
     "name": "Drew Van der Werff",
-    "description": ""
+    "description": "",
+    "order": 9
   },
   {
     "address": "0xa384E224A3F3D664F43eBE33395eF0DCcE67e894",
     "name": "Toni Wahrstätter",
-    "description": ""
+    "description": "",
+    "order": 10
   },
   {
-    "address": "0xd5cf6a34ba5fb9289510dc93c03f1f9084798487",
-    "name": "DAO Coordinators",
-    "description": ""
-  },
-  {
-    "address": "0x6268d189e011aa53a2f09a1fe159445beb3d878e",
+    "address": "0x6268d189E011Aa53A2f09A1FE159445BeB3d878E",
     "name": "Gattaca",
-    "description": ""
+    "description": "",
+    "order": 11
+  },
+  {
+    "address": "0xD5cF6A34Ba5fb9289510dC93c03F1f9084798487",
+    "name": "DAO Coordinators",
+    "description": "",
+    "order": 12
   }
 ]

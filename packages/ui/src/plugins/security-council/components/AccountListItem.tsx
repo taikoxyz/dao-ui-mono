@@ -5,8 +5,8 @@ import { useAccount } from "wagmi";
 import { Address, Hex, isAddressEqual } from "viem";
 import { AccountEncryptionStatus, useAccountEncryptionStatus } from "../hooks/useAccountEncryptionStatus";
 import { AddressText } from "@/components/text/address";
-import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { PUB_CHAIN } from "@/constants";
+import { getSecurityCouncilProfile } from "@/utils/getSecurityCouncilMemberData";
 
 export interface IAccountListItemProps extends IDataListItemProps {
   /** 0x address of the account owner */
@@ -23,7 +23,7 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
   const { avatarSrc, owner, appointedAgent, publicKey, ...otherProps } = props;
   const { address: currentUserAddress } = useAccount();
   const selfAppointed = appointedAgent && equalAddresses(appointedAgent, ADDRESS_ZERO);
-  const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
+  const profile = getSecurityCouncilProfile(owner);
 
   return (
     <DataList.Item href="#" target={undefined} className="min-w-fit !py-0 px-4 md:px-6" {...otherProps}>
@@ -31,7 +31,7 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
         <div className="flex w-full items-center justify-start gap-6">
           <MemberAvatar address={owner} avatarSrc={avatarSrc} responsiveSize={{ md: "md" }} />
           <div className="flex flex-col items-center justify-center">
-            <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">{profile?.name}</p>
+            <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">{profile.name}</p>
             <p className="inline-block w-full truncate text-sm text-neutral-400">
               <button
                 className="flex flex-col p-0"
@@ -73,7 +73,7 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
             </Else>
           </If>
         </p>
-        <div className="text-md w-full text-neutral-400">{profile?.description}</div>
+        <div className="text-md w-full text-neutral-400">{profile.description}</div>
       </div>
     </DataList.Item>
   );
@@ -84,7 +84,7 @@ export const AccountListItemPending: React.FC<IAccountListItemProps> = (props) =
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && owner && equalAddresses(currentUserAddress, owner);
   const { status } = useAccountEncryptionStatus(owner);
-  const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
+  const profile = getSecurityCouncilProfile(owner);
 
   let comment = "";
   switch (status) {
@@ -126,7 +126,7 @@ export const AccountListItemPending: React.FC<IAccountListItemProps> = (props) =
             </Else>
           </If>
         </div>
-        <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">{profile?.name}</p>
+        <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">{profile.name}</p>
         <p className="inline-block w-full truncate text-sm text-neutral-400">{formatHexString(owner)}</p>
         <If condition={!!appointedAgent && appointedAgent !== ADDRESS_ZERO}>
           <p className="inline-block w-full text-sm text-neutral-400">
@@ -143,7 +143,7 @@ export const AccountListItemPending: React.FC<IAccountListItemProps> = (props) =
         <If condition={!!comment}>
           <p className="inline-block w-full text-sm text-primary-300">{comment}</p>
         </If>
-        <div className="text-md w-full text-neutral-400">{profile?.description}</div>
+        <div className="text-md w-full text-neutral-400">{profile.description}</div>
       </div>
     </DataList.Item>
   );

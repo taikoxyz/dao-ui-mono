@@ -6,49 +6,42 @@ import { PUB_CHAIN } from "@/constants";
 import { useSignerList } from "@/plugins/security-council/hooks/useSignerList";
 import { useEncryptionAccounts } from "../hooks/useEncryptionAccounts";
 import { BYTES32_ZERO } from "@/utils/evm";
-import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { Address, isAddressEqual } from "viem";
+import {
+  compareSecurityCouncilAddresses,
+  securityCouncilProfileMatchesQuery,
+} from "@/utils/getSecurityCouncilMemberData";
 
 export const AccountList: React.FC = () => {
   const [searchValue, setSearchValue] = useState<string>();
-  const { data: accounts, isLoading: isLoading1, error: signerListError } = useSignerList();
-  const { data: encryptionAccounts, isLoading: isLoading2, error } = useEncryptionAccounts();
+  const { data: accounts, isLoading: isLoadingSigners, error: signerListError } = useSignerList();
+  const { data: encryptionAccounts, isLoading: isLoadingEncryption, error: encryptionError } = useEncryptionAccounts();
 
-  // The signer list now surfaces subgraph failures instead of silently
-  // resolving to []; without this the spinner below would never resolve.
   if (signerListError) {
     return <NoSignersView title="Could not fetch" message={signerListError.message} />;
   }
 
-  if ((!encryptionAccounts || !accounts) ?? isLoading1 ?? isLoading2) {
+  if (isLoadingSigners || isLoadingEncryption || !accounts) {
     return <PleaseWaitSpinner fullMessage="Please wait, loading accounts" />;
-  } else if (!encryptionAccounts.length) {
-    if (error) return <NoSignersView title="Could not fetch" message={error?.message} />;
-    return (
-      <NoSignersView
-        title="No signers registered"
-        message="There are no signers registered on the Encryption Registry. Be the first one to register a public key or appoint an agent that uses an EOA."
-      />
-    );
   }
+
+  if (!accounts.length) {
+    if (encryptionError) return <NoSignersView title="Could not fetch" message={encryptionError.message} />;
+    return <NoSignersView title="No signers registered" message="There are no signers listed on SignerList yet." />;
+  }
+
+  const registry = encryptionAccounts ?? [];
 
   return (
     <DataList.Root entityLabel={accounts.length === 1 ? "account" : "accounts"} itemsCount={accounts.length}>
       <DataList.Filter onSearchValueChange={setSearchValue} searchValue={searchValue} placeholder="Filter by address" />
       <DataList.Container className="grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-5">
         {accounts
-          .filter((acc: Address) => {
-            const profile = SecurityCouncilProfiles.find((profile) => isAddressEqual(profile.address as Address, acc));
-            return (
-              !searchValue ||
-              acc.toLowerCase().includes(searchValue.toLowerCase()) ||
-              (profile?.name.toLowerCase().includes(searchValue.toLowerCase()) ??
-                profile?.description.toLowerCase().includes(searchValue.toLowerCase()))
-            );
-          })
+          .filter((acc: Address) => securityCouncilProfileMatchesQuery(acc, searchValue))
+          .sort(compareSecurityCouncilAddresses)
           .map((account: Address) => {
-            const eAcc = encryptionAccounts.find((a) => isAddressEqual(a.owner, account));
-            if ((!eAcc || !eAcc.publicKey) ?? eAcc.publicKey === BYTES32_ZERO) {
+            const eAcc = registry.find((a) => isAddressEqual(a.owner, account));
+            if (!eAcc || !eAcc.publicKey || eAcc.publicKey === BYTES32_ZERO) {
               return (
                 <AccountListItemPending
                   key={account}
@@ -68,15 +61,6 @@ export const AccountList: React.FC = () => {
                 publicKey={eAcc?.publicKey}
               />
             );
-          })
-          .sort((a, b) => {
-            const _a = SecurityCouncilProfiles.findIndex((profile) =>
-              isAddressEqual(profile.address as Address, a.props.owner)
-            );
-            const _b = SecurityCouncilProfiles.findIndex((profile) =>
-              isAddressEqual(profile.address as Address, b.props.owner)
-            );
-            return _a - _b;
           })}
       </DataList.Container>
       {/* <DataList.Pagination /> */}

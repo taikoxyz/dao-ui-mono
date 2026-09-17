@@ -3,8 +3,11 @@ import { Icon, IconType, MemberAvatar } from "@aragon/ods";
 import { isAddressEqual, type Address } from "viem";
 import { useAccount } from "wagmi";
 import { PUB_CHAIN } from "@/constants";
-import { formatHexString } from "@/utils/evm";
 import { useSignerList } from "@/plugins/security-council/hooks/useSignerList";
+import {
+  compareSecurityCouncilAddresses,
+  getSecurityCouncilProfile,
+} from "@/utils/getSecurityCouncilMemberData";
 import type { IVote } from "@/utils/types";
 
 interface SignersPopoverProps {
@@ -69,7 +72,8 @@ export const SignersPopover: FC<SignersPopoverProps> = ({ votes }) => {
     return [...roster].sort((a, b) => {
       const aSigned = approverSet.has(a.toLowerCase());
       const bSigned = approverSet.has(b.toLowerCase());
-      return aSigned === bSigned ? 0 : aSigned ? -1 : 1;
+      if (aSigned !== bSigned) return aSigned ? -1 : 1;
+      return compareSecurityCouncilAddresses(a, b);
     });
   }, [hasRoster, signerList, votes, approverSet]);
 
@@ -136,7 +140,7 @@ export const SignersPopover: FC<SignersPopoverProps> = ({ votes }) => {
                     <span
                       className={`flex-1 truncate text-sm ${hasSigned ? "text-neutral-800" : "text-neutral-500"}`}
                     >
-                      {formatHexString(member)}
+                      {getSecurityCouncilProfile(member).name}
                     </span>
                     {isConnectedAccount && <span className="text-xs text-neutral-400">You</span>}
                     {hasSigned ? (

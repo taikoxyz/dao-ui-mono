@@ -1,25 +1,32 @@
-import { useConfig } from "wagmi";
+import { useConfig, usePublicClient } from "wagmi";
 import { SignerListAbi } from "../artifacts/SignerList";
 import { PUB_SIGNER_LIST_CONTRACT_ADDRESS } from "@/constants";
-import { Address } from "viem";
 import { useQuery } from "@tanstack/react-query";
 import { Config, readContract } from "@wagmi/core";
-import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
-import { PUB_SUBGRAPH_URL } from "@/constants";
+import { fetchSignerListFromChain } from "../utils/fetchSignerList";
 
+/**
+ * Live SignerList membership from Ethereum, not the subgraph.
+ * Names still come from the JSON overlay via getSecurityCouncilProfile.
+ */
 export function useSignerList() {
+  const publicClient = usePublicClient();
+  const config = useConfig() as Config;
+
   return useQuery({
     queryKey: ["signer-list-fetch", PUB_SIGNER_LIST_CONTRACT_ADDRESS],
     queryFn: () => {
-      return getGqlSigners();
+      if (!publicClient) {
+        throw new Error("No public client");
+      }
+      return fetchSignerListFromChain(publicClient, config);
     },
-    // Bounded: getGqlSigners rethrows, so an unreachable subgraph must surface as
-    // an error state rather than retrying forever.
+    enabled: !!publicClient,
     retry: 2,
     refetchOnMount: true,
     refetchOnReconnect: true,
     retryOnMount: true,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60,
   });
 }
 
@@ -49,7 +56,7 @@ export function useSignerListLength(blockNumber?: bigint) {
             functionName: "addresslistLength",
           }),
     retry: 2,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60,
   });
 }
 
@@ -68,40 +75,6 @@ export function useApproverWalletList() {
     refetchOnMount: true,
     refetchOnReconnect: true,
     retryOnMount: true,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60,
   });
-}
-
-async function getGqlSigners(): Promise<Address[]> {
-  const query = `
-  query GetSigners {
-  signers {
-    id
-  }
-}
-  `;
-
-  try {
-    const client = new ApolloClient({
-      uri: PUB_SUBGRAPH_URL,
-      cache: new InMemoryCache(),
-    });
-
-    const res: any = await client.query({
-      query: gql(query),
-    });
-
-    // An empty result is a valid "no signers" state.
-    if (!res?.data?.signers) {
-      return [];
-    }
-
-    return res.data.signers.map((s: any) => s.id);
-  } catch (e) {
-    // Rethrow: swallowing this into [] made an unreachable subgraph
-    // indistinguishable from an empty council, which let callers render an
-    // approver subset as if it were the full roster.
-    console.error("GQL Error:", e);
-    throw e;
-  }
 }

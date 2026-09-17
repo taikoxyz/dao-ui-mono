@@ -1,9 +1,8 @@
-import getSecurityCouncilMemberData from "@/utils/getSecurityCouncilMemberData";
+import { getSecurityCouncilProfile } from "@/utils/getSecurityCouncilMemberData";
 import type { IProposalResource } from "@/utils/types";
 import { Card, CardEmptyState, Heading, IconType, Link } from "@aragon/ods";
 import React from "react";
 import { zeroAddress } from "viem";
-import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { isAddressEqual } from "viem";
 import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import { IGqlProposalMixin } from "@/utils/gql/types";
@@ -43,9 +42,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
     encryptionAccounts?.find(
       ({ appointedAgent }) => appointedAgent && executor?.address && isAddressEqual(appointedAgent, executor.address)
     )?.owner ?? undefined;
-  const creatorProfile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
-  const executorProfile =
-    executioner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, executioner));
+  const executorLookup = executioner ?? executor?.address;
 
   const approvals = relatedProposal?.approvers ?? gqlProposal?.approvers ?? [];
   const vetoes = gqlProposal?.vetoes ?? relatedProposal?.vetoes ?? [];
@@ -61,8 +58,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
   // A related proposal only exists for proposals that carry over to another stage; emergency
   // and standard ones are self-contained, so fall back to the proposal's own creation data.
   const creationTxHash = relatedProposal?.creationTxHash ?? gqlProposal?.creationTxHash;
-  const creatorLabel =
-    creatorProfile?.name || getSecurityCouncilMemberData(creator).name || creator.replace(SHORT_ADDRESS, "$1...$2");
+  const creatorLabel = getSecurityCouncilProfile(owner ?? creator).name;
 
   if (!props.gqlProposal || !creationTxHash) {
     return <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">Loading tx info...</Card>;
@@ -104,7 +100,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
                   variant="primary"
                   key={i}
                 >
-                  {getSecurityCouncilMemberData(approver.address).name || approver.address}
+                  {getSecurityCouncilProfile(approver.address).name}
                 </Link>
               </td>
               <td>
@@ -161,7 +157,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
             <tr>
               <td>
                 <Link target="_blank" href={`https://etherscan.io/address/${executor?.address}`} variant="primary">
-                  {executorProfile?.name}
+                  {executorLookup ? getSecurityCouncilProfile(executorLookup).name : ""}
                 </Link>
               </td>
               <td>
