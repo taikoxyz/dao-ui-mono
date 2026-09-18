@@ -25,14 +25,14 @@ export const AccountList: React.FC = () => {
   } else if (!accounts.length) {
     return (
       <NoSignersView
-        title="No signers registered"
+        title="No members listed"
         message="There are no members listed in the Security Council roster."
       />
     );
   }
 
-  // Keep members mounted while keys load or fail. Pending rows show the key
-  // query's loading/error status; a failed refetch must not reuse stale keys.
+  // Keep members mounted while keys load or fail. This list marks key status
+  // unavailable after a failed refresh, even when older keys remain cached.
   const registry = encryptionError ? [] : (encryptionAccounts ?? []);
 
   return (

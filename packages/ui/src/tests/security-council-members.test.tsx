@@ -48,7 +48,7 @@ const render = () => act(() => root.render(<AccountList />));
 test("shows listed members before anyone registers an encryption key", () => {
   render();
   expect(container.querySelector('[data-state="pending"]')?.textContent).toBe(MEMBER);
-  expect(container.textContent).not.toContain("No signers registered");
+  expect(container.textContent).not.toContain("No members listed");
 });
 test("treats a zero public key as unregistered", () => {
   mocks.registry.mockReturnValue({ data: [{ owner: MEMBER, publicKey: BYTES32_ZERO }], isLoading: false, error: null });
@@ -65,7 +65,7 @@ test("uses the roster to show the empty state even if historical keys remain", (
   mocks.roster.mockReturnValue({ data: [], isLoading: false, error: null });
   mocks.registry.mockReturnValue({ data: [{ owner: MEMBER, publicKey: KEY }], isLoading: false, error: null });
   render();
-  expect(container.textContent).toContain("No signers registered");
+  expect(container.textContent).toContain("No members listed");
   expect(container.querySelector("[data-state]")).toBeNull();
 });
 test.each([undefined, [{ owner: MEMBER, publicKey: KEY }]])(
