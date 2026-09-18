@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
  * Returns the list of accounts that have been registered on the encryption registry.
  */
 
-export function useEncryptionAccounts() {
+export function useEncryptionAccounts({ refetchOnMount = true } = {}) {
   const config = useConfig() as Config;
 
   return useQuery({
@@ -38,11 +38,9 @@ export function useEncryptionAccounts() {
       });
     },
     retry: 2,
-    refetchOnMount: true,
+    refetchOnMount,
     refetchOnReconnect: true,
-    // Each pending member observes this query too. Mounting those rows must not
-    // restart an exhausted retry cycle after a registry outage.
-    retryOnMount: false,
+    retryOnMount: refetchOnMount,
     staleTime: 1000 * 60 * 5,
   });
 }

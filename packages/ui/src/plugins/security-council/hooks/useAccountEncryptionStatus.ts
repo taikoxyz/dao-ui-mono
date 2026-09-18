@@ -32,11 +32,18 @@ type HookResult = {
   publicKey: Hex | undefined;
 };
 
-export function useAccountEncryptionStatus(targetAddress?: Address | undefined): HookResult {
+export function useAccountEncryptionStatus(
+  targetAddress?: Address | undefined,
+  { refetchOnMount = true } = {}
+): HookResult {
   const { address: selfAddress } = useAccount();
   if (!targetAddress) targetAddress = selfAddress;
 
-  const { data: encryptionAccounts, isLoading: isLoadingEncryptionAccounts, error: error1 } = useEncryptionAccounts();
+  const {
+    data: encryptionAccounts,
+    isLoading: isLoadingEncryptionAccounts,
+    error: error1,
+  } = useEncryptionAccounts({ refetchOnMount });
   const { data: signers, isLoading: isLoadingSigners, error: error2 } = useSignerList();
   const { isContract } = useIsContract(targetAddress);
 

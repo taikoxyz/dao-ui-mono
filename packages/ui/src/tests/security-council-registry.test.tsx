@@ -109,6 +109,37 @@ test("a registry failure settles without hiding/remounting the real member rows"
   expect(container.querySelector('[role="status"]')).toBeNull();
 });
 
+test.each([false, true])("a page remount recovers after an outage (cached keys: %s)", async (cachedKeys) => {
+  if (cachedKeys) {
+    client.setQueryData(
+      ["encryption-registry-accounts-fetch", 1, "0x0000000000000000000000000000000000000002"],
+      [{ owner: MEMBER, appointedAgent: "0x0000000000000000000000000000000000000000", publicKey: KEY }],
+      { updatedAt: Date.now() - 300_001 }
+    );
+  }
+  mocks.readContract.mockRejectedValue(new Error("Registry unavailable"));
+  await render(<AccountList />);
+  await until(() => {
+    expect(container.querySelector("article")?.textContent).toContain("Cannot load status");
+  });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1000);
+  });
+  expect(mocks.readContract).toHaveBeenCalledTimes(3);
+
+  // Keep the same query client, as navigation does, while the RPC recovers.
+  await render(null);
+  mocks.readContract.mockImplementation(async (_config, request) =>
+    request.functionName === "getRegisteredAccounts" ? [MEMBER] : ["0x0000000000000000000000000000000000000000", KEY]
+  );
+  await render(<AccountList />);
+  await until(() => {
+    expect(container.querySelector('[role="alert"]')).toBeNull();
+    expect(container.querySelector("article")?.textContent).toContain("Self-appointed");
+  });
+  expect(mocks.readContract).toHaveBeenCalledTimes(5);
+});
+
 test("unknown listed members have a visible address heading before registration", async () => {
   mocks.readContract.mockResolvedValue([]);
   await render(<AccountList />);

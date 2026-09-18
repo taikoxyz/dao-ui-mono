@@ -85,7 +85,9 @@ export const AccountListItemPending: React.FC<IAccountListItemProps> = (props) =
   const { avatarSrc, owner, appointedAgent, publicKey, ...otherProps } = props;
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && owner && equalAddresses(currentUserAddress, owner);
-  const { status } = useAccountEncryptionStatus(owner);
+  // The list owns registry fetching. Rows mounted after a failure only observe
+  // its result; navigating back to the list can still retry the request.
+  const { status } = useAccountEncryptionStatus(owner, { refetchOnMount: false });
   const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
 
   let comment = "";
