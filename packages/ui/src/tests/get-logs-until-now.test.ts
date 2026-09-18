@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, test } from "vitest";
 import { parseAbiItem, type Address, type PublicClient } from "viem";
 import { getLogsUntilNow } from "@/utils/evm";
 
@@ -31,7 +31,7 @@ function blocksOf(logs: unknown[]): bigint[] {
 }
 
 describe("getLogsUntilNow", () => {
-  it("returns each log exactly once, including logs on window boundary blocks", async () => {
+  test("returns each log exactly once, including logs on window boundary blocks", async () => {
     const start = 100n;
     // Logs on the first block, on both sides of every 2000-block boundary
     // (start + 2000, start + 4000) and on the head itself.
@@ -43,7 +43,7 @@ describe("getLogsUntilNow", () => {
     expect(blocksOf(logs)).toEqual(logBlocks);
   });
 
-  it("pages through inclusive, contiguous, non-overlapping windows up to the head", async () => {
+  test("pages through inclusive, contiguous, non-overlapping windows up to the head", async () => {
     const start = 100n;
     const head = 5000n;
     const { client, ranges } = fakeClient(head, []);
@@ -57,7 +57,7 @@ describe("getLogsUntilNow", () => {
     ]);
   });
 
-  it("still scans the head block when the range is an exact multiple of the window size", async () => {
+  test("still scans the head block when the range is an exact multiple of the window size", async () => {
     const start = 1000n;
     const head = start + 2n * WINDOW; // 5000: exactly two full windows plus the head block
     const { client, ranges } = fakeClient(head, [head]);
@@ -68,7 +68,7 @@ describe("getLogsUntilNow", () => {
     expect(ranges.at(-1)).toEqual({ fromBlock: head, toBlock: head });
   });
 
-  it("scans a single window when the whole range fits in one", async () => {
+  test("scans a single window when the whole range fits in one", async () => {
     const { client, ranges } = fakeClient(150n, [120n]);
 
     const logs = await getLogsUntilNow(CONTRACT, event, {}, client, 100n);
@@ -77,7 +77,7 @@ describe("getLogsUntilNow", () => {
     expect(ranges).toEqual([{ fromBlock: 100n, toBlock: 150n }]);
   });
 
-  it("makes no request when the start block is beyond the head", async () => {
+  test("makes no request when the start block is beyond the head", async () => {
     const { client, ranges } = fakeClient(100n, [100n]);
 
     const logs = await getLogsUntilNow(CONTRACT, event, {}, client, 101n);
