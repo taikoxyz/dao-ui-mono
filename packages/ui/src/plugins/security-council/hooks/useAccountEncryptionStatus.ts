@@ -4,6 +4,7 @@ import { useEncryptionAccounts } from "./useEncryptionAccounts";
 import { Address, Hex, isAddressEqual } from "viem";
 import { ADDRESS_ZERO, BYTES32_ZERO } from "@/utils/evm";
 import { useAccount } from "wagmi";
+import { PUB_CHAIN } from "@/constants";
 
 export enum AccountEncryptionStatus {
   LOADING_ENCRYPTION_STATUS,
@@ -38,7 +39,7 @@ export function useAccountEncryptionStatus(targetAddress?: Address | undefined):
 
   const { data: encryptionAccounts, isLoading: isLoadingEncryptionAccounts, error: error1 } = useEncryptionAccounts();
   const { data: signers, isLoading: isLoadingSigners, error: error2 } = useSignerList();
-  const { isContract } = useIsContract(targetAddress);
+  const { isContract } = useIsContract(targetAddress, PUB_CHAIN.id);
 
   const encryptionAccount = (encryptionAccounts || []).find((item) => {
     return (

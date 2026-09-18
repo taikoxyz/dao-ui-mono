@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CardEmptyState, DataList } from "@aragon/ods";
+import { AlertInline, CardEmptyState, DataList } from "@aragon/ods";
 import { AccountListItemPending, AccountListItemReady } from "./AccountListItem";
 import { PleaseWaitSpinner } from "@/components/please-wait";
 import { PUB_CHAIN } from "@/constants";
@@ -30,11 +30,19 @@ export const AccountList: React.FC = () => {
     return <NoSignersView title="No signers registered" message="There are no signers listed on SignerList yet." />;
   }
 
-  const registry = encryptionAccounts ?? [];
+  // A failed refetch can retain stale data. Do not present it as current key status.
+  const registry = encryptionError ? [] : (encryptionAccounts ?? []);
 
   return (
     <DataList.Root entityLabel={accounts.length === 1 ? "account" : "accounts"} itemsCount={accounts.length}>
-      <DataList.Filter onSearchValueChange={setSearchValue} searchValue={searchValue} placeholder="Filter by address" />
+      {encryptionError && (
+        <AlertInline variant="warning" message="Could not load encryption keys. Member key status is unavailable." />
+      )}
+      <DataList.Filter
+        onSearchValueChange={setSearchValue}
+        searchValue={searchValue}
+        placeholder="Filter by name or address"
+      />
       <DataList.Container className="grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-5">
         {accounts
           .filter((acc: Address) => securityCouncilProfileMatchesQuery(acc, searchValue))

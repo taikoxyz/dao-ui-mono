@@ -3,8 +3,8 @@ import { Address, isAddress } from "viem";
 import { useQuery } from "@tanstack/react-query";
 import { usePublicClient } from "wagmi";
 
-export function useIsContract(address?: Address) {
-  const publicClient = usePublicClient();
+export function useIsContract(address?: Address, chainId?: number) {
+  const publicClient = usePublicClient({ chainId });
 
   const {
     data: addressIsContract,

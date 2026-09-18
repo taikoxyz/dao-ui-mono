@@ -1,7 +1,8 @@
 import { useConfig, usePublicClient } from "wagmi";
 import { SignerListAbi } from "../artifacts/SignerList";
-import { PUB_SIGNER_LIST_CONTRACT_ADDRESS } from "@/constants";
-import { useQuery } from "@tanstack/react-query";
+import { PUB_CHAIN, PUB_SIGNER_LIST_CONTRACT_ADDRESS } from "@/constants";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { type Address } from "viem";
 import { Config, readContract } from "@wagmi/core";
 import { fetchSignerListFromChain } from "../utils/fetchSignerList";
 
@@ -10,23 +11,25 @@ import { fetchSignerListFromChain } from "../utils/fetchSignerList";
  * Names still come from the JSON overlay via getSecurityCouncilProfile.
  */
 export function useSignerList() {
-  const publicClient = usePublicClient();
+  const publicClient = usePublicClient({ chainId: PUB_CHAIN.id });
   const config = useConfig() as Config;
+  const queryClient = useQueryClient();
+  const queryKey = ["signer-list-fetch", PUB_CHAIN.id, PUB_SIGNER_LIST_CONTRACT_ADDRESS];
 
   return useQuery({
-    queryKey: ["signer-list-fetch", PUB_SIGNER_LIST_CONTRACT_ADDRESS],
+    queryKey,
     queryFn: () => {
       if (!publicClient) {
         throw new Error("No public client");
       }
-      return fetchSignerListFromChain(publicClient, config);
+      return fetchSignerListFromChain(publicClient, config, queryClient.getQueryData<Address[]>(queryKey));
     },
     enabled: !!publicClient,
     retry: 2,
     refetchOnMount: true,
     refetchOnReconnect: true,
     retryOnMount: true,
-    staleTime: 1000 * 60,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -41,16 +44,23 @@ export function useSignerListLength(blockNumber?: bigint) {
   const config = useConfig() as Config;
 
   return useQuery({
-    queryKey: ["signer-list-length", PUB_SIGNER_LIST_CONTRACT_ADDRESS, blockNumber?.toString() ?? "latest"],
+    queryKey: [
+      "signer-list-length",
+      PUB_CHAIN.id,
+      PUB_SIGNER_LIST_CONTRACT_ADDRESS,
+      blockNumber?.toString() ?? "latest",
+    ],
     queryFn: () =>
       blockNumber
         ? readContract(config, {
+            chainId: PUB_CHAIN.id,
             abi: SignerListAbi,
             address: PUB_SIGNER_LIST_CONTRACT_ADDRESS,
             functionName: "addresslistLengthAtBlock",
             args: [blockNumber],
           })
         : readContract(config, {
+            chainId: PUB_CHAIN.id,
             abi: SignerListAbi,
             address: PUB_SIGNER_LIST_CONTRACT_ADDRESS,
             functionName: "addresslistLength",
@@ -64,9 +74,10 @@ export function useApproverWalletList() {
   const config = useConfig() as Config;
 
   return useQuery({
-    queryKey: ["encryption-registry-recipients-fetch", PUB_SIGNER_LIST_CONTRACT_ADDRESS],
+    queryKey: ["encryption-registry-recipients-fetch", PUB_CHAIN.id, PUB_SIGNER_LIST_CONTRACT_ADDRESS],
     queryFn: () =>
       readContract(config, {
+        chainId: PUB_CHAIN.id,
         abi: SignerListAbi,
         address: PUB_SIGNER_LIST_CONTRACT_ADDRESS,
         functionName: "getEncryptionAgents",

@@ -1,110 +1,94 @@
+import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
 import { Config, readContract } from "@wagmi/core";
-import { Address, getAbiItem, isAddressEqual, PublicClient } from "viem";
+import { Address, getAbiItem, isAddress, PublicClient } from "viem";
 import { SignerListAbi } from "@/plugins/security-council/artifacts/SignerList";
-import { PUB_SIGNER_LIST_CONTRACT_ADDRESS } from "@/constants";
-import { getLogsUntilNow } from "@/utils/evm";
+import { PUB_CHAIN, PUB_DEPLOYMENT_BLOCK, PUB_SIGNER_LIST_CONTRACT_ADDRESS, PUB_SUBGRAPH_URL } from "@/constants";
 import { getSecurityCouncilDirectoryAddresses } from "@/utils/getSecurityCouncilMemberData";
 
-const SignersAddedEvent = getAbiItem({
-  abi: SignerListAbi,
-  name: "SignersAdded",
-});
-const SignersRemovedEvent = getAbiItem({
-  abi: SignerListAbi,
-  name: "SignersRemoved",
-});
+const SignersAddedEvent = getAbiItem({ abi: SignerListAbi, name: "SignersAdded" });
+const LOG_WINDOW_SIZE = 2000n;
 
-export type SignerListMutation = {
-  blockNumber: bigint;
-  logIndex: number;
-  added: Address[];
-  removed: Address[];
-};
+async function getIndexedCandidates(): Promise<Address[]> {
+  try {
+    const client = new ApolloClient({ uri: PUB_SUBGRAPH_URL, cache: new InMemoryCache() });
+    const { data } = await client.query<{ signers: { id: string }[] }>({
+      query: gql`
+        query GetSigners {
+          signers {
+            id
+          }
+        }
+      `,
+    });
+    return (data?.signers ?? []).map(({ id }) => id).filter((id): id is Address => isAddress(id, { strict: false }));
+  } catch (error) {
+    // Indexing is only a discovery aid; known members can still be checked on L1.
+    console.warn("Could not load indexed signer candidates", error);
+    return [];
+  }
+}
 
 /**
- * Replay SignerList add/remove logs in chain order.
- * Addresses are compared case-insensitively so mixed-case event data cannot fork the set.
+ * Validate cheap candidates at one L1 block. Historical logs are only needed if
+ * the verified roster is shorter than the contract's count at that same block.
+ * Cached discoveries are revalidated too, so departed members never persist.
  */
-export function computeCurrentSignerList(mutations: SignerListMutation[]): Address[] {
-  const ordered = [...mutations].sort((a, b) => {
-    if (a.blockNumber < b.blockNumber) return -1;
-    if (a.blockNumber > b.blockNumber) return 1;
-    return a.logIndex - b.logIndex;
-  });
-
-  const result: Address[] = [];
-  for (const item of ordered) {
-    for (const addr of item.added) {
-      if (!result.some((existing) => isAddressEqual(existing, addr))) result.push(addr);
-    }
-    for (const addr of item.removed) {
-      const idx = result.findIndex((existing) => isAddressEqual(existing, addr));
-      if (idx >= 0) result.splice(idx, 1);
-    }
-  }
-  return result;
-}
-
-function mergeUnique(left: Address[], right: Address[]): Address[] {
-  const result = [...left];
-  for (const addr of right) {
-    if (!result.some((existing) => isAddressEqual(existing, addr))) result.push(addr);
-  }
-  return result;
-}
-
-async function isListed(config: Config, account: Address): Promise<boolean> {
-  return readContract(config, {
+export async function fetchSignerListFromChain(
+  publicClient: PublicClient,
+  config: Config,
+  cachedSigners: Address[] = []
+): Promise<Address[]> {
+  const [blockNumber, indexedCandidates] = await Promise.all([
+    publicClient.getBlockNumber({ cacheTime: 0 }),
+    getIndexedCandidates(),
+  ]);
+  const contract = {
     abi: SignerListAbi,
     address: PUB_SIGNER_LIST_CONTRACT_ADDRESS,
-    functionName: "isListed",
-    args: [account],
-  });
-}
+    chainId: PUB_CHAIN.id,
+    blockNumber,
+  } as const;
+  const checked = new Set<string>();
+  const listed: Address[] = [];
 
-/**
- * Live Security Council roster from SignerList, not the subgraph or the name overlay.
- *
- * Candidates come from add/remove logs (unknown seats) plus the name overlay
- * (known incoming seats). Every candidate is confirmed with on-chain `isListed`
- * so a same-size log gap cannot keep a departed member or drop an incoming one.
- */
-export async function fetchSignerListFromChain(publicClient: PublicClient, config: Config): Promise<Address[]> {
-  const [addedLogs, removedLogs, onChainLength] = await Promise.all([
-    getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersAddedEvent, {}, publicClient),
-    getLogsUntilNow(PUB_SIGNER_LIST_CONTRACT_ADDRESS, SignersRemovedEvent, {}, publicClient),
-    readContract(config, {
-      abi: SignerListAbi,
-      address: PUB_SIGNER_LIST_CONTRACT_ADDRESS,
-      functionName: "addresslistLength",
-    }),
-  ]);
-
-  const mutations: SignerListMutation[] = [
-    ...addedLogs.map((log) => ({
-      blockNumber: log.blockNumber,
-      logIndex: log.logIndex,
-      added: [...(log.args.signers ?? [])],
-      removed: [] as Address[],
-    })),
-    ...removedLogs.map((log) => ({
-      blockNumber: log.blockNumber,
-      logIndex: log.logIndex,
-      added: [] as Address[],
-      removed: [...(log.args.signers ?? [])],
-    })),
-  ];
-
-  const candidates = mergeUnique(computeCurrentSignerList(mutations), getSecurityCouncilDirectoryAddresses());
-  const listedFlags = await Promise.all(candidates.map((account) => isListed(config, account)));
-  const listed = candidates.filter((_, index) => listedFlags[index]);
-
-  if (listed.length !== Number(onChainLength)) {
-    throw new Error(
-      `SignerList length mismatch: reconstructed ${listed.length} member(s), contract reports ${onChainLength}. ` +
-        "One or more signer addresses are not reachable through log replay or the name overlay."
+  async function confirm(candidates: Address[]) {
+    const unchecked = candidates.filter((account) => {
+      const key = account.toLowerCase();
+      if (checked.has(key)) return false;
+      checked.add(key);
+      return true;
+    });
+    const flags = await Promise.all(
+      unchecked.map((account) => readContract(config, { ...contract, functionName: "isListed", args: [account] }))
     );
+    listed.push(...unchecked.filter((_, index) => flags[index]));
   }
 
+  const [onChainLength] = await Promise.all([
+    readContract(config, { ...contract, functionName: "addresslistLength" }),
+    confirm([...getSecurityCouncilDirectoryAddresses(), ...cachedSigners, ...indexedCandidates]),
+  ]);
+  if (BigInt(listed.length) === onChainLength) return listed;
+
+  try {
+    // Add events discover addresses; isListed at the snapshot rejects removals
+    // and stale subgraph/overlay entries. No removal replay is necessary.
+    for (let fromBlock = PUB_DEPLOYMENT_BLOCK; fromBlock <= blockNumber; fromBlock += LOG_WINDOW_SIZE) {
+      const windowEnd = fromBlock + LOG_WINDOW_SIZE - 1n;
+      const logs = await publicClient.getLogs({
+        address: PUB_SIGNER_LIST_CONTRACT_ADDRESS,
+        event: SignersAddedEvent,
+        fromBlock,
+        toBlock: windowEnd < blockNumber ? windowEnd : blockNumber,
+      });
+      await confirm(logs.flatMap((log) => log.args.signers ?? []));
+      if (BigInt(listed.length) === onChainLength) return listed;
+    }
+  } catch (error) {
+    // Keep the members already verified at the snapshot, even if discovery is
+    // unavailable. Returning them also avoids retrying the entire history.
+    console.warn("Could not finish signer discovery", error);
+  }
+  console.warn(`Resolved ${listed.length} of ${onChainLength} Security Council members at block ${blockNumber}.`);
   return listed;
 }

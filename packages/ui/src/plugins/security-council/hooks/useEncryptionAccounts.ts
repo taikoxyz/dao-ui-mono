@@ -1,7 +1,7 @@
 import { EncryptionRegistryAbi } from "../artifacts/EncryptionRegistry";
 import { useConfig } from "wagmi";
 import { Config, readContract } from "@wagmi/core";
-import { PUB_ENCRYPTION_REGISTRY_CONTRACT_ADDRESS } from "@/constants";
+import { PUB_CHAIN, PUB_ENCRYPTION_REGISTRY_CONTRACT_ADDRESS } from "@/constants";
 import { useQuery } from "@tanstack/react-query";
 
 /**
@@ -12,9 +12,10 @@ export function useEncryptionAccounts() {
   const config = useConfig() as Config;
 
   return useQuery({
-    queryKey: ["encryption-registry-accounts-fetch", PUB_ENCRYPTION_REGISTRY_CONTRACT_ADDRESS],
+    queryKey: ["encryption-registry-accounts-fetch", PUB_CHAIN.id, PUB_ENCRYPTION_REGISTRY_CONTRACT_ADDRESS],
     queryFn: () => {
       return readContract(config, {
+        chainId: PUB_CHAIN.id,
         abi: EncryptionRegistryAbi,
         address: PUB_ENCRYPTION_REGISTRY_CONTRACT_ADDRESS,
         functionName: "getRegisteredAccounts",
@@ -22,6 +23,7 @@ export function useEncryptionAccounts() {
         return Promise.all(
           accounts.map((accountAddress) =>
             readContract(config, {
+              chainId: PUB_CHAIN.id,
               abi: EncryptionRegistryAbi,
               address: PUB_ENCRYPTION_REGISTRY_CONTRACT_ADDRESS,
               functionName: "accounts",
@@ -35,7 +37,7 @@ export function useEncryptionAccounts() {
         );
       });
     },
-    retry: true,
+    retry: 2,
     refetchOnMount: true,
     refetchOnReconnect: true,
     retryOnMount: true,

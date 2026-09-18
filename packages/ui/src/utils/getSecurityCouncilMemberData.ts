@@ -2,12 +2,6 @@ import { Address, getAddress, isAddressEqual } from "viem";
 import { formatHexString } from "@/utils/evm";
 import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 
-export interface ISecurityCouncilMemberProfile {
-  owner: Address;
-  appointedAgent?: Address;
-  name: string;
-}
-
 export type SecurityCouncilProfileEntry = {
   address: string;
   name: string;
@@ -54,14 +48,6 @@ export function getSecurityCouncilProfile(address: Address): SecurityCouncilProf
     description: entry?.description ?? "",
     order,
     hasDirectoryEntry: index >= 0,
-  };
-}
-
-export default function getSecurityCouncilMemberData(address: Address): ISecurityCouncilMemberProfile {
-  const profile = getSecurityCouncilProfile(address);
-  return {
-    owner: profile.owner,
-    name: profile.name,
   };
 }
 
