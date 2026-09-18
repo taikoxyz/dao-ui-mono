@@ -7,7 +7,7 @@ import { PUB_TAIKO_BRIDGE_ADDRESS, TAIKO_L2_CHAIN_ID } from "@/constants";
 import { useWalletChainPolicy } from "@/context/WalletChainPolicy";
 import { useL2AnchorSync } from "@/hooks/useL2AnchorSync";
 import { useL2LegExecution } from "@/hooks/useL2LegExecution";
-import { hasL2LegFromActions, shouldRenderL2ExecutionCard } from "@/utils/l2-execution";
+import { getL2ExtractionView, hasL2LegFromActions, shouldRenderL2ExecutionCard } from "@/utils/l2-execution";
 import { type RawAction } from "@/utils/types";
 
 interface ProposalL2ExecutionProps {
@@ -46,6 +46,8 @@ export function ProposalL2Execution({
     message,
     isExtracting,
     extractError,
+    noMessageFound,
+    retryExtraction,
     executeL2,
     isL2Confirming,
     isL2Confirmed,
@@ -61,7 +63,13 @@ export function ProposalL2Execution({
   const hasL2Leg = detectedFromActions || detectedFromTx;
   // Allow Taiko L2 only while still determining L2 leg status or when a confirmed L2 leg exists.
   // Without this guard, executed proposals with no L2 leg keep the secondary chain allowed indefinitely.
-  const shouldAllowTaikoL2 = executed && shouldCheckL2 && !isL2Confirmed && (!isSynced || isExtracting || hasL2Leg);
+  const shouldAllowTaikoL2 =
+    executed &&
+    shouldCheckL2 &&
+    !isL2Confirmed &&
+    !extractError &&
+    !noMessageFound &&
+    (!isSynced || isExtracting || hasL2Leg);
 
   useEffect(() => {
     setAllowedSecondaryChainIds(shouldAllowTaikoL2 ? [TAIKO_L2_CHAIN_ID] : []);
@@ -140,17 +148,56 @@ export function ProposalL2Execution({
     );
   }
 
-  // No MessageSent found after extraction — not an L2 proposal
-  if (!message && !detectedFromActions) return null;
+  const extractionView = getL2ExtractionView({
+    extractError,
+    noMessageFound,
+    hasMessage: !!message,
+    detectedFromActions,
+  });
 
-  // Extract error
-  if (extractError) {
+  // Reading the L1 receipt failed. Reported before the "no L2 leg" bail-out
+  // below, which would otherwise swallow it: an executed proposal has its
+  // actions cleared, so detectedFromActions is false exactly here.
+  // The `&& extractError` is redundant with the view (getL2ExtractionView only
+  // returns "error" when it is set) but narrows string | null for AlertInline.
+  if (extractionView === "error" && extractError) {
     return (
       <div className="mt-4">
         <AlertInline
-          message={`Failed to read L1 transaction: ${extractError}`}
+          message={extractError}
           variant="critical"
         />
+        <Button className="mt-2" size="md" variant="secondary" onClick={retryExtraction}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  // The actions include a bridge sendMessage bound for L2, but the executed
+  // transaction emitted no MessageSent log.
+  if (extractionView === "no-message") {
+    return (
+      <div className="mt-4">
+        <AlertInline
+          message="No bridge message was found in the L1 execution transaction."
+          variant="critical"
+        />
+      </div>
+    );
+  }
+
+  // No MessageSent found after extraction — not an L2 proposal
+  if (extractionView === "hidden") return null;
+
+  // Extraction has not settled yet (the effect has not run for this hash, or a
+  // retry is pending). Show the spinner rather than an execute button that
+  // cannot do anything without a message.
+  if (extractionView === "waiting") {
+    return (
+      <div className="mt-4 flex items-center gap-2">
+        <Spinner size="sm" />
+        <span className="text-sm text-neutral-500">Extracting bridge message from L1 transaction...</span>
       </div>
     );
   }

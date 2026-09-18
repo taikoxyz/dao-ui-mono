@@ -68,21 +68,59 @@ export function useL2LegExecution(
   const [msgHash, setMsgHash] = useState<Hex | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
+  // Distinct from extractError: the receipt was read fine, it just carried no
+  // MessageSent log. That is the normal shape of an executed L1-only proposal,
+  // not a failure.
+  const [noMessageFound, setNoMessageFound] = useState(false);
+  const [extractionAttempt, setExtractionAttempt] = useState(0);
+
+  const retryExtraction = useCallback(() => {
+    setMessage(null);
+    setMsgHash(null);
+    setExtractError(null);
+    setNoMessageFound(false);
+    setExtractionAttempt((attempt) => attempt + 1);
+  }, []);
 
   // Reset extraction state when the tx hash changes (e.g. navigating between proposals)
   useEffect(() => {
     setMessage(null);
     setMsgHash(null);
     setExtractError(null);
+    setNoMessageFound(false);
+    setIsExtracting(false);
   }, [l1TxHash]);
 
   // Step 1: Extract message from L1 tx receipt
   useEffect(() => {
-    if (!l1TxHash || !l1Client || message) return;
+    if (!l1TxHash || !l1Client || message) {
+      // Nothing left to extract. Clear the spinner here rather than relying on
+      // the promise callbacks: when this effect re-runs because l1Client went
+      // away mid-flight, the previous run is cancelled and both callbacks bail
+      // on `if (cancelled) return` before their own setIsExtracting(false),
+      // which otherwise left the spinner up for good.
+      setIsExtracting(false);
+      if (message) {
+        // A completed extraction makes any earlier verdict stale by definition.
+        // Clearing it here means correctness does not rest on getL2ExtractionView
+        // happening to check hasMessage first. Deliberately not cleared when the
+        // hash or client is simply absent: a real error would vanish and the card
+        // would fall back to a spinner that nothing can resolve.
+        setExtractError(null);
+        setNoMessageFound(false);
+      }
+      return;
+    }
 
     let cancelled = false;
 
+    // Clear any verdict from a previous attempt for this same hash. The reset
+    // effect above only fires on l1TxHash, but an explicit retry or replacement
+    // L1 client also starts a fresh attempt. The client is pinned to PUB_CHAIN,
+    // so switching the wallet chain does not trigger a retry.
     setIsExtracting(true);
+    setExtractError(null);
+    setNoMessageFound(false);
     l1Client
       .getTransactionReceipt({ hash: l1TxHash })
       .then((receipt) => {
@@ -108,20 +146,23 @@ export function useL2LegExecution(
           }
         }
         if (!found) {
-          setExtractError("No bridge message found in this transaction");
+          setNoMessageFound(true);
         }
         setIsExtracting(false);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
-        setExtractError("Failed to read L1 transaction");
+        // Keep the underlying reason in the console; the alert only carries the
+        // user-facing sentence.
+        console.error("Could not read the L1 transaction receipt", err);
+        setExtractError("Could not read the L1 transaction receipt.");
         setIsExtracting(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [l1TxHash, l1Client, message]);
+  }, [l1TxHash, l1Client, message, extractionAttempt]);
 
   // Step 2: Write contract setup (declared early so l2TxHash is available for status polling)
   const {
@@ -293,6 +334,8 @@ export function useL2LegExecution(
     msgHash,
     isExtracting,
     extractError,
+    noMessageFound,
+    retryExtraction,
     executeL2,
     isL2Confirming: writeStatus === "pending" || isL2Confirming,
     isL2Confirmed: isMessageDone,

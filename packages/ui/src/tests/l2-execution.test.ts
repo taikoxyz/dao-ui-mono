@@ -3,6 +3,7 @@ import { encodeFunctionData, toFunctionSelector, type Address, type Hex } from "
 import {
   bridgeSendMessageAbi,
   getConfirmedL2MessageOutcome,
+  getL2ExtractionView,
   hasL2LegFromActions,
   isBridgeL2Send,
   shouldRenderL2ExecutionCard,
@@ -123,5 +124,72 @@ describe("getConfirmedL2MessageOutcome", () => {
     expect(getConfirmedL2MessageOutcome(1)).toBe("pending");
     expect(getConfirmedL2MessageOutcome(4)).toBe("pending");
     expect(getConfirmedL2MessageOutcome(undefined)).toBe("pending");
+  });
+});
+
+describe("getL2ExtractionView", () => {
+  const settled = {
+    extractError: null as string | null,
+    noMessageFound: false,
+    hasMessage: false,
+    detectedFromActions: false,
+  };
+
+  test("reports a receipt read failure even when the actions show no L2 leg", () => {
+    // An executed proposal has its actions cleared from the contract, so
+    // detectedFromActions is false exactly when this error matters. Bailing out
+    // on that first swallowed the error and rendered nothing at all.
+    expect(getL2ExtractionView({ ...settled, extractError: "The transaction receipt could not be fetched" })).toBe(
+      "error"
+    );
+  });
+
+  test("reports a receipt read failure when the actions do show an L2 leg", () => {
+    expect(
+      getL2ExtractionView({
+        ...settled,
+        extractError: "The transaction receipt could not be fetched",
+        detectedFromActions: true,
+      })
+    ).toBe("error");
+  });
+
+  test("hides the card when the receipt simply carried no bridge message", () => {
+    // The normal shape of an executed L1-only proposal: not a failure.
+    expect(getL2ExtractionView({ ...settled, noMessageFound: true })).toBe("hidden");
+  });
+
+  test("flags a missing bridge message when the actions promised one", () => {
+    expect(getL2ExtractionView({ ...settled, noMessageFound: true, detectedFromActions: true })).toBe("no-message");
+  });
+
+  test("hides the card when nothing points at an L2 leg", () => {
+    expect(getL2ExtractionView(settled)).toBe("hidden");
+  });
+
+  test("is ready once a bridge message was extracted", () => {
+    expect(getL2ExtractionView({ ...settled, hasMessage: true })).toBe("ready");
+  });
+
+  test("waits, never readies, while a declared L2 leg has no message or verdict yet", () => {
+    // "ready" here would render the execute card around a null message, whose
+    // executeL2 no-ops — the dead button this helper exists to prevent.
+    expect(getL2ExtractionView({ ...settled, detectedFromActions: true })).toBe("waiting");
+  });
+
+  test("an extracted message outranks a stale noMessageFound flag", () => {
+    // The reset effect keys on l1TxHash alone, but extraction also re-runs when
+    // the pinned L1 client is replaced or a retry is requested. A verdict left over from
+    // the earlier attempt must not hide a message the retry actually found.
+    expect(
+      getL2ExtractionView({
+        ...settled,
+        hasMessage: true,
+        noMessageFound: true,
+        detectedFromActions: true,
+      })
+    ).toBe("ready");
+
+    expect(getL2ExtractionView({ ...settled, hasMessage: true, noMessageFound: true })).toBe("ready");
   });
 });
