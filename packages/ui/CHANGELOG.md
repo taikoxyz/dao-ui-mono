@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.5.0](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.4.1...dao-ui-v0.5.0) (2026-09-18)
+
+
+### Features
+
+* **dao-ui:** use Taiko pink for the Executed proposal tag ([#199](https://github.com/taikoxyz/dao-ui-mono/issues/199)) ([f3fa540](https://github.com/taikoxyz/dao-ui-mono/commit/f3fa5400105805005bccbd932495b5f967f9ca76))
+
+
+### Bug Fixes
+
+* **dao-ui:** compare subgraph approvers case-insensitively ([#205](https://github.com/taikoxyz/dao-ui-mono/issues/205)) ([d9bd450](https://github.com/taikoxyz/dao-ui-mono/commit/d9bd4500595a155573505bcb58d94b8fd244c6a8))
+* **dao-ui:** keep council members visible without registered keys ([#211](https://github.com/taikoxyz/dao-ui-mono/issues/211)) ([183e620](https://github.com/taikoxyz/dao-ui-mono/commit/183e6203e5f5004805e15f47c74ece34001b92c3))
+* **dao-ui:** match subgraph proposals by id instead of list position ([#202](https://github.com/taikoxyz/dao-ui-mono/issues/202)) ([982d97c](https://github.com/taikoxyz/dao-ui-mono/commit/982d97ce2232afb2c97b2040fb01e1f5e62c970e))
+* **dao-ui:** refresh encryption account state after a failed transaction ([#203](https://github.com/taikoxyz/dao-ui-mono/issues/203)) ([dc92f9e](https://github.com/taikoxyz/dao-ui-mono/commit/dc92f9e61e11bdfd9e62abb7bccba79ec8a59fbe))
+* **dao-ui:** restore the mobile navigation menu for connected wallets ([#200](https://github.com/taikoxyz/dao-ui-mono/issues/200)) ([540e5e7](https://github.com/taikoxyz/dao-ui-mono/commit/540e5e7d25b190a51b42102cd2411ac155f402e8))
+* **dao-ui:** show the veto warning for wallets that never self-delegated ([#201](https://github.com/taikoxyz/dao-ui-mono/issues/201)) ([1d1db1f](https://github.com/taikoxyz/dao-ui-mono/commit/1d1db1ff6b42a8c7ed435edf2dd8972894ff72c7))
+* **dao-ui:** stop re-scanning the boundary block of each getLogs window ([#198](https://github.com/taikoxyz/dao-ui-mono/issues/198)) ([bb4fcc7](https://github.com/taikoxyz/dao-ui-mono/commit/bb4fcc7ca791bd2db419ca85394ac41e98821776))
+* **dao-ui:** surface L1 receipt read failures in the L2 execution card ([#204](https://github.com/taikoxyz/dao-ui-mono/issues/204)) ([9f89641](https://github.com/taikoxyz/dao-ui-mono/commit/9f89641497649d0cb8a1d932398a524127cd4031))
+
 ## [0.4.1](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.4.0...dao-ui-v0.4.1) (2026-09-04)
 
 
