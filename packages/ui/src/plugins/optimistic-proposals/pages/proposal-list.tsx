@@ -73,7 +73,7 @@ export function PublicProposals() {
 
   return (
     <>
-      <If condition={hasBalance && (delegatingToSomeoneElse ?? delegatedToZero)}>
+      <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
         <NoVetoPowerWarning
           delegatingToSomeoneElse={delegatingToSomeoneElse}
           delegatesTo={delegatesTo}

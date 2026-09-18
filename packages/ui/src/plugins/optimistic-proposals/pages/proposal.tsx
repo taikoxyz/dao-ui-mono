@@ -118,7 +118,7 @@ export default function ProposalDetail({ index: proposalIdx }: { index: number }
             <BodySection body={proposal.description ?? "No description was provided"} />
             {!isEmergency && (
               <>
-                <If condition={hasBalance && (delegatingToSomeoneElse ?? delegatedToZero)}>
+                <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
                   <NoVetoPowerWarning
                     delegatingToSomeoneElse={delegatingToSomeoneElse}
                     delegatesTo={delegatesTo}
