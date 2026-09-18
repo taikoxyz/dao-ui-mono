@@ -9,7 +9,7 @@ import { PUB_SUBGRAPH_URL } from "@/constants";
 
 export function useSignerList() {
   return useQuery({
-    queryKey: ["signer-list-fetch", PUB_SIGNER_LIST_CONTRACT_ADDRESS],
+    queryKey: ["signer-list-fetch", "subgraph", PUB_SUBGRAPH_URL, PUB_SIGNER_LIST_CONTRACT_ADDRESS],
     queryFn: () => {
       return getGqlSigners();
     },

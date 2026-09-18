@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CardEmptyState, DataList } from "@aragon/ods";
+import { AlertInline, CardEmptyState, DataList } from "@aragon/ods";
 import { AccountListItemPending, AccountListItemReady } from "./AccountListItem";
 import { PleaseWaitSpinner } from "@/components/please-wait";
 import { PUB_CHAIN } from "@/constants";
@@ -11,8 +11,8 @@ import { Address, isAddressEqual } from "viem";
 
 export const AccountList: React.FC = () => {
   const [searchValue, setSearchValue] = useState<string>();
-  const { data: accounts, isLoading: isLoading1, error: signerListError } = useSignerList();
-  const { data: encryptionAccounts, isLoading: isLoading2, error } = useEncryptionAccounts();
+  const { data: accounts, isLoading: isLoadingSigners, error: signerListError } = useSignerList();
+  const { data: encryptionAccounts, error: encryptionError } = useEncryptionAccounts();
 
   // The signer list now surfaces subgraph failures instead of silently
   // resolving to []; without this the spinner below would never resolve.
@@ -20,20 +20,26 @@ export const AccountList: React.FC = () => {
     return <NoSignersView title="Could not fetch" message={signerListError.message} />;
   }
 
-  if ((!encryptionAccounts || !accounts) ?? isLoading1 ?? isLoading2) {
+  if (!accounts || isLoadingSigners) {
     return <PleaseWaitSpinner fullMessage="Please wait, loading accounts" />;
-  } else if (!encryptionAccounts.length) {
-    if (error) return <NoSignersView title="Could not fetch" message={error?.message} />;
+  } else if (!accounts.length) {
     return (
       <NoSignersView
-        title="No signers registered"
-        message="There are no signers registered on the Encryption Registry. Be the first one to register a public key or appoint an agent that uses an EOA."
+        title="No members listed"
+        message="There are no members listed in the Security Council roster."
       />
     );
   }
 
+  // Keep members mounted while keys load or fail. This list marks key status
+  // unavailable after a failed refresh, even when older keys remain cached.
+  const registry = encryptionError ? [] : (encryptionAccounts ?? []);
+
   return (
     <DataList.Root entityLabel={accounts.length === 1 ? "account" : "accounts"} itemsCount={accounts.length}>
+      {encryptionError && (
+        <AlertInline variant="warning" message="Could not load encryption keys. Member key status is unavailable." />
+      )}
       <DataList.Filter onSearchValueChange={setSearchValue} searchValue={searchValue} placeholder="Filter by address" />
       <DataList.Container className="grid grid-cols-[repeat(auto-fill,_minmax(200px,_1fr))] gap-5">
         {accounts
@@ -47,8 +53,8 @@ export const AccountList: React.FC = () => {
             );
           })
           .map((account: Address) => {
-            const eAcc = encryptionAccounts.find((a) => isAddressEqual(a.owner, account));
-            if ((!eAcc || !eAcc.publicKey) ?? eAcc.publicKey === BYTES32_ZERO) {
+            const eAcc = registry.find((a) => isAddressEqual(a.owner, account));
+            if (!eAcc || !eAcc.publicKey || eAcc.publicKey === BYTES32_ZERO) {
               return (
                 <AccountListItemPending
                   key={account}

@@ -11,8 +11,8 @@
   },
   {
     "address": "0xf1cF63589A1e012F9124182c9eAa36B5333e5f06",
-    "name": "L2BEAT",
-    "description": ""
+    "name": "Sebastian Kugler (ex-L2BEAT seat)",
+    "description": "Serving in an individual capacity. Inherited the L2BEAT seat."
   },
   {
     "address": "0xb284810536C0dAB6A8e48153B58588A9B9e0F701",
@@ -48,5 +48,15 @@
     "address": "0x6268d189e011aa53a2f09a1fe159445beb3d878e",
     "name": "Gattaca",
     "description": ""
+  },
+  {
+    "address": "0xF74F2bBaEd41e3e4AbAcbA24563a5Ce5aB071C8A",
+    "name": "Daniel Wang",
+    "description": "Taiko co-founder. Listed as an EOA."
+  },
+  {
+    "address": "0xe63E61BbB3aa1b82d44471AbcAb490102C17c986",
+    "name": "Gustavo Gonzalez",
+    "description": "Serving in an individual capacity. Listed as an EOA."
   }
 ]

@@ -31,7 +31,9 @@ export const AccountListItemReady: React.FC<IAccountListItemProps> = (props) => 
         <div className="flex w-full items-center justify-start gap-6">
           <MemberAvatar address={owner} avatarSrc={avatarSrc} responsiveSize={{ md: "md" }} />
           <div className="flex flex-col items-center justify-center">
-            <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">{profile?.name}</p>
+            <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">
+              {profile?.name || formatHexString(owner)}
+            </p>
             <p className="inline-block w-full truncate text-sm text-neutral-400">
               <button
                 className="flex flex-col p-0"
@@ -83,7 +85,9 @@ export const AccountListItemPending: React.FC<IAccountListItemProps> = (props) =
   const { avatarSrc, owner, appointedAgent, publicKey, ...otherProps } = props;
   const { address: currentUserAddress, isConnected } = useAccount();
   const isCurrentUser = isConnected && owner && equalAddresses(currentUserAddress, owner);
-  const { status } = useAccountEncryptionStatus(owner);
+  // The list owns registry fetching. Rows mounted after a failure only observe
+  // its result; navigating back to the list can still retry the request.
+  const { status } = useAccountEncryptionStatus(owner, { refetchOnMount: false });
   const profile = SecurityCouncilProfiles.find((profile) => equalAddresses(profile.address, owner));
 
   let comment = "";
@@ -126,7 +130,9 @@ export const AccountListItemPending: React.FC<IAccountListItemProps> = (props) =
             </Else>
           </If>
         </div>
-        <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">{profile?.name}</p>
+        <p className="inline-block w-full text-lg text-neutral-800 md:text-xl">
+          {profile?.name || formatHexString(owner)}
+        </p>
         <p className="inline-block w-full truncate text-sm text-neutral-400">{formatHexString(owner)}</p>
         <If condition={!!appointedAgent && appointedAgent !== ADDRESS_ZERO}>
           <p className="inline-block w-full text-sm text-neutral-400">
