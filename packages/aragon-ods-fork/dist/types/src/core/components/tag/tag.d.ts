@@ -1,4 +1,4 @@
-export type TagVariant = 'neutral' | 'info' | 'warning' | 'critical' | 'success' | 'primary';
+export type TagVariant = 'neutral' | 'info' | 'warning' | 'critical' | 'success' | 'primary' | 'primaryStrong';
 export interface ITagProps {
     /**
      * Defines the variant of the tag.

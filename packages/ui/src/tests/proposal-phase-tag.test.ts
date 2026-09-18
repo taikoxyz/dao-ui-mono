@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { ProposalStatus } from "@aragon/ods";
-import { getPhaseTag } from "../plugins/optimistic-proposals/utils/proposal-phase-tag";
+import { IconType, ProposalStatus } from "@aragon/ods";
+import { getPhaseIcon, getPhaseTag } from "../plugins/optimistic-proposals/utils/proposal-phase-tag";
 
 const base = {
   isEmergency: false,
@@ -66,7 +66,7 @@ describe("getPhaseTag — terminal and degenerate states", () => {
   test("an executed proposal reads as Executed", () => {
     expect(getPhaseTag({ ...base, status: ProposalStatus.EXECUTED })).toEqual({
       label: "Executed",
-      variant: "success",
+      variant: "primaryStrong",
     });
   });
 
@@ -94,5 +94,16 @@ describe("getPhaseTag — emergency (zero-length veto window) proposals", () => 
 
   test("an emergency proposal is never labelled Executable", () => {
     expect(getPhaseTag({ ...base, status: ProposalStatus.ACCEPTED, isEmergency: true }).label).not.toBe("Executable");
+  });
+});
+
+describe("getPhaseIcon — the icon never contradicts its pill", () => {
+  test("the Taiko-pink Executed pill keeps the checkmark, not the pending clock", () => {
+    const executed = getPhaseTag({ ...base, status: ProposalStatus.EXECUTED });
+
+    expect(getPhaseIcon(executed.variant)).toEqual({
+      icon: IconType.CHECKMARK,
+      className: "text-primary-600",
+    });
   });
 });
