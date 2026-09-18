@@ -1,5 +1,5 @@
 import { useAccount, useBlockNumber, useReadContract } from "wagmi";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import EnhancedProposalCard from "@/plugins/optimistic-proposals/components/proposal/proposal-card-enhanced";
 import {
   AlertCard,
@@ -26,6 +26,7 @@ import {
   formatTimelockClause,
   getStandardProposalCycleDays,
 } from "@/plugins/optimistic-proposals/utils/standard-proposal-cycle";
+import { groupGqlProposalsByIndex } from "@/plugins/optimistic-proposals/utils/gql-proposal-index";
 const DEFAULT_PAGE_SIZE = 6;
 
 export function PublicProposals() {
@@ -71,6 +72,10 @@ export function PublicProposals() {
     isOptimistic: true,
   });
 
+  // Keyed by the on-chain proposal index decoded from each proposal id, not by
+  // the subgraph's array order, which does not line up with it.
+  const gqlProposalsByIndex = useMemo(() => groupGqlProposalsByIndex(gqlProposals), [gqlProposals]);
+
   return (
     <>
       <If condition={hasBalance && (delegatingToSomeoneElse || delegatedToZero)}>
@@ -97,7 +102,7 @@ export function PublicProposals() {
                 .reverse()
                 ?.map((proposalIndex) => (
                   <EnhancedProposalCard
-                    gqlProposal={gqlProposals?.[proposalIndex]}
+                    gqlProposal={gqlProposalsByIndex.get(proposalIndex)}
                     key={proposalIndex}
                     proposalIndex={proposalIndex}
                   />
