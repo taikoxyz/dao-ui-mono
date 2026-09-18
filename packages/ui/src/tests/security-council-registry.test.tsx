@@ -109,16 +109,23 @@ test("a registry failure settles without hiding/remounting the real member rows"
   expect(container.querySelector('[role="status"]')).toBeNull();
 });
 
-test.each([false, true])("a page remount recovers after an outage (cached keys: %s)", async (cachedKeys) => {
-  if (cachedKeys) {
+test.each(["none", "stale", "fresh"])("a page remount recovers after an outage (cached keys: %s)", async (cachedKeys) => {
+  const queryKey = ["encryption-registry-accounts-fetch", 1, "0x0000000000000000000000000000000000000002"];
+  if (cachedKeys !== "none") {
     client.setQueryData(
-      ["encryption-registry-accounts-fetch", 1, "0x0000000000000000000000000000000000000002"],
+      queryKey,
       [{ owner: MEMBER, appointedAgent: "0x0000000000000000000000000000000000000000", publicKey: KEY }],
-      { updatedAt: Date.now() - 300_001 }
+      { updatedAt: Date.now() - (cachedKeys === "stale" ? 300_001 : 0) }
     );
   }
   mocks.readContract.mockRejectedValue(new Error("Registry unavailable"));
   await render(<AccountList />);
+  if (cachedKeys === "fresh") {
+    // A post-transaction refresh can fail before the previous keys become stale.
+    await act(async () => {
+      void client.refetchQueries({ queryKey });
+    });
+  }
   await until(() => {
     expect(container.querySelector("article")?.textContent).toContain("Cannot load status");
   });

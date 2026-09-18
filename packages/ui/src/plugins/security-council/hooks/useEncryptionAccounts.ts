@@ -38,7 +38,9 @@ export function useEncryptionAccounts({ refetchOnMount = true } = {}) {
       });
     },
     retry: 2,
-    refetchOnMount,
+    // A failed explicit refresh retains dataUpdatedAt; retry even if cached keys
+    // are still fresh. Rows can opt out while the parent owns recovery.
+    refetchOnMount: refetchOnMount ? (query) => (query.state.status === "error" ? "always" : true) : false,
     refetchOnReconnect: true,
     retryOnMount: refetchOnMount,
     staleTime: 1000 * 60 * 5,
