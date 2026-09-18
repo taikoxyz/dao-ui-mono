@@ -6,7 +6,6 @@ import { PUB_ENCRYPTION_REGISTRY_CONTRACT_ADDRESS } from "@/constants";
 import { uint8ArrayToHex } from "@/utils/hex";
 import { useDerivedWallet } from "@/hooks/useDerivedWallet";
 import { useAlerts } from "@/context/Alerts";
-import { debounce } from "@/utils/debounce";
 import { useTransactionManager } from "@/hooks/useTransactionManager";
 import { useEncryptionAccounts } from "./useEncryptionAccounts";
 import { useApproverWalletList, useSignerList } from "@/plugins/security-council/hooks/useSignerList";
@@ -44,7 +43,7 @@ export function useEncryptionRegistry({ onAppointSuccess }: { onAppointSuccess?:
     }, // Err
     onErrorMessage: "Could not register the public key",
     onError() {
-      debounce(() => {
+      setTimeout(() => {
         refetchAccounts();
         refetchApprovers();
       }, 800);
@@ -68,7 +67,7 @@ export function useEncryptionRegistry({ onAppointSuccess }: { onAppointSuccess?:
     // Err
     onErrorMessage: "Could not appoint the agent",
     onError() {
-      debounce(() => {
+      setTimeout(() => {
         refetchAccounts();
         refetchApprovers();
       }, 800);
