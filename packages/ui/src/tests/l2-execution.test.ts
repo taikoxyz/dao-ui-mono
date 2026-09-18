@@ -179,7 +179,7 @@ describe("getL2ExtractionView", () => {
 
   test("an extracted message outranks a stale noMessageFound flag", () => {
     // The reset effect keys on l1TxHash alone, but extraction also re-runs when
-    // the viem client changes (a wallet chain switch). A verdict left over from
+    // the pinned L1 client is replaced or a retry is requested. A verdict left over from
     // the earlier attempt must not hide a message the retry actually found.
     expect(
       getL2ExtractionView({

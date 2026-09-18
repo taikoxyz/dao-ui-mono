@@ -72,6 +72,15 @@ export function useL2LegExecution(
   // MessageSent log. That is the normal shape of an executed L1-only proposal,
   // not a failure.
   const [noMessageFound, setNoMessageFound] = useState(false);
+  const [extractionAttempt, setExtractionAttempt] = useState(0);
+
+  const retryExtraction = useCallback(() => {
+    setMessage(null);
+    setMsgHash(null);
+    setExtractError(null);
+    setNoMessageFound(false);
+    setExtractionAttempt((attempt) => attempt + 1);
+  }, []);
 
   // Reset extraction state when the tx hash changes (e.g. navigating between proposals)
   useEffect(() => {
@@ -106,10 +115,9 @@ export function useL2LegExecution(
     let cancelled = false;
 
     // Clear any verdict from a previous attempt for this same hash. The reset
-    // effect above only fires on l1TxHash, but this effect also re-runs when
-    // l1Client changes (a wallet chain switch, which this card itself triggers),
-    // and a stale extractError/noMessageFound would otherwise outlive a retry
-    // that succeeds.
+    // effect above only fires on l1TxHash, but an explicit retry or replacement
+    // L1 client also starts a fresh attempt. The client is pinned to PUB_CHAIN,
+    // so switching the wallet chain does not trigger a retry.
     setIsExtracting(true);
     setExtractError(null);
     setNoMessageFound(false);
@@ -154,7 +162,7 @@ export function useL2LegExecution(
     return () => {
       cancelled = true;
     };
-  }, [l1TxHash, l1Client, message]);
+  }, [l1TxHash, l1Client, message, extractionAttempt]);
 
   // Step 2: Write contract setup (declared early so l2TxHash is available for status polling)
   const {
@@ -327,6 +335,7 @@ export function useL2LegExecution(
     isExtracting,
     extractError,
     noMessageFound,
+    retryExtraction,
     executeL2,
     isL2Confirming: writeStatus === "pending" || isL2Confirming,
     isL2Confirmed: isMessageDone,

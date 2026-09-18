@@ -47,6 +47,7 @@ export function ProposalL2Execution({
     isExtracting,
     extractError,
     noMessageFound,
+    retryExtraction,
     executeL2,
     isL2Confirming,
     isL2Confirmed,
@@ -62,7 +63,13 @@ export function ProposalL2Execution({
   const hasL2Leg = detectedFromActions || detectedFromTx;
   // Allow Taiko L2 only while still determining L2 leg status or when a confirmed L2 leg exists.
   // Without this guard, executed proposals with no L2 leg keep the secondary chain allowed indefinitely.
-  const shouldAllowTaikoL2 = executed && shouldCheckL2 && !isL2Confirmed && (!isSynced || isExtracting || hasL2Leg);
+  const shouldAllowTaikoL2 =
+    executed &&
+    shouldCheckL2 &&
+    !isL2Confirmed &&
+    !extractError &&
+    !noMessageFound &&
+    (!isSynced || isExtracting || hasL2Leg);
 
   useEffect(() => {
     setAllowedSecondaryChainIds(shouldAllowTaikoL2 ? [TAIKO_L2_CHAIN_ID] : []);
@@ -160,6 +167,9 @@ export function ProposalL2Execution({
           message={extractError}
           variant="critical"
         />
+        <Button className="mt-2" size="md" variant="secondary" onClick={retryExtraction}>
+          Retry
+        </Button>
       </div>
     );
   }
