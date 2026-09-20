@@ -5,10 +5,10 @@ import { getShortTimeDiffFrom } from "@/utils/dates";
 import { EmergencyProposal } from "../../utils/types";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { HeaderSection } from "@/components/layout/header-section";
-import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
 import { useEncryptionAccounts } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import { Address, isAddressEqual } from "viem";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
+import getSecurityCouncilMemberData from "@/utils/getSecurityCouncilMemberData";
 
 interface ProposalHeaderProps {
   proposalId: string;
@@ -32,7 +32,9 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
     encryptionAccounts?.find(
       ({ appointedAgent }) => creator && appointedAgent && isAddressEqual(appointedAgent, creator)
     )?.owner ?? undefined;
-  const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
+  const asOfBlock = gqlProposal?.creationBlockNumber;
+  const profile =
+    owner && asOfBlock != null ? getSecurityCouncilMemberData(owner, asOfBlock) : undefined;
 
   return (
     <div className="flex w-full justify-center bg-neutral-0">
