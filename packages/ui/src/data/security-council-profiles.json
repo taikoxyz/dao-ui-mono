@@ -12,7 +12,13 @@
   {
     "address": "0xf1cF63589A1e012F9124182c9eAa36B5333e5f06",
     "name": "Sebastian Kugler",
-    "description": "Serving in an individual capacity. Inherited the L2BEAT seat."
+    "description": "Serving in an individual capacity. Inherited the L2BEAT seat.",
+    "priorNames": [
+      {
+        "name": "L2BEAT",
+        "untilBlock": 25997731
+      }
+    ]
   },
   {
     "address": "0xb284810536C0dAB6A8e48153B58588A9B9e0F701",

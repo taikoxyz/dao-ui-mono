@@ -7,7 +7,7 @@ import { getShortTimeDiffFrom } from "@/utils/dates";
 import { Else, ElseIf, If, Then } from "@/components/if";
 import { useEncryptionAccounts } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import { isAddressEqual, zeroAddress } from "viem";
-import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
+import getSecurityCouncilMemberData from "@/utils/getSecurityCouncilMemberData";
 import { useGqlProposalSingle } from "@/utils/gql/hooks/useGetGqlProposalSingle";
 
 interface ProposalHeaderProps {
@@ -30,7 +30,9 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalId, proposal })
 
   const owner =
     encryptionAccounts?.find(({ appointedAgent }) => isAddressEqual(appointedAgent, creator))?.owner ?? undefined;
-  const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
+  const asOfBlock = gqlProposal?.creationBlockNumber;
+  const profile =
+    owner && asOfBlock != null ? getSecurityCouncilMemberData(owner, asOfBlock) : undefined;
 
   return (
     <div className="flex w-full justify-center bg-neutral-0">

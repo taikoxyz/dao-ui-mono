@@ -8,7 +8,7 @@ import { HeaderSection } from "@/components/layout/header-section";
 import { Publisher } from "@/components/publisher";
 import { Address, isAddressEqual } from "viem";
 import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
-import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
+import getSecurityCouncilMemberData from "@/utils/getSecurityCouncilMemberData";
 import { IGqlProposalMixin } from "@/utils/gql/types";
 
 const DEFAULT_PROPOSAL_TITLE = "(No proposal title)";
@@ -47,7 +47,9 @@ const ProposalHeader: React.FC<ProposalHeaderProps> = ({ proposalIdx, proposal, 
     encryptionAccounts?.find(
       ({ appointedAgent }) => appointedAgent && creator && isAddressEqual(appointedAgent, creator)
     )?.owner ?? undefined;
-  const profile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
+  const asOfBlock = gqlProposal?.creationBlockNumber;
+  const profile =
+    owner && asOfBlock != null ? getSecurityCouncilMemberData(owner, asOfBlock) : undefined;
 
   return (
     <div className="flex w-full justify-center bg-neutral-0">

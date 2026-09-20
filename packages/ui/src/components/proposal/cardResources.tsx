@@ -2,9 +2,7 @@ import getSecurityCouncilMemberData from "@/utils/getSecurityCouncilMemberData";
 import type { IProposalResource } from "@/utils/types";
 import { Card, CardEmptyState, Heading, IconType, Link } from "@aragon/ods";
 import React from "react";
-import { zeroAddress } from "viem";
-import SecurityCouncilProfiles from "@/data/security-council-profiles.json";
-import { isAddressEqual } from "viem";
+import { isAddressEqual, zeroAddress } from "viem";
 import { useEncryptionAccounts as useEncryptionAccountsEmergency } from "@/plugins/security-council/hooks/useEncryptionAccounts";
 import { IGqlProposalMixin } from "@/utils/gql/types";
 
@@ -43,9 +41,19 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
     encryptionAccounts?.find(
       ({ appointedAgent }) => appointedAgent && executor?.address && isAddressEqual(appointedAgent, executor.address)
     )?.owner ?? undefined;
-  const creatorProfile = owner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, owner));
-  const executorProfile =
-    executioner && SecurityCouncilProfiles.find((p: any) => isAddressEqual(p.address, executioner));
+  const creationBlocks = [relatedProposal?.creationBlockNumber, gqlProposal?.creationBlockNumber].filter(
+    (block): block is number => block != null
+  );
+  const asOfBlock = creationBlocks.length ? Math.min(...creationBlocks) : undefined;
+  const listedName = owner ? getSecurityCouncilMemberData(owner, asOfBlock).name : "";
+  const creatorLabel =
+    listedName ||
+    getSecurityCouncilMemberData(creator, asOfBlock).name ||
+    creator.replace(SHORT_ADDRESS, "$1...$2");
+  const executorLabel = getSecurityCouncilMemberData(
+    executioner ?? (executor?.address || zeroAddress),
+    asOfBlock
+  ).name;
 
   const approvals = relatedProposal?.approvers ?? gqlProposal?.approvers ?? [];
   const vetoes = gqlProposal?.vetoes ?? relatedProposal?.vetoes ?? [];
@@ -61,8 +69,6 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
   // A related proposal only exists for proposals that carry over to another stage; emergency
   // and standard ones are self-contained, so fall back to the proposal's own creation data.
   const creationTxHash = relatedProposal?.creationTxHash ?? gqlProposal?.creationTxHash;
-  const creatorLabel =
-    creatorProfile?.name || getSecurityCouncilMemberData(creator).name || creator.replace(SHORT_ADDRESS, "$1...$2");
 
   if (!props.gqlProposal || !creationTxHash) {
     return <Card className="flex flex-col gap-y-4 p-6 shadow-neutral">Loading tx info...</Card>;
@@ -104,7 +110,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
                   variant="primary"
                   key={i}
                 >
-                  {getSecurityCouncilMemberData(approver.address).name || approver.address}
+                  {getSecurityCouncilMemberData(approver.address, asOfBlock).name || approver.address}
                 </Link>
               </td>
               <td>
@@ -161,7 +167,7 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
             <tr>
               <td>
                 <Link target="_blank" href={`https://etherscan.io/address/${executor?.address}`} variant="primary">
-                  {executorProfile?.name}
+                  {executorLabel}
                 </Link>
               </td>
               <td>
