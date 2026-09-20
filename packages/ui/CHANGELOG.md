@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.5.0...dao-ui-v0.5.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **dao-ui:** show Sebastian Kugler without the ex-L2BEAT seat label ([#212](https://github.com/taikoxyz/dao-ui-mono/issues/212)) ([21e6c97](https://github.com/taikoxyz/dao-ui-mono/commit/21e6c97470625055f7348eb068a77832c9f16d9e))
+
 ## [0.5.0](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.4.1...dao-ui-v0.5.0) (2026-09-18)
 
 
