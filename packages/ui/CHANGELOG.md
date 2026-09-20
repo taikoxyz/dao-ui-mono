@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.5.1...dao-ui-v0.5.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **dao-ui:** label the inherited council seat as L2BEAT on pre-restructure proposals ([#214](https://github.com/taikoxyz/dao-ui-mono/issues/214)) ([e09f014](https://github.com/taikoxyz/dao-ui-mono/commit/e09f014517620d82315aac187ffe41e6870c7544))
+
 ## [0.5.1](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.5.0...dao-ui-v0.5.1) (2026-09-20)
 
 
