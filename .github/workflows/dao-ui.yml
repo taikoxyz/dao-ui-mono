@@ -24,7 +24,7 @@ jobs:
         # self-hosted runners, so untrusted fork PRs must never trigger it.
         # Tag pushes must still run so production deploys can depend on this job.
         if: ${{ github.event_name == 'push' || (github.event.pull_request.draft == false && !startsWith(github.head_ref, 'release-please') && github.actor != 'dependabot' && github.event.pull_request.head.repo.fork == false) }}
-        runs-on: [arc-runner-set]
+        runs-on: ubuntu-latest
         steps:
             - name: Install Git
               run: sudo apt-get update && sudo apt-get install -y git
