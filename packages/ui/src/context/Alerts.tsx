@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { IAlert } from "@/utils/types";
 import { usePublicClient } from "wagmi";
 
@@ -22,47 +22,72 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [alerts, setAlerts] = useState<IAlert[]>([]);
   const client = usePublicClient();
 
-  // Add a new alert to the list
-  const addAlert = (message: string, alertOptions?: AlertOptions) => {
-    // Clean duplicates
-    const idx = alerts.findIndex((a) => {
-      if (a.message !== message) return false;
-      else if (a.description !== alertOptions?.description) return false;
-      else if (a.type !== alertOptions?.type) return false;
-      return true;
-    });
-    if (idx >= 0) {
-      // Update the existing one
-      setAlerts((curAlerts) => {
-        const [prevAlert] = curAlerts.splice(idx, 1);
-        clearTimeout(prevAlert?.dismissTimeout);
-        const timeout = alertOptions?.timeout ?? DEFAULT_ALERT_TIMEOUT;
-        prevAlert.dismissTimeout = setTimeout(() => removeAlert(prevAlert.id), timeout);
-        return curAlerts.concat(prevAlert);
-      });
-      return;
-    }
+  // addAlert keeps one identity for the provider's lifetime. Hooks list it in the
+  // dependencies of the effects that raise their alerts, so a new identity re-runs
+  // those effects and raises the alert again; with a new one after every alert, that
+  // looped for as long as the effect's condition held (e.g. while a transaction
+  // confirms). Hence the list, timers and client are read through refs.
+  const alertsRef = useRef<IAlert[]>([]);
+  const timersRef = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const nextIdRef = useRef(0);
+  const clientRef = useRef(client);
+  clientRef.current = client;
 
-    const newAlert: IAlert = {
-      id: Date.now(),
-      message,
-      description: alertOptions?.description,
-      type: alertOptions?.type ?? "info",
-    };
-    if (alertOptions?.txHash && client) {
-      newAlert.explorerLink = client.chain.blockExplorers?.default.url + "/tx/" + alertOptions.txHash;
-    }
-    const timeout = alertOptions?.timeout ?? DEFAULT_ALERT_TIMEOUT;
-    newAlert.dismissTimeout = setTimeout(() => removeAlert(newAlert.id), timeout);
-    setAlerts((curAlerts) => curAlerts.concat(newAlert));
-  };
+  const removeAlert = useCallback((id: number) => {
+    clearTimeout(timersRef.current.get(id));
+    timersRef.current.delete(id);
+    alertsRef.current = alertsRef.current.filter((alert) => alert.id !== id);
+    setAlerts(alertsRef.current);
+  }, []);
 
-  // Function to remove an alert
-  const removeAlert = (id: number) => {
-    setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.id !== id));
-  };
+  const scheduleDismiss = useCallback(
+    (id: number, timeout: number) => {
+      clearTimeout(timersRef.current.get(id));
+      timersRef.current.set(
+        id,
+        setTimeout(() => removeAlert(id), timeout)
+      );
+    },
+    [removeAlert]
+  );
 
-  return <AlertContext.Provider value={{ alerts, addAlert }}>{children}</AlertContext.Provider>;
+  const addAlert = useCallback(
+    (message: string, alertOptions?: AlertOptions) => {
+      const type = alertOptions?.type ?? "info";
+      const description = alertOptions?.description;
+      const timeout = alertOptions?.timeout ?? DEFAULT_ALERT_TIMEOUT;
+      const publicClient = clientRef.current;
+      const explorerLink =
+        alertOptions?.txHash && publicClient
+          ? publicClient.chain.blockExplorers?.default.url + "/tx/" + alertOptions.txHash
+          : undefined;
+
+      // An alert already on screen only has its dismissal pushed back. The list is left
+      // untouched, so a repeat causes no re-render and can never feed a loop. Match on
+      // the type as stored (defaulted), so untyped alerts dedupe too.
+      const existing = alertsRef.current.find(
+        (alert) =>
+          alert.message === message &&
+          alert.description === description &&
+          alert.type === type &&
+          alert.explorerLink === explorerLink
+      );
+      if (existing) {
+        scheduleDismiss(existing.id, timeout);
+        return;
+      }
+
+      const newAlert: IAlert = { id: nextIdRef.current++, message, description, type, explorerLink };
+      alertsRef.current = alertsRef.current.concat(newAlert);
+      setAlerts(alertsRef.current);
+      scheduleDismiss(newAlert.id, timeout);
+    },
+    [scheduleDismiss]
+  );
+
+  const value = useMemo(() => ({ alerts, addAlert }), [alerts, addAlert]);
+
+  return <AlertContext.Provider value={value}>{children}</AlertContext.Provider>;
 };
 
 export const useAlerts = () => {
