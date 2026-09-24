@@ -26,7 +26,6 @@ export interface IAlert {
   message: string;
   description?: string;
   explorerLink?: string;
-  dismissTimeout?: ReturnType<typeof setTimeout>;
 }
 
 export type ProposalMetadata = {
