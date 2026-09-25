@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0](https://github.com/taikoxyz/dao-ui-mono/compare/ods-fork-v1.0.44...ods-fork-v1.1.0) (2026-09-25)
+
+
+### Features
+
+* **dao-ui:** use Taiko pink for the Executed proposal tag ([#199](https://github.com/taikoxyz/dao-ui-mono/issues/199)) ([f3fa540](https://github.com/taikoxyz/dao-ui-mono/commit/f3fa5400105805005bccbd932495b5f967f9ca76))
+
 ## [Unreleased]
 
 ## [1.0.44] - 2024-08-20
