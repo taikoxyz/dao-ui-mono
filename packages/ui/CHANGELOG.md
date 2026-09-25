@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.5.2...dao-ui-v0.5.3) (2026-09-25)
+
+
+### Bug Fixes
+
+* **dao-ui:** stop the approval alert loop while a transaction confirms ([#216](https://github.com/taikoxyz/dao-ui-mono/issues/216)) ([cb9ebd9](https://github.com/taikoxyz/dao-ui-mono/commit/cb9ebd90c14c7c62f7673b6b61f1a4d585137082))
+
 ## [0.5.2](https://github.com/taikoxyz/dao-ui-mono/compare/dao-ui-v0.5.1...dao-ui-v0.5.2) (2026-09-20)
 
 
