@@ -30,7 +30,11 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
 
   const creator = relatedProposal?.creator ?? gqlProposal?.creator ?? zeroAddress;
 
-  const executor = relatedProposal?.executor ?? gqlProposal?.executor;
+  // For optimistic proposals, execution belongs to the optimistic proposal itself (gqlProposal).
+  // The antecedent proposal's executor (relatedProposal) only executed the stage 1 multisig to create it.
+  const executor = gqlProposal?.isOptimistic
+    ? gqlProposal?.executor
+    : (gqlProposal?.executor ?? relatedProposal?.executor);
 
   const { data: encryptionAccounts } = useEncryptionAccountsEmergency();
   const owner =
@@ -47,13 +51,12 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
   const asOfBlock = creationBlocks.length ? Math.min(...creationBlocks) : undefined;
   const listedName = owner ? getSecurityCouncilMemberData(owner, asOfBlock).name : "";
   const creatorLabel =
-    listedName ||
-    getSecurityCouncilMemberData(creator, asOfBlock).name ||
-    creator.replace(SHORT_ADDRESS, "$1...$2");
-  const executorLabel = getSecurityCouncilMemberData(
-    executioner ?? (executor?.address || zeroAddress),
-    asOfBlock
-  ).name;
+    listedName || getSecurityCouncilMemberData(creator, asOfBlock).name || creator.replace(SHORT_ADDRESS, "$1...$2");
+  const executorListedName = executioner ? getSecurityCouncilMemberData(executioner, asOfBlock).name : "";
+  const executorLabel =
+    executorListedName ||
+    getSecurityCouncilMemberData(executioner ?? (executor?.address || zeroAddress), asOfBlock).name ||
+    (executor?.address ? executor.address.replace(SHORT_ADDRESS, "$1...$2") : "");
 
   const approvals = relatedProposal?.approvers ?? gqlProposal?.approvers ?? [];
   const vetoes = gqlProposal?.vetoes ?? relatedProposal?.vetoes ?? [];
@@ -61,6 +64,8 @@ const TransactionsCard: React.FC<ICardResourcesProps> = (props) => {
   const hideExecutionTx =
     // not executed yet, so there is no execution tx to link to
     !executor ||
+    !executor.address ||
+    !executor.txHash ||
     // if vetoed, no execution
     (vetoes.length && gqlProposal?.executor === null) ||
     // if std and still active, no execution
