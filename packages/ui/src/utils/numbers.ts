@@ -27,3 +27,10 @@ export function compactNumber(input: number | string, decimalPlaces: number = 2)
   }
   return "~0.0";
 }
+
+export function formatExactTokenAmount(decimalStr: string): string {
+  if (!decimalStr) return "-";
+  const [intPart, decPart] = decimalStr.split(".");
+  const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return decPart ? `${formattedInt}.${decPart}` : formattedInt;
+}

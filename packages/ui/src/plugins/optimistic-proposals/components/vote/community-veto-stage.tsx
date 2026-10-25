@@ -2,7 +2,7 @@ import { FC } from "react";
 import { Card, Tag, Button, Icon, IconType, Tabs } from "@aragon/ods";
 import { Tabs as RadixTabsRoot } from "@radix-ui/react-tabs";
 import { formatUnits } from "viem";
-import { compactNumber } from "@/utils/numbers";
+import { compactNumber, formatExactTokenAmount } from "@/utils/numbers";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { VotesDataList } from "@/components/proposalVoting/votesDataList/votesDataList";
@@ -159,7 +159,7 @@ export const CommunityVetoStage: FC<CommunityVetoStageProps> = ({
                 </div>
 
                 {/* Stats */}
-                <div className="mt-2 grid grid-cols-2 gap-4">
+                <div className="mt-2 grid grid-cols-2 gap-4 md:grid-cols-3">
                   <div className="rounded-lg bg-neutral-50 p-3">
                     <p className="mb-1 text-xs text-neutral-500">Current Vetoes</p>
                     <p className="text-lg font-semibold text-neutral-900">
@@ -170,13 +170,29 @@ export const CommunityVetoStage: FC<CommunityVetoStageProps> = ({
                   <div className="rounded-lg bg-neutral-50 p-3">
                     <p className="mb-1 text-xs text-neutral-500">Required to Veto</p>
                     <p className="text-lg font-semibold text-neutral-900">
-                      {compactNumber(
-                        formatUnits((totalSupply * BigInt(Math.floor(threshold * 1000000))) / 1000000n, 18)
-                      )}
+                      {totalSupply > 0n
+                        ? compactNumber(
+                            formatUnits((totalSupply * BigInt(Math.floor(threshold * 1000000))) / 1000000n, 18)
+                          )
+                        : "-"}
                     </p>
                     <p className="text-xs text-neutral-600">
                       {tokenSymbol} ({thresholdPercentage}%)
                     </p>
+                  </div>
+                  <div className="col-span-2 rounded-lg bg-neutral-50 p-3 md:col-span-1">
+                    <p className="mb-1 text-xs text-neutral-500">Total Voting Power</p>
+                    <p
+                      className="text-lg font-semibold text-neutral-900"
+                      title={
+                        totalSupply > 0n
+                          ? `${formatExactTokenAmount(formatUnits(totalSupply, 18))} ${tokenSymbol}`
+                          : undefined
+                      }
+                    >
+                      {totalSupply > 0n ? compactNumber(formatUnits(totalSupply, 18)) : "-"}
+                    </p>
+                    <p className="text-xs text-neutral-600">{tokenSymbol}</p>
                   </div>
                 </div>
               </div>
@@ -259,6 +275,19 @@ export const CommunityVetoStage: FC<CommunityVetoStageProps> = ({
               <div>
                 <dt className="text-sm text-neutral-500">Voting Strategy</dt>
                 <dd className="font-medium text-sm text-neutral-800">Token-based veto voting</dd>
+              </div>
+              <div>
+                <dt className="text-sm text-neutral-500">Total Voting Power</dt>
+                <dd
+                  className="font-medium text-sm text-neutral-800"
+                  title={
+                    totalSupply > 0n
+                      ? `${formatExactTokenAmount(formatUnits(totalSupply, 18))} ${tokenSymbol}`
+                      : undefined
+                  }
+                >
+                  {totalSupply > 0n ? `${compactNumber(formatUnits(totalSupply, 18))} ${tokenSymbol}` : "-"}
+                </dd>
               </div>
               <div>
                 <dt className="text-sm text-neutral-500">Veto Threshold</dt>

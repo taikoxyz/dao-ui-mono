@@ -157,6 +157,7 @@ export const VotingStage: React.FC<IVotingStageProps> = (props) => {
                   tokenAddress={details.tokenAddress}
                   strategy={details.strategy}
                   options={details.options}
+                  totalVotingPower={pastSupply}
                 />
               )}
             </div>
